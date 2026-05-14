@@ -6,6 +6,13 @@ echo   JAT-AI - Installing...
 echo  ========================================
 echo.
 
+where pnpm >nul 2>&1
+if %ERRORLEVEL% NEQ 0 (
+    echo [ERROR] pnpm is required for the dashboard. Install pnpm first, then rerun this installer.
+    pause
+    exit /b 1
+)
+
 set SCRIPT_DIR=%~dp0
 set ROOT=%SCRIPT_DIR%..
 
@@ -26,9 +33,9 @@ echo [OK] Python dependencies installed.
 :: Step 2: Install frontend dependencies
 echo [2/3] Checking frontend dependencies...
 if not exist "%ROOT%\dashboard\node_modules" (
-    echo       Installing npm packages...
+    echo       Installing pnpm packages...
     cd /d "%ROOT%\dashboard"
-    npm install --silent
+    pnpm install
     echo [OK] Frontend dependencies installed.
 ) else (
     echo [OK] Frontend already installed.

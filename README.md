@@ -45,12 +45,14 @@ Then run:
 jat
 ```
 
-That's it. `jat` starts the backend (FastAPI on `http://localhost:8000`) and the frontend (Vite on `http://localhost:5173`), then opens the dashboard in your browser. Press `Ctrl+C` in the terminal to stop both.
+That's it. `jat` starts the backend (FastAPI on `http://localhost:8000`) and the frontend (Vite on `http://localhost:3000`), then opens the dashboard in your browser. Press `Ctrl+C` in the terminal to stop both.
+
+The dashboard uses `pnpm`. Make sure `pnpm` is installed before running the installer or launch scripts.
 
 ### What the installer does
 
 1. Installs the Python package in editable mode (`pip install -e .`), which registers the `jat` and `jat-cli` commands.
-2. Installs the dashboard's npm dependencies (`cd dashboard && npm install`).
+2. Installs the dashboard's pnpm dependencies (`cd dashboard && pnpm install`).
 3. Sets up the `jat` command on your PATH (`~/jat.cmd` on Windows, `/usr/local/bin/jat` on macOS/Linux).
 
 ### Before your first run
@@ -200,7 +202,7 @@ examples/
    cd JAT-AI
    pip install -e ".[dev]"
    cd dashboard
-   npm install
+   pnpm install
    cd ..
    ```
 

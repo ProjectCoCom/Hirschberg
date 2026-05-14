@@ -76,6 +76,8 @@ async def get_settings_status():
         "github_token": {"status": "active" if s.github_token else "missing"},
         "github_fg_token": {"status": "active" if s.github_fg_token else "missing"},
         "supabase": {"status": "active" if (s.supabase_url and s.supabase_key) else "missing"},
+        "supabase_url": {"status": "active" if s.supabase_url else "missing"},
+        "supabase_key": {"status": "active" if s.supabase_key else "missing"},
     }
 
 
@@ -242,21 +244,27 @@ async def regenerate_encryption_key():
 
 
 _RESET_ACTIONS: dict[str, dict] = {
-    "ai_providers":             {"type": "table", "table": "ai_providers"},
-    "jules_accounts":           {"type": "table", "table": "accounts"},
-    "conversations":            {"type": "tables", "tables": ["messages", "conversations"]},
-    "custom_prompts":           {"type": "filtered", "table": "prompts", "filters": {"source": "user"}},
-    "system_prompt_overrides":  {"type": "filtered", "table": "prompts", "filters": {"source": "system"}},
-    "agent_tasks":              {"type": "tables", "tables": ["session_activities", "agent_tasks"]},
-    "workflows":                {"type": "table", "table": "workflows"},
-    "context_messages":         {"type": "table", "table": "context_messages"},
-    "merge_queue":              {"type": "table", "table": "merge_queue"},
-    "github_tokens":            {"type": "env_clear", "keys": ["GITHUB_TOKEN", "GITHUB_FG_TOKEN"]},
-    "env_keys":                 {"type": "env_clear", "keys": [
-        "GITHUB_TOKEN", "GITHUB_FG_TOKEN",
-        "SUPABASE_URL", "SUPABASE_KEY",
-        "DEFAULT_REPO_OWNER", "DEFAULT_REPO_NAME",
-    ]},
+    "ai_providers": {"type": "table", "table": "ai_providers"},
+    "jules_accounts": {"type": "table", "table": "accounts"},
+    "conversations": {"type": "tables", "tables": ["messages", "conversations"]},
+    "custom_prompts": {"type": "filtered", "table": "prompts", "filters": {"source": "user"}},
+    "system_prompt_overrides": {"type": "filtered", "table": "prompts", "filters": {"source": "system"}},
+    "agent_tasks": {"type": "tables", "tables": ["session_activities", "agent_tasks"]},
+    "workflows": {"type": "table", "table": "workflows"},
+    "context_messages": {"type": "table", "table": "context_messages"},
+    "merge_queue": {"type": "table", "table": "merge_queue"},
+    "github_tokens": {"type": "env_clear", "keys": ["GITHUB_TOKEN", "GITHUB_FG_TOKEN"]},
+    "env_keys": {
+        "type": "env_clear",
+        "keys": [
+            "GITHUB_TOKEN",
+            "GITHUB_FG_TOKEN",
+            "SUPABASE_URL",
+            "SUPABASE_KEY",
+            "DEFAULT_REPO_OWNER",
+            "DEFAULT_REPO_NAME",
+        ],
+    },
 }
 
 
@@ -286,6 +294,9 @@ async def reset_data(body: ResetPayload):
                 cleared.append(target)
         except Exception as e:
             errors.append(f"{target}: {e}")
-    return {"ok": True, "cleared": cleared, "errors": errors, "restart_required": any(
-        _RESET_ACTIONS.get(t, {}).get("type") == "env_clear" for t in cleared
-    )}
+    return {
+        "ok": True,
+        "cleared": cleared,
+        "errors": errors,
+        "restart_required": any(_RESET_ACTIONS.get(t, {}).get("type") == "env_clear" for t in cleared),
+    }

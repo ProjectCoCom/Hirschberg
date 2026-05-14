@@ -10,6 +10,13 @@ set "ROOT=%~dp0.."
 set BACKEND_PORT=8000
 set FRONTEND_PORT=3000
 
+where pnpm >nul 2>&1
+if %ERRORLEVEL% NEQ 0 (
+    echo [ERROR] pnpm is required to start the dashboard. Install pnpm first.
+    pause
+    exit /b 1
+)
+
 if not exist "%ROOT%\.env" (
     echo [ERROR] .env file not found. Copy .env.example and fill in your keys.
     pause
@@ -26,7 +33,7 @@ if not exist "%ROOT%\.cache\deps_installed" (
 if not exist "%ROOT%\dashboard\node_modules" (
     echo [SETUP] Installing dashboard dependencies...
     cd /d "%ROOT%\dashboard"
-    npm install --silent
+    pnpm install
 )
 
 echo [BACKEND] Starting FastAPI on port %BACKEND_PORT%...
@@ -42,7 +49,7 @@ echo [BACKEND] Ready on http://localhost:%BACKEND_PORT%
 
 echo [FRONTEND] Starting Vite on port %FRONTEND_PORT%...
 cd /d "%ROOT%\dashboard"
-start /b "" npx vite --port %FRONTEND_PORT%
+start /b "" pnpm exec vite --port %FRONTEND_PORT%
 
 :wait_frontend
 timeout /t 1 /nobreak >nul
