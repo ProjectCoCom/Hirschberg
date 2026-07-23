@@ -1,0 +1,1 @@
+This is a fork of https://github.com/iceyxsm/JAT-AI. It is undergoing an extreme remodel, and should not be considered functional or stable, in any way, until this document is updated to advise as such.
