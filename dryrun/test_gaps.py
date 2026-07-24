@@ -233,6 +233,8 @@ async def test_integrator_workflow_review():
 
     coordinator = MagicMock()
     store = MagicMock()
+    store.save_result = AsyncMock()
+    store.save_task_state = AsyncMock()
     db_mock = AsyncMock()
     store._db = db_mock
 
@@ -379,6 +381,71 @@ async def test_orchestrator_plan_approval_and_decisions():
     print("[PASS] test_orchestrator_plan_approval_and_decisions: Orchestrator start, approve, and decision history endpoints verified")
 
 
+async def test_orchestrator_delegation_and_recursion_limit():
+    from core.coordinator import AgentCoordinator
+    from models.workflow import AgentTask, TaskStatus
+    from core.account_pool import AccountPool, Account, AccountRole
+    from config import Settings
+    from unittest.mock import MagicMock, AsyncMock, patch
+    from uuid import uuid4
+
+    # Build account pool with orchestrator and worker roles
+    pool = AccountPool()
+    orch_acc = Account(name="delegated-orch", role=AccountRole.ORCHESTRATOR)
+    pool.add_account(orch_acc)
+    worker_acc = Account(name="worker-1", role=AccountRole.WORKER)
+    pool.add_account(worker_acc)
+
+    store = MagicMock()
+    store.save_result = AsyncMock()
+    store.save_task_state = AsyncMock()
+    db_mock = AsyncMock()
+    store._db = db_mock
+
+    # Mock DB query for delegating session lookup
+    parent_uuid = str(uuid4())
+    db_mock.select.return_value = [{"id": parent_uuid}]
+
+    coordinator = AgentCoordinator(pool, store)
+
+    task = AgentTask(
+        id=uuid4(),
+        prompt="Write API",
+        assign_to="delegated-orch",
+        orchestrator_session_id="standing-orch-session-abc",
+    )
+
+    # 1. Test when delegation is disabled (max_delegation_depth = 0)
+    with patch("config.load_settings") as mock_settings:
+        mock_settings.return_value = Settings(max_delegation_depth=0)
+
+        # It should resolve to worker role (which fails since delegated-orch is an orchestrator account)
+        try:
+            await coordinator.run_task(task)
+        except Exception:
+            pass
+        assert task.prompt == "Write API" # No reframing
+        assert task.parent_task_id is None
+
+    # 2. Test when delegation is enabled (max_delegation_depth = 2)
+    with patch("config.load_settings") as mock_settings:
+        mock_settings.return_value = Settings(max_delegation_depth=2)
+
+        # Mock client creation and polling so it completes immediately
+        mock_client = AsyncMock()
+        mock_session = MagicMock()
+        mock_session.id = "session-delegated"
+        mock_client.create_session.return_value = mock_session
+        mock_client.get_session.return_value = AsyncMock(state="COMPLETED")
+        pool._clients[orch_acc.id] = mock_client
+
+        res = await coordinator.run_task(task)
+        assert "subtree of the goal: Write API" in res.prompt
+        assert res.parent_task_id is not None
+
+    print("[PASS] test_orchestrator_delegation_and_recursion_limit: Delegation prompt reframing and parent_task_id assignment verified successfully")
+
+
 async def main():
     print("=" * 50)
     print("JAT-AI GAP COVERAGE TESTS")
@@ -396,6 +463,7 @@ async def main():
     await test_qa_reviewer_verdicts_and_ci()
     await test_integrator_workflow_review()
     await test_orchestrator_plan_approval_and_decisions()
+    await test_orchestrator_delegation_and_recursion_limit()
 
     print()
     print("=" * 50)
