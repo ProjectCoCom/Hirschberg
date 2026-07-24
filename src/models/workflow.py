@@ -43,6 +43,7 @@ class AgentTask(BaseModel):
     assign_to: str = ""
     prompt_id: str | None = None
     exit_criteria: str = ""
+    orchestrator_session_id: str = ""
     created_at: datetime | None = None
     updated_at: datetime | None = None
 

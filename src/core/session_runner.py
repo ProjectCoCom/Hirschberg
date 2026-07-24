@@ -102,10 +102,49 @@ async def _poll_until_done(
 ) -> dict:
     last_activity_time: str | None = None
     elapsed = 0
+    last_state = None
 
     while elapsed < SESSION_TIMEOUT:
         session = await jules.get_session(session_id)
         log.info("session_poll", session_id=session_id, state=session.state)
+
+        if task_id:
+            # Check state transitions and notify
+            if session.state != last_state:
+                try:
+                    from uuid import UUID
+                    from models.workflow import AgentTask
+                    from core.config_loader import load_config, build_jules_pool
+
+                    rows = await db.select("agent_tasks", {"id": task_id})
+                    if rows:
+                        task_obj = AgentTask.model_validate(rows[0])
+                        config = load_config()
+                        pool = build_jules_pool(config)
+                        store = ContextStore(db)
+
+                        if session.state == SessionState.COMPLETED:
+                            pr_url = ""
+                            for output in session.outputs:
+                                if output.pull_request:
+                                    pr_url = output.pull_request.url
+                            from core.orchestrator_relay import notify_orchestrator
+                            await notify_orchestrator(pool, store, task_obj, "completed", pr_url=pr_url)
+                        elif session.state == SessionState.FAILED:
+                            from core.orchestrator_relay import notify_orchestrator
+                            await notify_orchestrator(pool, store, task_obj, "failed", summary="Jules session failed")
+                        elif session.state == SessionState.AWAITING_USER_FEEDBACK:
+                            from core.orchestrator_relay import notify_orchestrator, relay_worker_feedback
+                            await notify_orchestrator(pool, store, task_obj, "awaiting_user_feedback", summary="Worker session needs feedback")
+                            await relay_worker_feedback(pool, store, jules, session_id, task_obj)
+                        elif session.state == SessionState.PAUSED:
+                            from core.orchestrator_relay import notify_orchestrator
+                            await notify_orchestrator(pool, store, task_obj, "paused", summary="Worker session paused")
+
+                        await pool.close_all()
+                except Exception as e:
+                    log.warning("session_runner_notification_failed", error=str(e))
+                last_state = session.state
 
         try:
             activities = await jules.list_activities(session_id, since=last_activity_time)
@@ -120,7 +159,26 @@ async def _poll_until_done(
                 last_activity_time = activity.create_time.isoformat()
 
         if session.state == SessionState.COMPLETED:
-            return _build_result(session, "completed")
+            res = _build_result(session, "completed")
+            if task_id and res.get("pr_url"):
+                try:
+                    from core.qa_reviewer import run_qa_review_for_task
+                    from models.workflow import AgentTask
+                    from core.config_loader import load_config, build_jules_pool
+                    from core.context_store import ContextStore
+
+                    rows = await db.select("agent_tasks", {"id": task_id})
+                    if rows:
+                        task_obj = AgentTask.model_validate(rows[0])
+                        config = load_config()
+                        pool = build_jules_pool(config)
+                        store = ContextStore(db)
+
+                        await run_qa_review_for_task(pool, store, task_obj, res["pr_url"])
+                        await pool.close_all()
+                except Exception as e:
+                    log.warning("failed_to_trigger_qa_in_session_runner", error=str(e))
+            return res
 
         if session.state == SessionState.FAILED:
             return _build_result(session, "failed")
@@ -200,7 +258,7 @@ async def _store_activity(db: Database, task_id: str, session_id: str, activity)
             "originator": activity.originator,
             "description": activity.description,
             "activity_type": activity_type,
-            "raw_data": {},
+            "raw_data": activity.model_dump(mode="json"),
             "created_at": activity.create_time.isoformat() if activity.create_time else datetime.now(timezone.utc).isoformat(),
         })
     except Exception as exc:

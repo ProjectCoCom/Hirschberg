@@ -112,6 +112,7 @@ class LocalDB:
                 assign_to TEXT NOT NULL DEFAULT '',
                 prompt_id TEXT,
                 exit_criteria TEXT NOT NULL DEFAULT '',
+                orchestrator_session_id TEXT NOT NULL DEFAULT '',
                 created_at TEXT DEFAULT (datetime('now')),
                 updated_at TEXT DEFAULT (datetime('now'))
             );
@@ -230,6 +231,7 @@ class LocalDB:
             );
 
             CREATE INDEX IF NOT EXISTS idx_agent_tasks_workflow ON agent_tasks(workflow_id);
+            CREATE INDEX IF NOT EXISTS idx_agent_tasks_orchestrator ON agent_tasks(orchestrator_session_id);
             CREATE INDEX IF NOT EXISTS idx_agent_tasks_status ON agent_tasks(status);
             CREATE INDEX IF NOT EXISTS idx_context_messages_to ON context_messages(to_task_id);
             CREATE INDEX IF NOT EXISTS idx_merge_queue_task ON merge_queue(task_id);
@@ -286,6 +288,9 @@ class LocalDB:
             conn.execute("ALTER TABLE agent_tasks ADD COLUMN prompt_id TEXT")
         if "exit_criteria" not in task_columns:
             conn.execute("ALTER TABLE agent_tasks ADD COLUMN exit_criteria TEXT NOT NULL DEFAULT ''")
+        if "orchestrator_session_id" not in task_columns:
+            conn.execute("ALTER TABLE agent_tasks ADD COLUMN orchestrator_session_id TEXT NOT NULL DEFAULT ''")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_agent_tasks_orchestrator ON agent_tasks(orchestrator_session_id);")
 
         conn.commit()
 

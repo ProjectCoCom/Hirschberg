@@ -118,14 +118,45 @@ class AgentCoordinator:
 
     async def _poll_session(self, client, task: AgentTask) -> AgentTask:
         elapsed = 0
+        last_state = None
         while elapsed < SESSION_TIMEOUT:
             session = await client.get_session(task.session_id)
+
+            if session.state != last_state:
+                if session.state == SessionState.COMPLETED:
+                    pr_url = ""
+                    for output in session.outputs:
+                        if output.pull_request:
+                            pr_url = output.pull_request.url
+                    from core.orchestrator_relay import notify_orchestrator
+                    await notify_orchestrator(self._pool, self._store, task, "completed", pr_url=pr_url)
+                elif session.state == SessionState.FAILED:
+                    from core.orchestrator_relay import notify_orchestrator
+                    await notify_orchestrator(self._pool, self._store, task, "failed", summary="Jules session failed")
+                elif session.state == SessionState.AWAITING_USER_FEEDBACK:
+                    from core.orchestrator_relay import notify_orchestrator, relay_worker_feedback
+                    await notify_orchestrator(self._pool, self._store, task, "awaiting_user_feedback", summary="Worker session needs feedback")
+                    await relay_worker_feedback(self._pool, self._store, client, task.session_id, task)
+                elif session.state == SessionState.PAUSED:
+                    from core.orchestrator_relay import notify_orchestrator
+                    await notify_orchestrator(self._pool, self._store, task, "paused", summary="Worker session paused")
+
+                last_state = session.state
 
             if session.state == SessionState.COMPLETED:
                 task.status = TaskStatus.COMPLETED
                 for output in session.outputs:
                     if output.pull_request:
                         task.pr_url = output.pull_request.url
+
+                # If a PR was created, run the pre-merge QA reviewer
+                if task.pr_url:
+                    try:
+                        from core.qa_reviewer import run_qa_review_for_task
+                        await run_qa_review_for_task(self._pool, self._store, task, task.pr_url)
+                    except Exception as e:
+                        log.warning("qa_trigger_failed", task_id=str(task.id), error=str(e))
+
                 return task
 
             if session.state == SessionState.FAILED:

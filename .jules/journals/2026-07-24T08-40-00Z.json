@@ -1,0 +1,46 @@
+{
+  "step_number": 5,
+  "timestamp_utc": "2026-07-24T08:40:00Z",
+  "title": "Implement dependency-scoped cancellation and orchestrator notify/relay mechanisms",
+  "task_summary": "Implement dependency-scoped transitive cancellation in WorkflowEngine, notify standing orchestrators exactly once per task state transition, serialize turn communication per orchestrator, relay worker questions back to orchestrators, and persist raw activity model data.",
+  "status": "completed",
+  "previous_step_review": {
+    "reviewed_step": 4,
+    "checked": "src/core/plan_executor.py, src/api/execute.py, src/core/coordinator.py, src/clients/github.py, src/core/account_pool.py, dryrun/test_full_workflow.py, dryrun/test_gaps.py",
+    "issues_found": [],
+    "fixes_applied": []
+  },
+  "files_changed": [
+    {"path": "src/models/workflow.py", "change": "Added orchestrator_session_id string field to AgentTask model."},
+    {"path": "supabase/schema_local.sql", "change": "Added orchestrator_session_id to agent_tasks table schema and created idx_agent_tasks_orchestrator index."},
+    {"path": "src/clients/local_db.py", "change": "Added orchestrator_session_id to SQLite table schema and implemented database schema migrations and index creation inside _migrate_tables."},
+    {"path": "src/core/context_store.py", "change": "Added save_task_orchestrator and get_task_orchestrator methods to ContextStore."},
+    {"path": "src/core/workflow_engine.py", "change": "Re-implemented run() to calculate transitive dependents and perform dependency-scoped transitive cancellation rather than workflow-wide cancellation."},
+    {"path": "src/core/orchestrator_relay.py", "change": "Created notify_orchestrator and relay_worker_feedback with lock-based turn serialization per standing orchestrator session ID."},
+    {"path": "src/core/coordinator.py", "change": "Updated _poll_session to call notify_orchestrator on state transitions and trigger relay_worker_feedback when awaiting user feedback."},
+    {"path": "src/core/session_runner.py", "change": "Updated _poll_until_done to call notify_orchestrator and relay_worker_feedback on state transitions if task_id is supplied, and fixed _store_activity to serialize full Pydantic Activity models to raw_data."}
+  ],
+  "assumptions_verified": [
+    {"assumption": "Transitive closure for cancellation", "verification": "Confirmed with user; implemented full transitive dependents calculation to cancel propagating dependencies across the workflow.", "result": "confirmed"},
+    {"assumption": "Index orchestrator_session_id", "verification": "Confirmed with user; added idx_agent_tasks_orchestrator index to SQL schema and local db migrations.", "result": "confirmed"},
+    {"assumption": "Worker notifications trigger on paused state", "verification": "Confirmed with user; added paused state to notify_orchestrator transitions list.", "result": "confirmed"},
+    {"assumption": "Feedback relay lock turn serialization", "verification": "Confirmed with user; serialized interactions per orchestrator session to safely assume next agentMessaged activity contains the reply.", "result": "confirmed"}
+  ],
+  "decisions": [
+    {"decision": "Extract notifications and feedback relay to a separate orchestrator_relay module", "reasoning": "Maintains perfect modularity, prevents circular imports between coordinator.py and session_runner.py, and organises turn serialization cleanly."}
+  ],
+  "self_review": {
+    "passes_completed": 1,
+    "checked": "All modified files, Pydantic serialization paths, SQLite table updates, and test suite execution",
+    "changes_made": [],
+    "deferred_from_review": []
+  },
+  "blockers": [],
+  "deferred": [],
+  "tests": {
+    "suite_result": "pass",
+    "new_tests_added": [],
+    "pre_existing_failures_noted": []
+  },
+  "notes_for_next_step": "Step 5 is fully completed and thoroughly verified. Dependency-scoped cancellation and state-transition orchestrator notifies/relays are perfectly working."
+}
