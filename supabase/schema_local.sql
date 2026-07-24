@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS workflows (
     name TEXT NOT NULL,
     description TEXT DEFAULT '',
     status TEXT DEFAULT 'created',
+    execution_mode TEXT DEFAULT 'sequential',
     created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT DEFAULT (datetime('now'))
 );
@@ -51,6 +52,9 @@ CREATE TABLE IF NOT EXISTS agent_tasks (
     pr_url TEXT NOT NULL DEFAULT '',
     context TEXT NOT NULL DEFAULT '{}',
     error TEXT NOT NULL DEFAULT '',
+    assign_to TEXT NOT NULL DEFAULT '',
+    prompt_id TEXT,
+    exit_criteria TEXT NOT NULL DEFAULT '',
     created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT DEFAULT (datetime('now'))
 );

@@ -89,6 +89,7 @@ class LocalDB:
                 name TEXT NOT NULL,
                 description TEXT DEFAULT '',
                 status TEXT DEFAULT 'created',
+                execution_mode TEXT DEFAULT 'sequential',
                 created_at TEXT DEFAULT (datetime('now')),
                 updated_at TEXT DEFAULT (datetime('now'))
             );
@@ -108,6 +109,9 @@ class LocalDB:
                 pr_url TEXT NOT NULL DEFAULT '',
                 context TEXT NOT NULL DEFAULT '{}',
                 error TEXT NOT NULL DEFAULT '',
+                assign_to TEXT NOT NULL DEFAULT '',
+                prompt_id TEXT,
+                exit_criteria TEXT NOT NULL DEFAULT '',
                 created_at TEXT DEFAULT (datetime('now')),
                 updated_at TEXT DEFAULT (datetime('now'))
             );
@@ -256,6 +260,8 @@ class LocalDB:
     def _migrate_tables(self) -> None:
         conn = self._conn
         assert conn is not None
+
+        # Migrate accounts
         cursor = conn.execute("PRAGMA table_info(accounts)")
         columns = [row["name"] for row in cursor.fetchall()]
         if "plan_tier" not in columns:
@@ -264,6 +270,23 @@ class LocalDB:
             conn.execute("ALTER TABLE accounts ADD COLUMN role TEXT NOT NULL DEFAULT 'worker'")
         if "label" not in columns:
             conn.execute("ALTER TABLE accounts ADD COLUMN label TEXT NOT NULL DEFAULT ''")
+
+        # Migrate workflows
+        cursor = conn.execute("PRAGMA table_info(workflows)")
+        wf_columns = [row["name"] for row in cursor.fetchall()]
+        if "execution_mode" not in wf_columns:
+            conn.execute("ALTER TABLE workflows ADD COLUMN execution_mode TEXT DEFAULT 'sequential'")
+
+        # Migrate agent_tasks
+        cursor = conn.execute("PRAGMA table_info(agent_tasks)")
+        task_columns = [row["name"] for row in cursor.fetchall()]
+        if "assign_to" not in task_columns:
+            conn.execute("ALTER TABLE agent_tasks ADD COLUMN assign_to TEXT NOT NULL DEFAULT ''")
+        if "prompt_id" not in task_columns:
+            conn.execute("ALTER TABLE agent_tasks ADD COLUMN prompt_id TEXT")
+        if "exit_criteria" not in task_columns:
+            conn.execute("ALTER TABLE agent_tasks ADD COLUMN exit_criteria TEXT NOT NULL DEFAULT ''")
+
         conn.commit()
 
     def _init_tables(self) -> None:

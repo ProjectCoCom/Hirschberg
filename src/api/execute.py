@@ -1,117 +1,21 @@
 from __future__ import annotations
 
 import asyncio
-
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from config import load_settings
 from db import db
-from core.plan_executor import (
-    parse_plan,
-    create_branch_from_ref,
-    get_default_branch_sha,
-    create_jules_session,
-    poll_session_status,
-    get_jules_key,
-    ExecutionPlan,
-    AgentTask,
-)
-from core.session_limiter import get_session_limiter
+from core.plan_executor import parse_plan
+from core.config_loader import load_config, build_jules_pool
+from core.context_store import ContextStore
+from core.coordinator import AgentCoordinator
+from core.workflow_engine import WorkflowEngine
+from models.workflow import WorkflowStatus, TaskStatus, AgentTask
+from clients.github import GitHubClient
 
 router = APIRouter()
 settings = load_settings()
-
-
-async def _track_task(task: AgentTask, plan: ExecutionPlan, status: str, session_id: str | None = None):
-    try:
-        existing = await db.select("agent_tasks", {
-            "repo_owner": plan.repo_owner,
-            "repo_name": plan.repo_name,
-        })
-        # Match by prompt text prefix to find the right row for this specific task
-        match = None
-        for r in existing:
-            if r.get("prompt", "")[:100] == task.description[:100]:
-                match = r
-                break
-
-        if match:
-            updates = {"status": status}
-            if session_id:
-                updates["session_id"] = session_id
-            await db.update("agent_tasks", updates, {"id": match["id"]})
-        else:
-            await db.insert("agent_tasks", {
-                "prompt": task.description[:500],
-                "repo_owner": plan.repo_owner,
-                "repo_name": plan.repo_name,
-                "status": status,
-                "session_id": session_id or "",
-            })
-    except Exception:
-        pass
-
-
-async def _resolve_ai_ctx(provider_type: str, model: str) -> dict:
-    """Fetch the first enabled API key for the requested provider so poll_session_status
-    can call the chat AI when Jules asks mid-session questions."""
-    if not provider_type or not model:
-        return {}
-    try:
-        rows = await db.select("ai_providers", filters={"provider_type": provider_type, "enabled": True})
-    except Exception:
-        rows = []
-    if not rows:
-        return {}
-    from api.chat import _decrypt_key
-    key = _decrypt_key(rows[0].get("api_key_encrypted", ""))
-    if not key:
-        return {}
-    return {"key": key, "provider": provider_type, "model": model}
-
-
-_EXEC_CTX_KEY = "execution_context"
-
-
-async def _persist_execution_context(plan: ExecutionPlan, provider_type: str, model: str):
-    """Save enough info to resume pending tasks after a crash."""
-    import json
-    ctx = json.dumps({
-        "repo_owner": plan.repo_owner,
-        "repo_name": plan.repo_name,
-        "execution_mode": plan.execution_mode,
-        "provider_type": provider_type,
-        "model": model,
-        "max_retries": plan.max_retries,
-        "timeout_minutes": plan.timeout_minutes,
-    })
-    try:
-        existing = await db.select("app_settings", filters={"key": _EXEC_CTX_KEY})
-        if existing:
-            await db.update("app_settings", {"value": ctx}, {"key": _EXEC_CTX_KEY})
-        else:
-            await db.insert("app_settings", {"key": _EXEC_CTX_KEY, "value": ctx})
-    except Exception:
-        pass
-
-
-async def _clear_execution_context():
-    try:
-        await db.delete("app_settings", {"key": _EXEC_CTX_KEY})
-    except Exception:
-        pass
-
-
-async def _load_execution_context() -> dict | None:
-    import json
-    try:
-        rows = await db.select("app_settings", filters={"key": _EXEC_CTX_KEY})
-        if rows:
-            return json.loads(rows[0].get("value", "{}"))
-    except Exception:
-        pass
-    return None
 
 
 class ExecuteRequest(BaseModel):
@@ -135,290 +39,105 @@ class ExecuteResponse(BaseModel):
     results: list[TaskResult]
 
 
-async def _update_jdocs(plan: ExecutionPlan, task: AgentTask, status: str, session_id: str, pr_url: str | None, token: str):
-    from core.jdocs import update_context_after_agent, append_session_history
-    # Write to agent's own branch
-    await update_context_after_agent(
-        plan.repo_owner, plan.repo_name, task.branch_name, token,
-        agent_id=task.id, task_description=task.description,
-        status=status, pr_url=pr_url, files_changed=None,
-    )
-    await append_session_history(
-        plan.repo_owner, plan.repo_name, task.branch_name, token,
-        agent_id=task.id, session_id=session_id or "",
-        status=status, prompt_summary=task.description[:200],
-    )
-    # Also write to main so subsequent agents can read prior context
-    try:
-        await update_context_after_agent(
-            plan.repo_owner, plan.repo_name, "main", token,
-            agent_id=task.id, task_description=task.description,
-            status=status, pr_url=pr_url, files_changed=None,
-        )
-        await append_session_history(
-            plan.repo_owner, plan.repo_name, "main", token,
-            agent_id=task.id, session_id=session_id or "",
-            status=status, prompt_summary=task.description[:200],
-        )
-    except Exception:
-        pass  # Non-critical — agent branch has the data regardless
-
-
-def _extract_pr_url(outputs: list[dict]) -> str | None:
-    for out in outputs:
-        if "pull_request" in out:
-            return out["pull_request"].get("url", "")
-    return None
-
-
-async def _run_task_once(task: AgentTask, plan: ExecutionPlan, base_sha: str, jules_key: str, token: str, task_index: int = 0, ai_ctx: dict | None = None) -> TaskResult:
-    limiter = get_session_limiter()
-    pipeline_id = f"{plan.repo_owner}/{plan.repo_name}"
-
-    acquired = await limiter.acquire(pipeline_id, plan.repo_name, task.id)
-    if not acquired:
-        return TaskResult(task_id=task.id, status="failed", error="Could not acquire session slot (global limit reached)")
-
-    try:
-        await _track_task(task, plan, "running")
-        branch_created = await create_branch_from_ref(
-            plan.repo_owner, plan.repo_name, task.branch_name, base_sha, token
-        )
-        if not branch_created:
-            await _track_task(task, plan, "failed")
-            return TaskResult(task_id=task.id, status="failed", error="Branch creation failed")
-
-        prompt = await _resolve_prompt(task, plan, token, task_index)
-        session_id = await create_jules_session(
-            prompt=prompt, owner=plan.repo_owner, repo=plan.repo_name,
-            branch=task.branch_name, jules_key=jules_key,
-        )
-        if not session_id:
-            await _track_task(task, plan, "failed")
-            return TaskResult(task_id=task.id, status="failed", error="Session creation failed")
-
-        ai = ai_ctx or {}
-        task_context = (
-            f"Task: {task.description}\n"
-            f"Branch: {task.branch_name}\n"
-            f"Exit criteria: {task.exit_criteria or 'Task completed as described'}"
-        )
-        result = await poll_session_status(
-            session_id, jules_key, plan.timeout_minutes,
-            task_context=task_context,
-            ai_key=ai.get("key", ""),
-            ai_provider=ai.get("provider", ""),
-            ai_model=ai.get("model", ""),
-        )
-        state = result.get("state", "UNKNOWN")
-
-        if state == "TIMEOUT":
-            return TaskResult(task_id=task.id, status="failed", session_id=session_id, error=f"Session timed out after {plan.timeout_minutes}min (still running on Jules)")
-
-        pr_url = _extract_pr_url(result.get("outputs", []))
-        status = "completed" if state == "COMPLETED" else "failed"
-        await _track_task(task, plan, status, session_id)
-        await _update_jdocs(plan, task, status, session_id or "", pr_url, token)
-
-        return TaskResult(
-            task_id=task.id, status=status, session_id=session_id, pr_url=pr_url,
-            error=None if state == "COMPLETED" else f"Session ended with state: {state}",
-        )
-    finally:
-        await limiter.release(task.id)
-
-
-async def _resolve_prompt(task: AgentTask, plan: ExecutionPlan, token: str, task_index: int = 0) -> str:
-    from core.prompt_builder import build_agent_xml_prompt
-
-    # Read prior agent context from jdocs on the default branch
-    dependency_context = await _read_jdocs_context(plan.repo_owner, plan.repo_name, token)
-
-    # If task has a prompt_id, load the skill content as extra steps
-    steps = ""
-    if task.prompt_id:
-        try:
-            rows = await db.select("prompts", filters={"name": task.prompt_id})
-            if rows:
-                steps = rows[0].get("content", "")
-        except Exception:
-            pass
-
-    # Parse acceptance criteria from exit_criteria (split on newlines or semicolons)
-    criteria = [c.strip() for c in task.exit_criteria.replace(";", "\n").split("\n") if c.strip()] if task.exit_criteria else ["Task completed as described"]
-
-    return build_agent_xml_prompt(
-        agent_index=task_index + 1,
-        total_agents=len(plan.tasks),
-        title=task.description[:80],
-        description=task.description,
-        branch_name=task.branch_name,
-        files_scope=[],  # Jules discovers files from the repo
-        acceptance_criteria=criteria,
-        repo_owner=plan.repo_owner,
-        repo_name=plan.repo_name,
-        dependency_context=dependency_context,
-        steps=steps,
-    )
-
-
-async def _read_jdocs_context(owner: str, repo: str, token: str, branch: str = "main") -> str:
-    """Fetch .jules/jdocs/context.xml from the repo so the next agent knows what prior agents did."""
-    import httpx
-    import base64
-
-    url = f"https://api.github.com/repos/{owner}/{repo}/contents/.jules/jdocs/context.xml?ref={branch}"
-    headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
-
-    try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            res = await client.get(url, headers=headers)
-        if res.status_code == 200:
-            content = base64.b64decode(res.json()["content"]).decode()
-            return content
-    except Exception:
-        pass
-    return "No prior agent context available."
-
-
-async def _run_task(task: AgentTask, plan: ExecutionPlan, base_sha: str, jules_key: str, token: str, task_index: int = 0, ai_ctx: dict | None = None) -> TaskResult:
-    max_retries = plan.max_retries if hasattr(plan, "max_retries") else 2
-    for attempt in range(max_retries + 1):
-        result = await _run_task_once(task, plan, base_sha, jules_key, token, task_index, ai_ctx)
-        if result.status == "completed":
-            return result
-        if result.error and ("creation failed" in result.error or "Branch creation" in result.error):
-            return result
-        if attempt < max_retries:
-            task.branch_name = f"{task.branch_name}-retry{attempt + 1}"
-    return result
-
-
-async def _execute_sequential(plan: ExecutionPlan, jules_key: str, token: str, ai_ctx: dict | None = None) -> list[TaskResult]:
-    base_sha = await get_default_branch_sha(plan.repo_owner, plan.repo_name, token)
-    if not base_sha:
-        return [TaskResult(task_id=t.id, status="failed", error="Could not get base SHA") for t in plan.tasks]
-
-    results = []
-    for i, task in enumerate(plan.tasks):
-        result = await _run_task(task, plan, base_sha, jules_key, token, i, ai_ctx)
-        results.append(result)
-        if result.status == "failed":
-            break
-    return results
-
-
-async def _execute_parallel(plan: ExecutionPlan, jules_key: str, token: str, ai_ctx: dict | None = None) -> list[TaskResult]:
-    base_sha = await get_default_branch_sha(plan.repo_owner, plan.repo_name, token)
-    if not base_sha:
-        return [TaskResult(task_id=t.id, status="failed", error="Could not get base SHA") for t in plan.tasks]
-
-    from core.config_loader import load_config, get_workflow_settings
-    stagger_delay = get_workflow_settings(load_config()).get("parallel_limit", 2)
-
-    tasks = []
-    for i, task in enumerate(plan.tasks):
-        coro = _run_task(task, plan, base_sha, jules_key, token, i, ai_ctx)
-        tasks.append(asyncio.create_task(coro))
-        await asyncio.sleep(stagger_delay)
-    return await asyncio.gather(*tasks)
-
-
-async def _execute_hybrid(plan: ExecutionPlan, jules_key: str, token: str, ai_ctx: dict | None = None) -> list[TaskResult]:
-    base_sha = await get_default_branch_sha(plan.repo_owner, plan.repo_name, token)
-    if not base_sha:
-        return [TaskResult(task_id=t.id, status="failed", error="Could not get base SHA") for t in plan.tasks]
-
-    completed: dict[str, TaskResult] = {}
-    pending = list(plan.tasks)
-    results = []
-
-    while pending:
-        ready = [t for t in pending if all(d in completed for d in t.dependencies)]
-        if not ready:
-            break
-
-        coros = [_run_task(t, plan, base_sha, jules_key, token, plan.tasks.index(t), ai_ctx) for t in ready]
-        batch_results = await asyncio.gather(*coros)
-
-        for task, result in zip(ready, batch_results):
-            completed[task.id] = result
-            results.append(result)
-            pending.remove(task)
-
-    for t in pending:
-        results.append(TaskResult(task_id=t.id, status="blocked", error="Dependencies not met"))
-
-    return results
-
-
 @router.post("/api/execute")
 async def execute_plan(request: ExecuteRequest):
-    jules_key = await get_jules_key()
-    if not jules_key:
-        raise HTTPException(400, "No Jules API key configured")
-
     token = settings.github_token
     if not token:
         raise HTTPException(400, "No GitHub token configured in .env")
 
+    # 1. Parse plan JSON into models.workflow.Workflow object
     try:
-        plan = parse_plan(request.plan_json, request.repo_owner, request.repo_name)
+        workflow = parse_plan(request.plan_json, request.repo_owner, request.repo_name)
     except Exception as e:
         raise HTTPException(400, f"Invalid plan: {e}")
 
-    # Apply config.json workflow overrides
-    from core.config_loader import load_config, get_workflow_settings
-    wf_cfg = get_workflow_settings(load_config())
-    if wf_cfg.get("max_retries") is not None:
-        plan.max_retries = wf_cfg["max_retries"]
+    # 2. Build AccountPool from the database with config.json fallback
+    config = load_config()
+    pool = build_jules_pool(config)
 
-    ai_ctx = await _resolve_ai_ctx(request.provider_type, request.model)
+    # 3. Check if we have any active/enabled accounts configured
+    if not pool._accounts:
+        await pool.close_all()
+        raise HTTPException(400, "No enabled Jules API accounts configured")
 
-    # Pre-register all tasks as "pending" so they appear on the canvas immediately
-    for task in plan.tasks:
-        await _track_task(task, plan, "pending")
+    # 4. Insert workflow and pre-register tasks in SQLite database
+    try:
+        await db.insert("workflows", {
+            "id": str(workflow.id),
+            "name": workflow.name,
+            "description": workflow.description,
+            "status": str(workflow.status),
+            "execution_mode": workflow.execution_mode,
+        })
+        for task in workflow.tasks:
+            task.workflow_id = workflow.id
+            await db.insert("agent_tasks", task.model_dump(mode="json"))
+    except Exception as e:
+        await pool.close_all()
+        raise HTTPException(500, f"Database persistence failed: {e}")
 
-    # Persist execution context so pending tasks can be auto-resumed after a crash
-    await _persist_execution_context(plan, request.provider_type, request.model)
+    # 5. Execute using System A (WorkflowEngine)
+    store = ContextStore(db)
+    coordinator = AgentCoordinator(pool, store)
+    engine = WorkflowEngine(coordinator, store)
 
     try:
-        from core.jdocs import init_jdocs
-        await init_jdocs(plan.repo_owner, plan.repo_name, "main", token)
+        workflow = await engine.run(workflow)
     except Exception as e:
-        print(f"[JDOCS] Init failed (non-fatal): {e}")
+        workflow.status = WorkflowStatus.FAILED
+        print(f"[WORKFLOW] Engine execution failed: {e}")
+    finally:
+        await db.update("workflows", {"status": str(workflow.status)}, {"id": str(workflow.id)})
+        await pool.close_all()
 
-    if plan.execution_mode == "parallel":
-        results = await _execute_parallel(plan, jules_key, token, ai_ctx)
-    elif plan.execution_mode == "hybrid":
-        results = await _execute_hybrid(plan, jules_key, token, ai_ctx)
-    else:
-        results = await _execute_sequential(plan, jules_key, token, ai_ctx)
+    # 6. Retrieve latest tasks state from DB to return complete results
+    results = []
+    for task in workflow.tasks:
+        try:
+            db_task = await store.get_task_state(task.id)
+            results.append(TaskResult(
+                task_id=str(task.id),
+                status=db_task.get("status", str(task.status)),
+                session_id=db_task.get("session_id") or None,
+                pr_url=db_task.get("pr_url") or None,
+                error=db_task.get("error") or None,
+            ))
+        except Exception:
+            results.append(TaskResult(
+                task_id=str(task.id),
+                status=str(task.status),
+                session_id=task.session_id or None,
+                pr_url=task.pr_url or None,
+                error=task.error or None,
+            ))
 
-    all_done = all(r.status == "completed" for r in results)
-
-    await _clear_execution_context()
-
-    merge_result = None
+    # 7. Merge branches and create final PR if workflow is successful
+    all_done = workflow.status == WorkflowStatus.COMPLETED
     if all_done:
-        from core.merge_review import merge_branches, create_integration_branch, run_review_session, create_final_pr
-        base_sha = await get_default_branch_sha(request.repo_owner, request.repo_name, token)
-        if base_sha:
-            branches = [t.branch_name for t in plan.tasks]
-            integration = f"jat/integration-{request.repo_name}"
-            await create_integration_branch(request.repo_owner, request.repo_name, base_sha, integration, token)
-            merge_result = await merge_branches(request.repo_owner, request.repo_name, branches, integration, token)
-            pr_url = await create_final_pr(request.repo_owner, request.repo_name, integration, "main", f"JAT-AI: {integration}", token)
-            merge_result["pr_url"] = pr_url
+        from core.merge_review import merge_branches, create_integration_branch, create_final_pr
+        gh_client = GitHubClient(token)
+        try:
+            base_sha = await gh_client.get_default_branch_sha(request.repo_owner, request.repo_name)
+            if base_sha:
+                branches = [t.branch for t in workflow.tasks]
+                integration = f"jat/integration-{request.repo_name}"
+                await create_integration_branch(request.repo_owner, request.repo_name, base_sha, integration, token)
+                await merge_branches(request.repo_owner, request.repo_name, branches, integration, token)
+                await create_final_pr(request.repo_owner, request.repo_name, integration, "main", f"JAT-AI: {integration}", token)
+        except Exception as e:
+            print(f"[WORKFLOW] Post-execution merge/PR failed: {e}")
+        finally:
+            await gh_client.close()
 
     return ExecuteResponse(
-        status="completed" if all_done else "partial",
+        status="completed" if all_done else "failed",
         results=results,
     )
 
 
 @router.get("/api/session-limiter/status")
 async def limiter_status():
+    from core.session_limiter import get_session_limiter
     limiter = get_session_limiter()
     return limiter.status()
 
@@ -438,14 +157,19 @@ async def merge_and_review(request: MergeReviewRequest):
         merge_branches, create_integration_branch,
         run_review_session, cleanup_branches, create_final_pr,
     )
-    from core.plan_executor import get_default_branch_sha
+    from core.auto_mode import get_jules_key
 
     token = settings.github_token
     jules_key = await get_jules_key()
     if not token:
         raise HTTPException(400, "No GitHub token configured")
 
-    base_sha = await get_default_branch_sha(request.repo_owner, request.repo_name, token)
+    gh_client = GitHubClient(token)
+    try:
+        base_sha = await gh_client.get_default_branch_sha(request.repo_owner, request.repo_name)
+    finally:
+        await gh_client.close()
+
     if not base_sha:
         raise HTTPException(500, "Could not get base SHA")
 

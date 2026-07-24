@@ -81,13 +81,18 @@ class AccountPool:
     def get_client(self, account_id: UUID) -> JulesClient:
         return self._clients[account_id]
 
-    def acquire(self, source: str | None = None, role: AccountRole | None = None) -> Account:
+    def acquire(self, source: str | None = None, role: AccountRole | None = None, assign_to: str | None = None) -> Account:
         eligible = [a for a in self._accounts if a.has_capacity]
 
         if role is not None:
             eligible = [a for a in eligible if a.role == role]
             if not eligible:
                 raise AccountPoolExhausted(f"No accounts available with role '{role}' and capacity")
+
+        if assign_to:
+            eligible = [a for a in eligible if a.name == assign_to or a.label == assign_to]
+            if not eligible:
+                raise AccountPoolExhausted(f"No accounts available with name or label '{assign_to}' and capacity")
 
         if source:
             with_source = [a for a in eligible if source in a.sources]

@@ -82,6 +82,53 @@ def _times_within_minutes(local_time: str, jules_time: str, minutes: int) -> boo
         return True  # Parse failure — don't block on this
 
 
+async def _get_jules_key() -> str | None:
+    from db import db
+    from core.ai_interface import KeyVault
+    from config import load_settings
+    try:
+        rows = await db.select("accounts")
+    except Exception:
+        return None
+    enabled = [r for r in rows if r.get("enabled", True)]
+    if not enabled:
+        return None
+    best = min(enabled, key=lambda r: r.get("sessions_today", 0))
+    daily_limit = best.get("max_daily_tasks", 300)
+    if best.get("sessions_today", 0) >= daily_limit:
+        return None
+    encrypted = best.get("api_key_encrypted", "")
+    if not encrypted:
+        return None
+    vault = KeyVault(load_settings().encryption_key)
+    try:
+        return vault.decrypt(encrypted)
+    except Exception:
+        return encrypted
+
+
+async def _local_poll_session_status(session_id: str, jules_key: str, timeout_minutes: int = 20) -> dict:
+    from clients.jules import JulesClient
+    from models.jules import SessionState
+    client = JulesClient(jules_key)
+    deadline = asyncio.get_event_loop().time() + (timeout_minutes * 60)
+    try:
+        while asyncio.get_event_loop().time() < deadline:
+            try:
+                session = await client.get_session(session_id)
+                state = session.state
+                if state in (SessionState.COMPLETED, SessionState.FAILED):
+                    return {"state": str(state)}
+                if state == SessionState.AWAITING_PLAN_APPROVAL:
+                    await client.approve_plan(session_id)
+            except Exception:
+                pass
+            await asyncio.sleep(15)
+        return {"state": "TIMEOUT"}
+    finally:
+        await client.close()
+
+
 async def _recover_orphaned_tasks():
     """On startup, check tasks stuck as 'running' and sync their actual state from Jules."""
     await asyncio.sleep(2)  # Let the DB connection settle
@@ -92,9 +139,7 @@ async def _recover_orphaned_tasks():
     if not rows:
         return
 
-    from core.plan_executor import get_jules_key, poll_session_status
-
-    jules_key = await get_jules_key()
+    jules_key = await _get_jules_key()
     if not jules_key:
         return
 
@@ -144,16 +189,8 @@ async def _recover_orphaned_tasks():
 
 async def _resume_polling(task_row: dict, session_id: str, jules_key: str):
     """Resume polling a still-active Jules session and update the DB when it finishes."""
-    from core.plan_executor import poll_session_status
-
-    task_context = (
-        f"Task: {task_row.get('prompt', '')}\n"
-        f"Repo: {task_row.get('repo_owner', '')}/{task_row.get('repo_name', '')}"
-    )
-
-    result = await poll_session_status(
-        session_id, jules_key, timeout_minutes=20,
-        task_context=task_context,
+    result = await _local_poll_session_status(
+        session_id, jules_key, timeout_minutes=20
     )
     state = result.get("state", "UNKNOWN")
     new_status = "completed" if state == "COMPLETED" else "failed"
@@ -176,7 +213,7 @@ async def _resume_pending_tasks(jules_key: str):
         _resolve_ai_ctx, _run_task_once, _track_task,
         AgentTask, ExecutionPlan,
     )
-    from core.plan_executor import get_default_branch_sha
+    from clients.github import GitHubClient
 
     ctx = await _load_execution_context()
     if not ctx:
@@ -191,7 +228,11 @@ async def _resume_pending_tasks(jules_key: str):
         return
 
     ai_ctx = await _resolve_ai_ctx(ctx.get("provider_type", ""), ctx.get("model", ""))
-    base_sha = await get_default_branch_sha(ctx["repo_owner"], ctx["repo_name"], token)
+    gh_client = GitHubClient(token)
+    try:
+        base_sha = await gh_client.get_default_branch_sha(ctx["repo_owner"], ctx["repo_name"])
+    finally:
+        await gh_client.close()
     if not base_sha:
         print("[RECOVERY] Could not get base SHA — cannot resume")
         return
@@ -234,15 +275,20 @@ async def lifespan(app: FastAPI):
 async def _daily_reset_loop():
     """Reset sessions_today at midnight UTC each day."""
     from datetime import datetime, timezone, timedelta
-    from core.plan_executor import reset_daily_sessions
 
     while True:
         now = datetime.now(timezone.utc)
         tomorrow = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
         seconds_until_midnight = (tomorrow - now).total_seconds()
         await asyncio.sleep(seconds_until_midnight)
-        await reset_daily_sessions()
-        print("[DAILY] Reset sessions_today counters")
+        try:
+            rows = await db.select("accounts")
+            for r in rows:
+                if r.get("sessions_today", 0) > 0:
+                    await db.update("accounts", {"sessions_today": 0}, {"id": r["id"]})
+            print("[DAILY] Reset sessions_today counters")
+        except Exception as e:
+            print(f"[DAILY] Reset failed: {e}")
 
 
 app = FastAPI(title="JAT-AI API", lifespan=lifespan)
@@ -621,8 +667,7 @@ async def get_codex_usage():
 
 
 async def _fetch_jules_repos_as_tentacles() -> dict[str, dict]:
-    from core.plan_executor import get_jules_key
-    jules_key = await get_jules_key() or ""
+    jules_key = await _get_jules_key() or ""
     if not jules_key:
         return {}
     try:

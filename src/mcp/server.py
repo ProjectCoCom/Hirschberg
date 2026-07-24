@@ -19,8 +19,24 @@ mcp = FastMCP("JAT MCP Server")
 def _get_jules():
     import asyncio
     from clients.jules import JulesClient
-    from core.plan_executor import get_jules_key
-    key = asyncio.run(get_jules_key())
+    from db import db
+    from core.ai_interface import KeyVault
+    from config import load_settings
+
+    accounts = asyncio.run(db.select("accounts", {"enabled": True}))
+    if not accounts:
+        raise RuntimeError("No enabled Jules accounts configured.")
+    acc = accounts[0]
+    encrypted = acc.get("api_key_encrypted", "")
+    if encrypted:
+        vault = KeyVault(load_settings().encryption_key)
+        try:
+            key = vault.decrypt(encrypted)
+        except Exception:
+            key = encrypted
+    else:
+        key = ""
+
     if not key:
         raise RuntimeError("No Jules API key configured. Add one via the dashboard APIs page.")
     return JulesClient(key)
