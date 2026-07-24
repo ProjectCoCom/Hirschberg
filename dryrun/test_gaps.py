@@ -301,6 +301,84 @@ async def test_integrator_workflow_review():
     print("[PASS] test_integrator_workflow_review: Integrator review dispatches and handles approve/reject paths correctly")
 
 
+async def test_orchestrator_plan_approval_and_decisions():
+    from unittest.mock import patch, AsyncMock, MagicMock
+    from fastapi.testclient import TestClient
+    from api.server import app
+    from uuid import uuid4
+
+    # Test the API endpoints added in Step 7
+    client = TestClient(app)
+
+    # 1. Test POST /api/orchestrators/start
+    mock_pool = MagicMock()
+    mock_pool.close_all = AsyncMock()
+    mock_account = MagicMock()
+    mock_account.id = uuid4()
+    mock_pool.acquire.return_value = mock_account
+    mock_pool._accounts = [mock_account]
+
+    mock_jules_client = AsyncMock()
+    mock_session = MagicMock()
+    mock_session.id = "orch-session-123"
+    mock_jules_client.create_session.return_value = mock_session
+    mock_pool.get_client.return_value = mock_jules_client
+
+    with patch("core.config_loader.build_jules_pool", return_value=mock_pool), \
+         patch("db.db.insert", new_callable=AsyncMock) as mock_insert, \
+         patch("api.execute._poll_orchestrator", new_callable=AsyncMock) as mock_poll:
+
+        response = client.post("/api/orchestrators/start", json={
+            "repo_owner": "owner",
+            "repo_name": "repo",
+            "prompt": "Orchestrate auth feature"
+        })
+        assert response.status_code == 200
+        data = response.json()
+        assert data["session_id"] == "orch-session-123"
+        assert data["status"] == "running"
+        assert mock_insert.call_count == 2 # 1 for agent_tasks, 1 for orchestrator_sessions
+
+    # 2. Test POST /api/orchestrators/{session_id}/approve
+    with patch("core.config_loader.build_jules_pool", return_value=mock_pool), \
+         patch("db.db.select", new_callable=AsyncMock) as mock_select, \
+         patch("db.db.update", new_callable=AsyncMock) as mock_update:
+
+        mock_select.return_value = [{"session_id": "orch-session-123", "id": "task-abc"}]
+        response = client.post("/api/orchestrators/orch-session-123/approve")
+        assert response.status_code == 200
+        assert response.json()["ok"] is True
+        assert mock_jules_client.approve_plan.call_count == 1
+        assert mock_update.call_count == 1
+
+    # 3. Test GET /api/orchestrators/{session_id}/decisions
+    with patch("db.db.select", new_callable=AsyncMock) as mock_select:
+        mock_select.side_effect = [
+            [{"id": "act-1", "description": "Planned tasks"}], # activities
+            [{"id": "task-1", "prompt": "Task 1", "orchestrator_session_id": "orch-session-123"}] # tasks
+        ]
+        response = client.get("/api/orchestrators/orch-session-123/decisions")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["activities"]) == 1
+        assert len(data["tasks"]) == 1
+
+    # 4. Test GET /api/projects/{owner}/{repo}/decisions
+    with patch("db.db.select", new_callable=AsyncMock) as mock_select:
+        mock_select.side_effect = [
+            [{"session_id": "orch-session-123", "status": "running", "created_at": "2026-07-24"}], # sessions
+            [{"id": "act-1", "description": "Planned tasks"}], # activities
+            [{"id": "task-1", "prompt": "Task 1", "orchestrator_session_id": "orch-session-123"}] # tasks
+        ]
+        response = client.get("/api/projects/owner/repo/decisions")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["decisions"]) == 1
+        assert data["decisions"][0]["session_id"] == "orch-session-123"
+
+    print("[PASS] test_orchestrator_plan_approval_and_decisions: Orchestrator start, approve, and decision history endpoints verified")
+
+
 async def main():
     print("=" * 50)
     print("JAT-AI GAP COVERAGE TESTS")
@@ -317,6 +395,7 @@ async def main():
     await test_system_prompts_complete()
     await test_qa_reviewer_verdicts_and_ci()
     await test_integrator_workflow_review()
+    await test_orchestrator_plan_approval_and_decisions()
 
     print()
     print("=" * 50)

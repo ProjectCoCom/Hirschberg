@@ -56,6 +56,14 @@
       "summary": "Introduced dynamic integration branch creation for multi-task workflows. Added AccountRole.INTEGRATOR. Refactored per-task branching to derive off the integration branch. Implemented a post-QA, pre-final-PR Integrator review session to catch cross-agent integration issues, with approval/rejection logic managing final PR merges and branch cleanup.",
       "status": "completed",
       "journal_ref": ".jules/journals/2026-07-24T19-19-06Z.json"
+    },
+    {
+      "step_number": 7,
+      "timestamp_utc": "2026-07-24T21:28:29Z",
+      "title": "Establish human plan approval gate and visible decision history APIs",
+      "summary": "Added an explicit human plan approval gate to standing orchestrator sessions. Implemented first-class orchestrator_sessions tracking table and management endpoints. Enhanced polling loops in coordinator.py and session_runner.py to handle AWAITING_PLAN_APPROVAL. Exposed decision history APIs and surfaced pending approvals on the dashboard.",
+      "status": "completed",
+      "journal_ref": ".jules/journals/2026-07-24T21-28-29Z.json"
     }
   ]
 }

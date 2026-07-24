@@ -137,6 +137,13 @@ async def _poll_until_done(
                             from core.orchestrator_relay import notify_orchestrator, relay_worker_feedback
                             await notify_orchestrator(pool, store, task_obj, "awaiting_user_feedback", summary="Worker session needs feedback")
                             await relay_worker_feedback(pool, store, jules, session_id, task_obj)
+                        elif session.state == SessionState.AWAITING_PLAN_APPROVAL:
+                            from core.orchestrator_relay import notify_orchestrator
+                            await notify_orchestrator(pool, store, task_obj, "awaiting_plan_approval", summary="Session is awaiting plan approval")
+                            try:
+                                await db.update("agent_tasks", {"status": "awaiting_plan_approval"}, {"id": task_id})
+                            except Exception:
+                                pass
                         elif session.state == SessionState.PAUSED:
                             from core.orchestrator_relay import notify_orchestrator
                             await notify_orchestrator(pool, store, task_obj, "paused", summary="Worker session paused")
@@ -145,6 +152,12 @@ async def _poll_until_done(
                 except Exception as e:
                     log.warning("session_runner_notification_failed", error=str(e))
                 last_state = session.state
+
+        if session.state == SessionState.AWAITING_PLAN_APPROVAL:
+            # Do not transition, sleep and keep polling
+            await asyncio.sleep(POLL_INTERVAL)
+            elapsed += POLL_INTERVAL
+            continue
 
         try:
             activities = await jules.list_activities(session_id, since=last_activity_time)

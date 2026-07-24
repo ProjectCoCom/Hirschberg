@@ -135,6 +135,206 @@ async def execute_plan(request: ExecuteRequest):
     )
 
 
+def _now() -> str:
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc).isoformat()
+
+
+class StartOrchestratorRequest(BaseModel):
+    repo_owner: str
+    repo_name: str
+    prompt: str = "Automated standing orchestrator session"
+
+
+@router.post("/api/orchestrators/start")
+async def start_orchestrator(request: StartOrchestratorRequest):
+    from core.config_loader import load_config, build_jules_pool
+    from core.account_pool import AccountRole
+    from uuid import uuid4
+
+    config = load_config()
+    pool = build_jules_pool(config)
+
+    source = f"sources/github/{request.repo_owner}/{request.repo_name}"
+    try:
+        # Prioritize ORCHESTRATOR role account
+        account = pool.acquire(source, role=AccountRole.ORCHESTRATOR)
+    except Exception:
+        try:
+            # Fall back to any available
+            account = pool.acquire(source)
+        except Exception as e:
+            await pool.close_all()
+            raise HTTPException(400, f"No available accounts configured: {e}")
+
+    client = pool.get_client(account.id)
+    try:
+        session = await client.create_session(
+            prompt=request.prompt,
+            source=source,
+            branch="main",
+            title="JAT-AI Standing Orchestrator",
+            require_plan_approval=True,
+        )
+        session_id = session.id
+
+        # Insert a dummy agent_task for the orchestrator to satisfy foreign key constraints
+        orchestrator_task_id = uuid4()
+        await db.insert("agent_tasks", {
+            "id": str(orchestrator_task_id),
+            "prompt": request.prompt,
+            "repo_owner": request.repo_owner,
+            "repo_name": request.repo_name,
+            "branch": "main",
+            "status": "running",
+            "session_id": session_id,
+            "orchestrator_session_id": session_id,
+        })
+
+        await db.insert("orchestrator_sessions", {
+            "id": str(orchestrator_task_id),
+            "session_id": session_id,
+            "repo_owner": request.repo_owner,
+            "repo_name": request.repo_name,
+            "status": "running",
+        })
+
+        # Launch background poller
+        asyncio.create_task(_poll_orchestrator(session_id, str(account.id), request.repo_owner, request.repo_name, str(orchestrator_task_id)))
+
+        return {
+            "session_id": session_id,
+            "account_id": str(account.id),
+            "status": "running",
+            "task_id": str(orchestrator_task_id),
+        }
+    except Exception as e:
+        raise HTTPException(500, f"Failed to start orchestrator: {e}")
+    finally:
+        await pool.close_all()
+
+
+async def _poll_orchestrator(session_id: str, account_id: str, owner: str, repo: str, task_id: str):
+    from core.config_loader import load_config, build_jules_pool
+    from models.jules import SessionState
+    import asyncio
+
+    config = load_config()
+    pool = build_jules_pool(config)
+    try:
+        client = pool.get_client(UUID(account_id))
+    except Exception:
+        await pool.close_all()
+        return
+
+    last_activity_time = None
+    try:
+        while True:
+            try:
+                session = await client.get_session(session_id)
+                status_map = {
+                    SessionState.COMPLETED: "completed",
+                    SessionState.FAILED: "failed",
+                    SessionState.AWAITING_PLAN_APPROVAL: "awaiting_plan_approval",
+                    SessionState.PAUSED: "paused",
+                }
+                new_status = status_map.get(session.state, "running")
+                await db.update("orchestrator_sessions", {"status": new_status, "updated_at": _now()}, {"session_id": session_id})
+                await db.update("agent_tasks", {"status": "running" if new_status == "running" else new_status}, {"id": task_id})
+
+                try:
+                    acts = await client.list_activities(session_id, since=last_activity_time)
+                    for act in acts:
+                        activity_type = "plan_generated" if act.plan_generated else ("agent_messaged" if act.agent_messaged else "progress_updated")
+                        await db.upsert("session_activities", {
+                            "task_id": task_id,
+                            "session_id": session_id,
+                            "activity_id": act.id,
+                            "originator": act.originator,
+                            "description": act.description or "",
+                            "activity_type": activity_type,
+                            "raw_data": act.model_dump(mode="json"),
+                            "created_at": act.create_time.isoformat() if act.create_time else _now()
+                        })
+                        if act.create_time:
+                            last_activity_time = act.create_time.isoformat()
+                except Exception:
+                    pass
+
+                if session.state in (SessionState.COMPLETED, SessionState.FAILED):
+                    break
+            except Exception:
+                pass
+            await asyncio.sleep(15)
+    finally:
+        await pool.close_all()
+
+
+@router.post("/api/orchestrators/{session_id}/approve")
+async def approve_orchestrator_plan(session_id: str):
+    from core.config_loader import load_config, build_jules_pool
+    # Find account associated with the session
+    try:
+        tasks = await db.select("agent_tasks", {"session_id": session_id})
+        if not tasks:
+            raise HTTPException(404, "Orchestrator session not found in tasks")
+
+        config = load_config()
+        pool = build_jules_pool(config)
+
+        # Try to find client
+        client = None
+        for acc in pool._accounts:
+            client = pool.get_client(acc.id)
+            break
+
+        if not client:
+            await pool.close_all()
+            raise HTTPException(400, "No active Jules clients available")
+
+        await client.approve_plan(session_id)
+        await db.update("orchestrator_sessions", {"status": "running"}, {"session_id": session_id})
+        await pool.close_all()
+        return {"ok": True}
+    except Exception as e:
+        raise HTTPException(500, f"Approve plan failed: {e}")
+
+
+@router.get("/api/orchestrators/{session_id}/decisions")
+async def get_orchestrator_decisions(session_id: str):
+    try:
+        activities = await db.select("session_activities", {"session_id": session_id})
+        tasks = await db.select("agent_tasks", {"orchestrator_session_id": session_id})
+        return {
+            "session_id": session_id,
+            "activities": activities,
+            "tasks": tasks
+        }
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+
+@router.get("/api/projects/{owner}/{repo}/decisions")
+async def get_project_decisions(owner: str, repo: str):
+    try:
+        sessions = await db.select("orchestrator_sessions", {"repo_owner": owner, "repo_name": repo})
+        results = []
+        for s in sessions:
+            session_id = s["session_id"]
+            activities = await db.select("session_activities", {"session_id": session_id})
+            tasks = await db.select("agent_tasks", {"orchestrator_session_id": session_id})
+            results.append({
+                "session_id": session_id,
+                "status": s["status"],
+                "created_at": s["created_at"],
+                "activities": activities,
+                "tasks": tasks
+            })
+        return {"decisions": results}
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+
 @router.get("/api/session-limiter/status")
 async def limiter_status():
     from core.session_limiter import get_session_limiter

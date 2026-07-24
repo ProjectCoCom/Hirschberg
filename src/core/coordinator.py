@@ -143,11 +143,25 @@ class AgentCoordinator:
                     from core.orchestrator_relay import notify_orchestrator, relay_worker_feedback
                     await notify_orchestrator(self._pool, self._store, task, "awaiting_user_feedback", summary="Worker session needs feedback")
                     await relay_worker_feedback(self._pool, self._store, client, task.session_id, task)
+                elif session.state == SessionState.AWAITING_PLAN_APPROVAL:
+                    from core.orchestrator_relay import notify_orchestrator
+                    await notify_orchestrator(self._pool, self._store, task, "awaiting_plan_approval", summary="Session is awaiting plan approval")
+                    try:
+                        task.status = "awaiting_plan_approval"
+                        await self._store.save_task_state(task.id, task.model_dump(mode="json"))
+                    except Exception:
+                        pass
                 elif session.state == SessionState.PAUSED:
                     from core.orchestrator_relay import notify_orchestrator
                     await notify_orchestrator(self._pool, self._store, task, "paused", summary="Worker session paused")
 
                 last_state = session.state
+
+            if session.state == SessionState.AWAITING_PLAN_APPROVAL:
+                # Do not transition to final status, just sleep and keep polling
+                await asyncio.sleep(POLL_INTERVAL)
+                elapsed += POLL_INTERVAL
+                continue
 
             if session.state == SessionState.COMPLETED:
                 task.status = TaskStatus.COMPLETED

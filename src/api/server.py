@@ -428,6 +428,7 @@ async def list_terminals():
         rows = await db.select("agent_tasks")
     except Exception:
         return []
+    count = await _get_pending_approvals_count()
     return [{
         "terminalId": r["id"],
         "label": r.get("prompt", "")[:40],
@@ -440,6 +441,8 @@ async def list_terminals():
         "lifecycleState": "running" if r["status"] == "running" else ("registered" if r["status"] == "pending" else "exited"),
         "hasUserPrompt": True,
         "sessionId": r.get("session_id", ""),
+        "pending_approvals_count": count,
+        "pendingApprovalsCount": count,
     } for r in rows]
 
 
@@ -626,8 +629,17 @@ async def _count_today_sessions(accounts: list[dict]) -> int:
     return total
 
 
+async def _get_pending_approvals_count() -> int:
+    try:
+        rows = await db.select("orchestrator_sessions", {"status": "awaiting_plan_approval"})
+        return len(rows)
+    except Exception:
+        return 0
+
+
 @app.get("/api/ui-state")
 async def get_ui_state():
+    count = await _get_pending_approvals_count()
     return {
         "activePrimaryNav": 1,
         "sidebarWidth": 260,
@@ -643,6 +655,8 @@ async def get_ui_state():
         "canvasOpenTerminalIds": [],
         "canvasOpenTentacleIds": [],
         "canvasTerminalsPanelWidth": None,
+        "pending_approvals_count": count,
+        "pendingApprovalsCount": count,
     }
 
 

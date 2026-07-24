@@ -92,6 +92,7 @@ class JulesClient:
         )
         self._raise_on_error(response)
 
+    @_retry
     async def approve_plan(self, session_id: str) -> None:
         response = await self._client.post(
             f"/sessions/{session_id}:approvePlan",
