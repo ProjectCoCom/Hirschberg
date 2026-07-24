@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "entries": [
+    {
+      "step_number": 1,
+      "timestamp_utc": "2026-07-24T06:00:00Z",
+      "title": "Fork JAT-AI",
+      "summary": "Completed by user.",
+      "status": "completed",
+      "journal_ref": ".jules/journals/2026-07-24T06-00-00Z.json"
+    },
+    {
+      "step_number": 2,
+      "timestamp_utc": "2026-07-24T06:40:00Z",
+      "title": "Remove Supabase, complete local database functionality",
+      "summary": "Replaced Supabase with a fully-functional local SQLite database. No Supabase configuration, client, or dependency remains anywhere in the codebase. Implemented auto JSON serialization/deserialization for SQLite, unique task_id constraint for context_messages, and an in-process pub/sub mechanism to replace Supabase realtime features.",
+      "status": "completed",
+      "journal_ref": ".jules/journals/2026-07-24T06-40-00Z.json"
+    }
+  ]
+}

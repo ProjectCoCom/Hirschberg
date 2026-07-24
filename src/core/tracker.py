@@ -6,7 +6,7 @@ from uuid import UUID
 
 import structlog
 
-from clients.supabase import SupabaseClient
+from clients.database import Database
 
 log = structlog.get_logger()
 
@@ -28,11 +28,11 @@ class MonitorConfig:
 
 class Tracker:
     def __init__(
-        self, supabase: SupabaseClient, config: MonitorConfig | None = None
+        self, db: Database, config: MonitorConfig | None = None
     ) -> None:
-        self._db = supabase
+        self._db = db
         self._config = config or MonitorConfig()
-        self._channels: list = []
+        self._channels: list[str] = []
         self._activity_cache: list[dict] = []
         self._last_fetch: datetime | None = None
 
@@ -90,48 +90,39 @@ class Tracker:
     async def subscribe_task_updates(
         self, callback: Callable[[dict], None]
     ) -> None:
-        channel = self._db.client.channel("task-updates")
-        channel.on_postgres_changes(
+        sub_id = self._db.subscribe(
+            "agent_tasks",
             "*",
-            schema="public",
-            table="agent_tasks",
-            callback=callback,
+            callback,
         )
-        await channel.subscribe()
-        self._channels.append(channel)
+        self._channels.append(sub_id)
         log.info("subscribed", table="agent_tasks")
 
     async def subscribe_activity_updates(
         self, callback: Callable[[dict], None]
     ) -> None:
-        channel = self._db.client.channel("activity-updates")
-        channel.on_postgres_changes(
+        sub_id = self._db.subscribe(
+            "session_activities",
             "INSERT",
-            schema="public",
-            table="session_activities",
-            callback=callback,
+            callback,
         )
-        await channel.subscribe()
-        self._channels.append(channel)
+        self._channels.append(sub_id)
         log.info("subscribed", table="session_activities")
 
     async def subscribe_workflow_tasks(
         self, workflow_id: UUID, callback: Callable[[dict], None]
     ) -> None:
-        channel = self._db.client.channel(f"workflow-{workflow_id}")
-        channel.on_postgres_changes(
+        sub_id = self._db.subscribe(
+            "agent_tasks",
             "*",
-            schema="public",
-            table="agent_tasks",
-            filter=f"workflow_id=eq.{workflow_id}",
-            callback=callback,
+            callback,
+            filter_fn=lambda payload: payload.get("new", {}).get("workflow_id") == str(workflow_id),
         )
-        await channel.subscribe()
-        self._channels.append(channel)
+        self._channels.append(sub_id)
         log.info("subscribed", table="agent_tasks", workflow_id=str(workflow_id))
 
     async def unsubscribe_all(self) -> None:
-        for channel in self._channels:
-            await self._db.client.remove_channel(channel)
+        for sub_id in self._channels:
+            self._db.unsubscribe(sub_id)
         self._channels.clear()
         log.info("unsubscribed_all")

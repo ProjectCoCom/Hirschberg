@@ -72,8 +72,6 @@ def get_prompt_settings(config: dict) -> dict:
     return config.get("prompts", {})
 
 
-def get_supabase_settings(config: dict) -> dict:
-    return config.get("supabase", {})
 
 
 def get_github_settings(config: dict) -> dict:

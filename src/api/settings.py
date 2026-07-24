@@ -28,8 +28,6 @@ class SummarizerConfig(BaseModel):
 class AppSettingsPayload(BaseModel):
     github_token: str = ""
     github_fg_token: str = ""
-    supabase_url: str = ""
-    supabase_key: str = ""
     database_mode: str = "local"
 
 
@@ -75,9 +73,6 @@ async def get_settings_status():
     return {
         "github_token": {"status": "active" if s.github_token else "missing"},
         "github_fg_token": {"status": "active" if s.github_fg_token else "missing"},
-        "supabase": {"status": "active" if (s.supabase_url and s.supabase_key) else "missing"},
-        "supabase_url": {"status": "active" if s.supabase_url else "missing"},
-        "supabase_key": {"status": "active" if s.supabase_key else "missing"},
     }
 
 
@@ -105,8 +100,6 @@ async def get_app_settings():
     return {
         "github_token": _mask(s.github_token),
         "github_fg_token": _mask(s.github_fg_token),
-        "supabase_url": s.supabase_url,
-        "supabase_key": _mask(s.supabase_key),
         "encryption_key_status": "configured" if s.encryption_key else "missing",
         "database_mode": await _get_db_mode(),
     }
@@ -165,8 +158,6 @@ async def update_app_settings(body: AppSettingsPayload):
     key_map = {
         "github_token": "GITHUB_TOKEN",
         "github_fg_token": "GITHUB_FG_TOKEN",
-        "supabase_url": "SUPABASE_URL",
-        "supabase_key": "SUPABASE_KEY",
     }
     for field, env_key in key_map.items():
         incoming_val = incoming.get(field, "")
@@ -259,8 +250,6 @@ _RESET_ACTIONS: dict[str, dict] = {
         "keys": [
             "GITHUB_TOKEN",
             "GITHUB_FG_TOKEN",
-            "SUPABASE_URL",
-            "SUPABASE_KEY",
             "DEFAULT_REPO_OWNER",
             "DEFAULT_REPO_NAME",
         ],

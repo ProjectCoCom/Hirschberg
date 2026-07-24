@@ -6,7 +6,7 @@ import structlog
 from cryptography.fernet import Fernet
 
 from clients.ai_providers import AIProviderPool, ProviderAccount, ProviderType
-from clients.supabase import SupabaseClient
+from clients.database import Database
 
 log = structlog.get_logger()
 
@@ -41,7 +41,7 @@ class KeyVault:
 
 class AIInterface:
     def __init__(
-        self, supabase: SupabaseClient, pool: AIProviderPool, vault: KeyVault
+        self, supabase: Database, pool: AIProviderPool, vault: KeyVault
     ) -> None:
         self._db = supabase
         self._pool = pool

@@ -23,17 +23,8 @@
     "default_account": "primary",
     "default_owner": "iceyxsm"
   },
-  "supabase": {
-    "url": "",
-    "key": "",
-    "realtime_enabled": true
-  },
   "database": {
-    "mode": "local",
-    "local": {
-      "path": "./data/jat.db"
-    },
-    "sync_interval": 30
+    "local_path": "./data/jat.db"
   },
   "ai_providers": {
     "accounts": [
