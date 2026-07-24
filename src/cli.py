@@ -14,7 +14,7 @@ import structlog
 from config import load_settings, configure_logging
 from clients.jules import JulesClient
 from clients.github import GitHubClient
-from clients.supabase import SupabaseClient
+from db import db
 from core.session_runner import run_session
 
 log = structlog.get_logger()
@@ -98,7 +98,6 @@ async def run_task(settings, api_key: str, args) -> None:
 
     source = f"sources/github/{owner}/{repo}"
     jules = JulesClient(api_key)
-    db = SupabaseClient(settings.supabase_url, settings.supabase_key)
 
     github = None
     if args.auto_merge and settings.github_token:
@@ -175,7 +174,6 @@ async def run_workflow(settings, api_key: str, args) -> None:
     pool = AccountPool()
     pool.add_account(Account(name="default", api_key=api_key, plan=PlanTier.ULTRA))
 
-    db = SupabaseClient(settings.supabase_url, settings.supabase_key)
     store = ContextStore(db)
     coordinator = AgentCoordinator(pool, store)
     engine = WorkflowEngine(coordinator, store)

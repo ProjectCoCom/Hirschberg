@@ -53,8 +53,6 @@ def _decrypt_key(stored: str) -> str:
     from core.ai_interface import KeyVault
     vault = KeyVault(settings.encryption_key)
     try:
-        if stored.startswith("\\x"):
-            stored = bytes.fromhex(stored[2:]).decode()
         return vault.decrypt(stored)
     except Exception:
         return stored

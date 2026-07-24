@@ -527,7 +527,7 @@ async def get_usage():
     pct = int((sessions_today / total_daily) * 100) if total_daily > 0 else 0
     return {
         "status": "ok",
-        "fetchedAt": "connected" if settings.supabase_url else "disconnected",
+        "fetchedAt": "connected",
         "source": "cli-pty",
         "planType": "ultra" if total_daily >= 300 else ("pro" if total_daily >= 100 else "free"),
         "primaryUsedPercent": pct,

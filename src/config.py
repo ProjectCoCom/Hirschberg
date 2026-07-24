@@ -19,8 +19,6 @@ def _mask_secrets(_, __, event_dict: dict) -> dict:
 class Settings(BaseSettings):
     github_token: str = ""
     github_fg_token: str = ""
-    supabase_url: str = ""
-    supabase_key: str = ""
     encryption_key: str = ""
     ollama_url: str = "http://localhost:11434"
     ollama_model: str = "qwen2.5:14b"

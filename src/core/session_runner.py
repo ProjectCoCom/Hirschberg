@@ -7,7 +7,7 @@ import structlog
 
 from clients.jules import JulesClient
 from clients.github import GitHubClient
-from clients.supabase import SupabaseClient
+from clients.database import Database
 from core.auto_merge import AutoMerge, MergeStrategy
 from core.context_store import ContextStore
 from core.prompt_builder import build_session_prompt
@@ -21,7 +21,7 @@ SESSION_TIMEOUT = 1800
 
 async def run_session(
     jules: JulesClient,
-    db: SupabaseClient,
+    db: Database,
     prompt: str,
     source: str,
     branch: str = "main",
@@ -64,7 +64,7 @@ async def run_session(
 
 async def _try_auto_merge(
     github: GitHubClient,
-    db: SupabaseClient,
+    db: Database,
     result: dict,
     source: str,
     merge_strategy: str,
@@ -96,7 +96,7 @@ async def _try_auto_merge(
 
 async def _poll_until_done(
     jules: JulesClient,
-    db: SupabaseClient,
+    db: Database,
     session_id: str,
     task_id: str | None,
 ) -> dict:
@@ -175,7 +175,7 @@ def _log_activity(activity) -> None:
     log.info("activity", detail=" | ".join(parts))
 
 
-async def _store_activity(db: SupabaseClient, task_id: str, session_id: str, activity) -> None:
+async def _store_activity(db: Database, task_id: str, session_id: str, activity) -> None:
     activity_type = ""
     if activity.plan_generated:
         activity_type = "plan_generated"
