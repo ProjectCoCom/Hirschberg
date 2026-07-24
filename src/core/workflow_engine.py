@@ -83,12 +83,24 @@ class WorkflowEngine:
         try:
             while pending or running:
                 ready = self._find_ready_tasks(pending, completed)
+                dispatched_any = False
                 for task in ready:
-                    del pending[task.id]
-                    coro = self._coordinator.run_task(task)
-                    running[task.id] = asyncio.create_task(coro)
+                    role, source = self._get_task_requirements(task)
+                    if self._coordinator._pool.has_capacity_for(source, role=role, assign_to=task.assign_to):
+                        del pending[task.id]
+                        coro = self._coordinator.run_task(task)
+                        running[task.id] = asyncio.create_task(coro)
+                        dispatched_any = True
 
                 if not running:
+                    if pending:
+                        log.warning("pool_capacity_exhausted_deadlock", pending_count=len(pending))
+                        for task_id, t in list(pending.items()):
+                            t.status = TaskStatus.FAILED
+                            t.error = "Pool capacity completely exhausted: no available accounts with capacity."
+                            await self._store.save_task_state(task_id, t.model_dump(mode="json"))
+                            del pending[task_id]
+                        has_failures = True
                     break
 
                 done, _ = await asyncio.wait(
@@ -134,6 +146,26 @@ class WorkflowEngine:
             await self._cancel_remaining(running)
 
         return workflow
+
+    def _get_task_requirements(self, task: AgentTask) -> tuple[AccountRole, str]:
+        from core.account_pool import AccountRole
+        from config import load_settings
+        settings = load_settings()
+        max_depth = getattr(settings, "max_delegation_depth", 0)
+
+        role_to_acquire = AccountRole.WORKER
+        is_orchestrator_assignee = False
+        if task.assign_to:
+            for acc in self._coordinator._pool._accounts:
+                if (acc.name == task.assign_to or acc.label == task.assign_to) and acc.role == AccountRole.ORCHESTRATOR:
+                    is_orchestrator_assignee = True
+                    break
+
+        if is_orchestrator_assignee and max_depth > 0:
+            role_to_acquire = AccountRole.ORCHESTRATOR
+
+        source = f"sources/github/{task.repo_owner}/{task.repo_name}"
+        return role_to_acquire, source
 
     def _find_ready_tasks(
         self, pending: dict[UUID, AgentTask], completed: set[UUID]

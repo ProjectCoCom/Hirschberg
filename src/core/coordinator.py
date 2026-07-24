@@ -91,7 +91,25 @@ class AgentCoordinator:
                 if delegating_task_id:
                     task.parent_task_id = UUID(delegating_task_id) if isinstance(delegating_task_id, str) else delegating_task_id
 
-        account = self._pool.acquire(source, role=role_to_acquire, assign_to=task.assign_to)
+        from exceptions import AccountPoolExhausted
+        retries = 3
+        backoff = 2
+        account = None
+        for attempt in range(retries):
+            try:
+                account = self._pool.acquire(source, role=role_to_acquire, assign_to=task.assign_to)
+                break
+            except AccountPoolExhausted as exc:
+                if attempt == retries - 1:
+                    raise exc
+                log.info("task_waiting_on_capacity", task_id=str(task.id), attempt=attempt+1)
+                try:
+                    from core.orchestrator_relay import notify_orchestrator
+                    await notify_orchestrator(self._pool, self._store, task, "waiting_on_capacity", summary=f"Task is waiting for pool capacity (attempt {attempt+1}/{retries})")
+                except Exception:
+                    pass
+                await asyncio.sleep(backoff)
+
         task.account_id = account.id
         task.status = TaskStatus.WAITING
 

@@ -82,6 +82,22 @@ class AccountPool:
     def get_client(self, account_id: UUID) -> JulesClient:
         return self._clients[account_id]
 
+    def has_capacity_for(self, source: str | None = None, role: AccountRole | None = None, assign_to: str | None = None) -> bool:
+        eligible = [a for a in self._accounts if a.has_capacity]
+
+        if role is not None:
+            eligible = [a for a in eligible if a.role == role]
+
+        if assign_to:
+            eligible = [a for a in eligible if a.name == assign_to or a.label == assign_to]
+
+        if source:
+            with_source = [a for a in eligible if source in a.sources]
+            if with_source:
+                eligible = with_source
+
+        return len(eligible) > 0
+
     def acquire(self, source: str | None = None, role: AccountRole | None = None, assign_to: str | None = None) -> Account:
         eligible = [a for a in self._accounts if a.has_capacity]
 
