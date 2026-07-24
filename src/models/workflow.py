@@ -55,5 +55,6 @@ class Workflow(BaseModel):
     status: WorkflowStatus = WorkflowStatus.CREATED
     tasks: list[AgentTask] = []
     execution_mode: str = "sequential"
+    integration_branch: str = ""
     created_at: datetime | None = None
     updated_at: datetime | None = None

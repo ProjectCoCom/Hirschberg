@@ -61,9 +61,15 @@ class AgentCoordinator:
             if settings.github_token:
                 gh_client = GitHubClient(settings.github_token)
                 try:
-                    base_sha = await gh_client.get_default_branch_sha(task.repo_owner, task.repo_name)
-                    if base_sha:
-                        await gh_client.create_branch_from_ref(task.repo_owner, task.repo_name, task.branch, base_sha)
+                    base_branch = None
+                    if task.workflow_id:
+                        wf_rows = await self._store._db.select("workflows", {"id": str(task.workflow_id)})
+                        if wf_rows:
+                            base_branch = wf_rows[0].get("integration_branch") or None
+
+                    await gh_client.create_branch_with_base(
+                        task.repo_owner, task.repo_name, task.branch, base_branch
+                    )
                 except Exception as e:
                     log.warning("branch_creation_failed_ignored", error=str(e))
                 finally:

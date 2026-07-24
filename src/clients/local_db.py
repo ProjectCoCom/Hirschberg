@@ -90,6 +90,7 @@ class LocalDB:
                 description TEXT DEFAULT '',
                 status TEXT DEFAULT 'created',
                 execution_mode TEXT DEFAULT 'sequential',
+                integration_branch TEXT DEFAULT '',
                 created_at TEXT DEFAULT (datetime('now')),
                 updated_at TEXT DEFAULT (datetime('now'))
             );
@@ -278,6 +279,8 @@ class LocalDB:
         wf_columns = [row["name"] for row in cursor.fetchall()]
         if "execution_mode" not in wf_columns:
             conn.execute("ALTER TABLE workflows ADD COLUMN execution_mode TEXT DEFAULT 'sequential'")
+        if "integration_branch" not in wf_columns:
+            conn.execute("ALTER TABLE workflows ADD COLUMN integration_branch TEXT DEFAULT ''")
 
         # Migrate agent_tasks
         cursor = conn.execute("PRAGMA table_info(agent_tasks)")

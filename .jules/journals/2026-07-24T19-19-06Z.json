@@ -1,0 +1,45 @@
+{
+  "step_number": 6.1,
+  "timestamp_utc": "2026-07-24T19:19:06Z",
+  "title": "Establish integration_branch and Integrator review logic for multi-task workflows",
+  "task_summary": "Introduced dynamic integration branch creation for multi-task workflows. Added AccountRole.INTEGRATOR. Refactored per-task branching to derive off the integration branch. Implemented a post-QA, pre-final-PR Integrator review session to catch cross-agent integration issues, with approval/rejection logic managing final PR merges and branch cleanup.",
+  "status": "completed",
+  "previous_step_review": {
+    "reviewed_step": 6,
+    "checked": "src/core/qa_reviewer.py, src/core/auto_merge.py, src/core/coordinator.py, src/core/session_runner.py",
+    "issues_found": [],
+    "fixes_applied": []
+  },
+  "files_changed": [
+    {"path": "src/core/account_pool.py", "change": "Registered AccountRole.INTEGRATOR enum value."},
+    {"path": "src/clients/local_db.py", "change": "Added workflows.integration_branch schema definitions and automatic migration handler."},
+    {"path": "src/models/workflow.py", "change": "Added integration_branch attribute to Pydantic Workflow model."},
+    {"path": "src/clients/github.py", "change": "Extended GitHubClient with get_branch_sha, create_branch_with_base, merge_branch, delete_branch, and create_pull_request."},
+    {"path": "src/core/merge_review.py", "change": "Refactored all API methods to route entirely through clients/github.py instead of raw httpx calls."},
+    {"path": "src/core/workflow_engine.py", "change": "Created integration branch on GitHub at workflow dispatch, and implemented the full integrator review pipeline including final PR merge and branch cleanup."},
+    {"path": "src/core/coordinator.py", "change": "Updated run_task to base task branches off the integration_branch if available."},
+    {"path": "src/core/auto_merge.py", "change": "Modified merge_when_ready to merge task branches into the integration branch upon completion, and to lookup Integrator review verdicts for known integration branch PRs."},
+    {"path": "dryrun/test_gaps.py", "change": "Added comprehensive test test_integrator_workflow_review to verify the Integrator review dispatch and approve/reject paths."}
+  ],
+  "assumptions_verified": [
+    {"assumption": "Integrator Verdict Structured Format", "verification": "Parsed structured JSON from Integrator activities, matching QA's template format.", "result": "confirmed"},
+    {"assumption": "Task branch bases", "verification": "Wrote test_integrator_workflow_review confirming task branches are branched from integration_branch if multi-task.", "result": "confirmed"}
+  ],
+  "decisions": [
+    {"decision": "Pass target base_branch to GitHubClient branch creation helper", "reasoning": "Determines base branch dynamically (integration branch or fallback default branch), avoiding hardcoded values and preserving single-task behavior."}
+  ],
+  "self_review": {
+    "passes_completed": 1,
+    "checked": "All modified files, schema changes, and test executions.",
+    "changes_made": [],
+    "deferred_from_review": []
+  },
+  "blockers": [],
+  "deferred": [],
+  "tests": {
+    "suite_result": "pass",
+    "new_tests_added": ["test_integrator_workflow_review"],
+    "pre_existing_failures_noted": []
+  },
+  "notes_for_next_step": "Step 6.1 is fully completed and thoroughly verified. The multi-task Integrator review pipeline is completely active and tested."
+}

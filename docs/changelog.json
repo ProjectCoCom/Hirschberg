@@ -48,6 +48,14 @@
       "summary": "Added a mandatory, pre-merge, report-only QA review gate using a dedicated qa-role Jules account with prompt template interpolation and JSON verdict block extraction. Fixed the CI checks wait block in AutoMerge to prevent merging on CI failures or timeouts, and integrated internal QA verdict lookup inside merge_when_ready to ensure no merge-check bypass. Rejected verdicts notify the responsible orchestrator of the specific blocking issues.",
       "status": "completed",
       "journal_ref": ".jules/journals/2026-07-24T09-20-00Z.json"
+    },
+    {
+      "step_number": 6.1,
+      "timestamp_utc": "2026-07-24T19:19:06Z",
+      "title": "Establish integration_branch and Integrator review logic for multi-task workflows",
+      "summary": "Introduced dynamic integration branch creation for multi-task workflows. Added AccountRole.INTEGRATOR. Refactored per-task branching to derive off the integration branch. Implemented a post-QA, pre-final-PR Integrator review session to catch cross-agent integration issues, with approval/rejection logic managing final PR merges and branch cleanup.",
+      "status": "completed",
+      "journal_ref": ".jules/journals/2026-07-24T19-19-06Z.json"
     }
   ]
 }

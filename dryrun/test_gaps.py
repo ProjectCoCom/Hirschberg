@@ -214,6 +214,93 @@ async def test_qa_reviewer_verdicts_and_ci():
     print("[PASS] test_qa_reviewer_verdicts_and_ci: AutoMerge enforces green CI and approve QA verdict")
 
 
+async def test_integrator_workflow_review():
+    from core.workflow_engine import WorkflowEngine
+    from models.workflow import Workflow, AgentTask, WorkflowStatus
+    from unittest.mock import MagicMock, AsyncMock, patch
+    from uuid import uuid4
+
+    # Build a multi-task workflow
+    workflow_id = uuid4()
+    task1 = AgentTask(id=uuid4(), prompt="Task 1", exit_criteria="Crit 1", repo_owner="owner", repo_name="repo", branch="jat/task-1")
+    task2 = AgentTask(id=uuid4(), prompt="Task 2", exit_criteria="Crit 2", repo_owner="owner", repo_name="repo", branch="jat/task-2")
+    workflow = Workflow(
+        id=workflow_id,
+        name="Multi-task Test Workflow",
+        tasks=[task1, task2],
+        integration_branch=f"jat/integration-{workflow_id}"
+    )
+
+    coordinator = MagicMock()
+    store = MagicMock()
+    db_mock = AsyncMock()
+    store._db = db_mock
+
+    # Mock DB queries
+    db_mock.select.return_value = [
+        {
+            "id": str(uuid4()),
+            "repo_owner": "owner",
+            "repo_name": "repo",
+            "branch": workflow.integration_branch,
+            "status": "completed",
+            "orchestrator_session_id": "orch-1",
+            "context": {"is_integrator_task": True}
+        }
+    ]
+
+    # Mock pool account acquisition
+    mock_acc = MagicMock()
+    mock_acc.id = uuid4()
+    coordinator._pool.acquire.return_value = mock_acc
+
+    # Mock Jules client session creation and polling
+    mock_jules_client = AsyncMock()
+    mock_session = MagicMock()
+    mock_session.id = "jules-session-abc"
+    mock_jules_client.create_session.return_value = mock_session
+    mock_jules_client.get_session.return_value = AsyncMock(state="COMPLETED")
+
+    # Mock activities to return Integrator "approve" verdict
+    mock_act = MagicMock()
+    mock_act.agent_messaged.agent_message = 'My integration review details.\n\n{\n  "verdict": "approve",\n  "blocking_issues": [],\n  "summary": "Integration looks solid."\n}'
+    mock_jules_client.list_activities.return_value = [mock_act]
+
+    coordinator._pool.get_client.return_value = mock_jules_client
+
+    engine = WorkflowEngine(coordinator, store)
+
+    # 1. Test approved path
+    with patch("core.merge_review.create_final_pr", new_callable=AsyncMock) as mock_pr, \
+         patch("core.merge_review.cleanup_branches", new_callable=AsyncMock) as mock_cleanup, \
+         patch("core.auto_merge.AutoMerge.merge_when_ready", new_callable=AsyncMock) as mock_merge:
+
+        mock_pr.return_value = "https://github.com/owner/repo/pull/42"
+        mock_merge.return_value = MagicMock(merged=True, sha="merge-sha-123")
+
+        ok = await engine._run_integrator_review(workflow)
+        assert ok is True
+        assert mock_pr.call_count == 1
+        assert mock_merge.call_count == 1
+        assert mock_cleanup.call_count == 1
+
+    # 2. Test rejected path
+    # Mock activities to return Integrator "reject" verdict
+    mock_act_reject = MagicMock()
+    mock_act_reject.agent_messaged.agent_message = 'Issues found.\n\n{\n  "verdict": "reject",\n  "blocking_issues": [{"file": "src/main.py", "issue": "Conflict", "severity": "blocking"}],\n  "summary": "Broken import."\n}'
+    mock_jules_client.list_activities.return_value = [mock_act_reject]
+
+    with patch("core.merge_review.create_final_pr", new_callable=AsyncMock) as mock_pr, \
+         patch("core.orchestrator_relay.notify_orchestrator", new_callable=AsyncMock) as mock_notify:
+
+        ok = await engine._run_integrator_review(workflow)
+        assert ok is False
+        assert mock_pr.call_count == 0
+        assert mock_notify.call_count == 1
+
+    print("[PASS] test_integrator_workflow_review: Integrator review dispatches and handles approve/reject paths correctly")
+
+
 async def main():
     print("=" * 50)
     print("JAT-AI GAP COVERAGE TESTS")
@@ -229,6 +316,7 @@ async def main():
     await test_conversation_persistence_endpoints()
     await test_system_prompts_complete()
     await test_qa_reviewer_verdicts_and_ci()
+    await test_integrator_workflow_review()
 
     print()
     print("=" * 50)
