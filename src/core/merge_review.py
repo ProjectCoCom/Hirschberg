@@ -1,44 +1,32 @@
 from __future__ import annotations
 
 import asyncio
-import httpx
 
+from clients.github import GitHubClient
 from clients.jules import JulesClient
 from models.jules import SessionState
 
 
 async def merge_branches(owner: str, repo: str, branches: list[str], target_branch: str, token: str) -> dict:
-    headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
     results: dict[str, str] = {}
-
-    async with httpx.AsyncClient(timeout=30.0) as client:
+    gh_client = GitHubClient(token)
+    try:
         for branch in branches:
-            res = await client.post(
-                f"https://api.github.com/repos/{owner}/{repo}/merges",
-                json={"base": target_branch, "head": branch, "commit_message": f"jat: merge {branch} into {target_branch}"},
-                headers=headers,
+            res_str = await gh_client.merge_branch(
+                owner, repo, target_branch, branch, f"jat: merge {branch} into {target_branch}"
             )
-            if res.status_code == 201:
-                results[branch] = "merged"
-            elif res.status_code == 204:
-                results[branch] = "already_merged"
-            elif res.status_code == 409:
-                results[branch] = "conflict"
-            else:
-                results[branch] = f"error_{res.status_code}"
-
+            results[branch] = res_str
+    finally:
+        await gh_client.close()
     return results
 
 
 async def create_integration_branch(owner: str, repo: str, base_sha: str, branch_name: str, token: str) -> bool:
-    headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
-    async with httpx.AsyncClient(timeout=15.0) as client:
-        res = await client.post(
-            f"https://api.github.com/repos/{owner}/{repo}/git/refs",
-            json={"ref": f"refs/heads/{branch_name}", "sha": base_sha},
-            headers=headers,
-        )
-    return res.status_code == 201
+    gh_client = GitHubClient(token)
+    try:
+        return await gh_client.create_branch_from_ref(owner, repo, branch_name, base_sha)
+    finally:
+        await gh_client.close()
 
 
 async def run_review_session(
@@ -51,9 +39,8 @@ async def run_review_session(
         "Tasks:\n"
         "1. Review all changes for integration issues\n"
         "2. Run tests if available\n"
-        "3. Fix any conflicts or broken imports\n"
-        "4. Verify exit criteria from each agent were met\n"
-        "5. Create a REVIEW.md summarizing what was done and any issues found"
+        "3. Verify exit criteria from each agent were met\n"
+        "4. Create a REVIEW.md summarizing what was done and any issues found"
     )
 
     client = JulesClient(jules_key)
@@ -95,26 +82,21 @@ async def run_review_session(
 
 
 async def cleanup_branches(owner: str, repo: str, branches: list[str], token: str) -> dict[str, bool]:
-    headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
+    gh_client = GitHubClient(token)
     results = {}
-    async with httpx.AsyncClient(timeout=15.0) as client:
+    try:
         for branch in branches:
-            res = await client.delete(
-                f"https://api.github.com/repos/{owner}/{repo}/git/refs/heads/{branch}",
-                headers=headers,
-            )
-            results[branch] = res.status_code == 204
+            results[branch] = await gh_client.delete_branch(owner, repo, branch)
+    finally:
+        await gh_client.close()
     return results
 
 
 async def create_final_pr(owner: str, repo: str, integration_branch: str, base: str, title: str, token: str) -> str | None:
-    headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
-    async with httpx.AsyncClient(timeout=15.0) as client:
-        res = await client.post(
-            f"https://api.github.com/repos/{owner}/{repo}/pulls",
-            json={"title": title, "head": integration_branch, "base": base, "body": "Automated PR from JAT-AI orchestrator."},
-            headers=headers,
+    gh_client = GitHubClient(token)
+    try:
+        return await gh_client.create_pull_request(
+            owner, repo, title, integration_branch, base, "Automated PR from JAT-AI orchestrator."
         )
-    if res.status_code == 201:
-        return res.json().get("html_url")
-    return None
+    finally:
+        await gh_client.close()

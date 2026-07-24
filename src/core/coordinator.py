@@ -46,7 +46,70 @@ class AgentCoordinator:
     async def run_task(self, task: AgentTask) -> AgentTask:
         source = f"sources/github/{task.repo_owner}/{task.repo_name}"
         from core.account_pool import AccountRole
-        account = self._pool.acquire(source, role=AccountRole.WORKER, assign_to=task.assign_to)
+        from config import load_settings
+        settings = load_settings()
+        max_depth = getattr(settings, "max_delegation_depth", 0)
+
+        role_to_acquire = AccountRole.WORKER
+
+        # Check if assign_to targets an orchestrator account and max delegation depth allows it
+        is_orchestrator_assignee = False
+        if task.assign_to:
+            for acc in self._pool._accounts:
+                if (acc.name == task.assign_to or acc.label == task.assign_to) and acc.role == AccountRole.ORCHESTRATOR:
+                    is_orchestrator_assignee = True
+                    break
+
+        if is_orchestrator_assignee and max_depth > 0:
+            # Resolve delegating orchestrator task ID from orchestrator_session_id
+            delegating_task_id = None
+            if task.orchestrator_session_id:
+                try:
+                    orch_rows = await self._store._db.select("agent_tasks", {"session_id": task.orchestrator_session_id})
+                    if orch_rows:
+                        delegating_task_id = orch_rows[0]["id"]
+                except Exception:
+                    pass
+
+            # Calculate current depth by climbing parent_task_id tree
+            current_depth = 0
+            curr_parent_id = delegating_task_id
+            while curr_parent_id:
+                try:
+                    parent_rows = await self._store._db.select("agent_tasks", {"id": str(curr_parent_id)})
+                    if parent_rows and parent_rows[0].get("parent_task_id"):
+                        curr_parent_id = parent_rows[0]["parent_task_id"]
+                        current_depth += 1
+                    else:
+                        break
+                except Exception:
+                    break
+
+            if current_depth < max_depth:
+                role_to_acquire = AccountRole.ORCHESTRATOR
+                task.prompt = f"you are responsible for this subtree of the goal: {task.prompt}"
+                if delegating_task_id:
+                    task.parent_task_id = UUID(delegating_task_id) if isinstance(delegating_task_id, str) else delegating_task_id
+
+        from exceptions import AccountPoolExhausted
+        retries = 3
+        backoff = 2
+        account = None
+        for attempt in range(retries):
+            try:
+                account = self._pool.acquire(source, role=role_to_acquire, assign_to=task.assign_to)
+                break
+            except AccountPoolExhausted as exc:
+                if attempt == retries - 1:
+                    raise exc
+                log.info("task_waiting_on_capacity", task_id=str(task.id), attempt=attempt+1)
+                try:
+                    from core.orchestrator_relay import notify_orchestrator
+                    await notify_orchestrator(self._pool, self._store, task, "waiting_on_capacity", summary=f"Task is waiting for pool capacity (attempt {attempt+1}/{retries})")
+                except Exception:
+                    pass
+                await asyncio.sleep(backoff)
+
         task.account_id = account.id
         task.status = TaskStatus.WAITING
 
@@ -61,9 +124,15 @@ class AgentCoordinator:
             if settings.github_token:
                 gh_client = GitHubClient(settings.github_token)
                 try:
-                    base_sha = await gh_client.get_default_branch_sha(task.repo_owner, task.repo_name)
-                    if base_sha:
-                        await gh_client.create_branch_from_ref(task.repo_owner, task.repo_name, task.branch, base_sha)
+                    base_branch = None
+                    if task.workflow_id:
+                        wf_rows = await self._store._db.select("workflows", {"id": str(task.workflow_id)})
+                        if wf_rows:
+                            base_branch = wf_rows[0].get("integration_branch") or None
+
+                    await gh_client.create_branch_with_base(
+                        task.repo_owner, task.repo_name, task.branch, base_branch
+                    )
                 except Exception as e:
                     log.warning("branch_creation_failed_ignored", error=str(e))
                 finally:
@@ -137,11 +206,25 @@ class AgentCoordinator:
                     from core.orchestrator_relay import notify_orchestrator, relay_worker_feedback
                     await notify_orchestrator(self._pool, self._store, task, "awaiting_user_feedback", summary="Worker session needs feedback")
                     await relay_worker_feedback(self._pool, self._store, client, task.session_id, task)
+                elif session.state == SessionState.AWAITING_PLAN_APPROVAL:
+                    from core.orchestrator_relay import notify_orchestrator
+                    await notify_orchestrator(self._pool, self._store, task, "awaiting_plan_approval", summary="Session is awaiting plan approval")
+                    try:
+                        task.status = "awaiting_plan_approval"
+                        await self._store.save_task_state(task.id, task.model_dump(mode="json"))
+                    except Exception:
+                        pass
                 elif session.state == SessionState.PAUSED:
                     from core.orchestrator_relay import notify_orchestrator
                     await notify_orchestrator(self._pool, self._store, task, "paused", summary="Worker session paused")
 
                 last_state = session.state
+
+            if session.state == SessionState.AWAITING_PLAN_APPROVAL:
+                # Do not transition to final status, just sleep and keep polling
+                await asyncio.sleep(POLL_INTERVAL)
+                elapsed += POLL_INTERVAL
+                continue
 
             if session.state == SessionState.COMPLETED:
                 task.status = TaskStatus.COMPLETED

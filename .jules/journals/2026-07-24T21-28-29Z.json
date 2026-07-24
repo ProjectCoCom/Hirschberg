@@ -1,0 +1,43 @@
+{
+  "step_number": 7,
+  "timestamp_utc": "2026-07-24T21:28:29Z",
+  "title": "Establish human plan approval gate and visible decision history APIs",
+  "task_summary": "Added an explicit human plan approval gate to standing orchestrator sessions. Implemented first-class orchestrator_sessions tracking table and management endpoints. Enhanced polling loops in coordinator.py and session_runner.py to handle AWAITING_PLAN_APPROVAL. Exposed decision history APIs and surfaced pending approvals on the dashboard.",
+  "status": "completed",
+  "previous_step_review": {
+    "reviewed_step": 6.1,
+    "checked": "src/core/workflow_engine.py, src/core/coordinator.py, src/clients/github.py",
+    "issues_found": [],
+    "fixes_applied": []
+  },
+  "files_changed": [
+    {"path": "src/clients/jules.py", "change": "Wrapped approve_plan with the retry decorator to prevent transient failures."},
+    {"path": "src/clients/local_db.py", "change": "Registered orchestrator_sessions first-class tracking table and auto-migration script."},
+    {"path": "src/core/coordinator.py", "change": "Added explicit AWAITING_PLAN_APPROVAL state check and handling in worker polling loops."},
+    {"path": "src/core/session_runner.py", "change": "Enhanced _poll_until_done loop to handle AWAITING_PLAN_APPROVAL correctly."},
+    {"path": "src/api/execute.py", "change": "Implemented start orchestrator, approve plan, get decision logs, and list aggregated project decisions endpoints."},
+    {"path": "src/api/server.py", "change": "Exposed pending_approvals_count in both get_ui_state and list_terminals endpoints to surface pending approval counts in dashboard polling."},
+    {"path": "dryrun/test_gaps.py", "change": "Added comprehensive test test_orchestrator_plan_approval_and_decisions to verify the whole orchestrator plan approval and decision history endpoints."}
+  ],
+  "assumptions_verified": [
+    {"assumption": "Orchestrator session table schema", "verification": "Validated successful creation and migration of orchestrator_sessions table in SQLite.", "result": "confirmed"},
+    {"assumption": "AWAITING_PLAN_APPROVAL state behavior", "verification": "Confirmed polling loops sleep and proceed upon approval instead of timing out.", "result": "confirmed"}
+  ],
+  "decisions": [
+    {"decision": "Inject a dummy task for orchestrators to satisfy SQLite foreign keys", "reasoning": "Since session_activities has a foreign key to agent_tasks, registering a matching task row keeps schema constraints clean and satisfied."}
+  ],
+  "self_review": {
+    "passes_completed": 1,
+    "checked": "All modified files, schema changes, and test executions.",
+    "changes_made": [],
+    "deferred_from_review": []
+  },
+  "blockers": [],
+  "deferred": [],
+  "tests": {
+    "suite_result": "pass",
+    "new_tests_added": ["test_orchestrator_plan_approval_and_decisions"],
+    "pre_existing_failures_noted": []
+  },
+  "notes_for_next_step": "Step 7 is fully completed and thoroughly verified. The orchestrator session, human plan approval, and visible decision history APIs are fully working."
+}

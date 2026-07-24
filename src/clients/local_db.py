@@ -74,6 +74,16 @@ class LocalDB:
                 updated_at TEXT DEFAULT (datetime('now'))
             );
 
+            CREATE TABLE IF NOT EXISTS orchestrator_sessions (
+                id TEXT PRIMARY KEY,
+                session_id TEXT NOT NULL,
+                repo_owner TEXT NOT NULL,
+                repo_name TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'running',
+                created_at TEXT DEFAULT (datetime('now')),
+                updated_at TEXT DEFAULT (datetime('now'))
+            );
+
             CREATE TABLE IF NOT EXISTS account_sources (
                 id TEXT PRIMARY KEY,
                 account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
@@ -90,6 +100,7 @@ class LocalDB:
                 description TEXT DEFAULT '',
                 status TEXT DEFAULT 'created',
                 execution_mode TEXT DEFAULT 'sequential',
+                integration_branch TEXT DEFAULT '',
                 created_at TEXT DEFAULT (datetime('now')),
                 updated_at TEXT DEFAULT (datetime('now'))
             );
@@ -278,6 +289,21 @@ class LocalDB:
         wf_columns = [row["name"] for row in cursor.fetchall()]
         if "execution_mode" not in wf_columns:
             conn.execute("ALTER TABLE workflows ADD COLUMN execution_mode TEXT DEFAULT 'sequential'")
+        if "integration_branch" not in wf_columns:
+            conn.execute("ALTER TABLE workflows ADD COLUMN integration_branch TEXT DEFAULT ''")
+
+        # Migrate orchestrator_sessions
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS orchestrator_sessions (
+                id TEXT PRIMARY KEY,
+                session_id TEXT NOT NULL,
+                repo_owner TEXT NOT NULL,
+                repo_name TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'running',
+                created_at TEXT DEFAULT (datetime('now')),
+                updated_at TEXT DEFAULT (datetime('now'))
+            );
+        """)
 
         # Migrate agent_tasks
         cursor = conn.execute("PRAGMA table_info(agent_tasks)")

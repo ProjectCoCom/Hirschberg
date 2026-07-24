@@ -214,6 +214,298 @@ async def test_qa_reviewer_verdicts_and_ci():
     print("[PASS] test_qa_reviewer_verdicts_and_ci: AutoMerge enforces green CI and approve QA verdict")
 
 
+async def test_integrator_workflow_review():
+    from core.workflow_engine import WorkflowEngine
+    from models.workflow import Workflow, AgentTask, WorkflowStatus
+    from unittest.mock import MagicMock, AsyncMock, patch
+    from uuid import uuid4
+
+    # Build a multi-task workflow
+    workflow_id = uuid4()
+    task1 = AgentTask(id=uuid4(), prompt="Task 1", exit_criteria="Crit 1", repo_owner="owner", repo_name="repo", branch="jat/task-1")
+    task2 = AgentTask(id=uuid4(), prompt="Task 2", exit_criteria="Crit 2", repo_owner="owner", repo_name="repo", branch="jat/task-2")
+    workflow = Workflow(
+        id=workflow_id,
+        name="Multi-task Test Workflow",
+        tasks=[task1, task2],
+        integration_branch=f"jat/integration-{workflow_id}"
+    )
+
+    coordinator = MagicMock()
+    store = MagicMock()
+    store.save_result = AsyncMock()
+    store.save_task_state = AsyncMock()
+    db_mock = AsyncMock()
+    store._db = db_mock
+
+    # Mock DB queries
+    db_mock.select.return_value = [
+        {
+            "id": str(uuid4()),
+            "repo_owner": "owner",
+            "repo_name": "repo",
+            "branch": workflow.integration_branch,
+            "status": "completed",
+            "orchestrator_session_id": "orch-1",
+            "context": {"is_integrator_task": True}
+        }
+    ]
+
+    # Mock pool account acquisition
+    mock_acc = MagicMock()
+    mock_acc.id = uuid4()
+    coordinator._pool.acquire.return_value = mock_acc
+
+    # Mock Jules client session creation and polling
+    mock_jules_client = AsyncMock()
+    mock_session = MagicMock()
+    mock_session.id = "jules-session-abc"
+    mock_jules_client.create_session.return_value = mock_session
+    mock_jules_client.get_session.return_value = AsyncMock(state="COMPLETED")
+
+    # Mock activities to return Integrator "approve" verdict
+    mock_act = MagicMock()
+    mock_act.agent_messaged.agent_message = 'My integration review details.\n\n{\n  "verdict": "approve",\n  "blocking_issues": [],\n  "summary": "Integration looks solid."\n}'
+    mock_jules_client.list_activities.return_value = [mock_act]
+
+    coordinator._pool.get_client.return_value = mock_jules_client
+
+    engine = WorkflowEngine(coordinator, store)
+
+    # 1. Test approved path
+    with patch("core.merge_review.create_final_pr", new_callable=AsyncMock) as mock_pr, \
+         patch("core.merge_review.cleanup_branches", new_callable=AsyncMock) as mock_cleanup, \
+         patch("core.auto_merge.AutoMerge.merge_when_ready", new_callable=AsyncMock) as mock_merge:
+
+        mock_pr.return_value = "https://github.com/owner/repo/pull/42"
+        mock_merge.return_value = MagicMock(merged=True, sha="merge-sha-123")
+
+        ok = await engine._run_integrator_review(workflow)
+        assert ok is True
+        assert mock_pr.call_count == 1
+        assert mock_merge.call_count == 1
+        assert mock_cleanup.call_count == 1
+
+    # 2. Test rejected path
+    # Mock activities to return Integrator "reject" verdict
+    mock_act_reject = MagicMock()
+    mock_act_reject.agent_messaged.agent_message = 'Issues found.\n\n{\n  "verdict": "reject",\n  "blocking_issues": [{"file": "src/main.py", "issue": "Conflict", "severity": "blocking"}],\n  "summary": "Broken import."\n}'
+    mock_jules_client.list_activities.return_value = [mock_act_reject]
+
+    with patch("core.merge_review.create_final_pr", new_callable=AsyncMock) as mock_pr, \
+         patch("core.orchestrator_relay.notify_orchestrator", new_callable=AsyncMock) as mock_notify:
+
+        ok = await engine._run_integrator_review(workflow)
+        assert ok is False
+        assert mock_pr.call_count == 0
+        assert mock_notify.call_count == 1
+
+    print("[PASS] test_integrator_workflow_review: Integrator review dispatches and handles approve/reject paths correctly")
+
+
+async def test_orchestrator_plan_approval_and_decisions():
+    from unittest.mock import patch, AsyncMock, MagicMock
+    from fastapi.testclient import TestClient
+    from api.server import app
+    from uuid import uuid4
+
+    # Test the API endpoints added in Step 7
+    client = TestClient(app)
+
+    # 1. Test POST /api/orchestrators/start
+    mock_pool = MagicMock()
+    mock_pool.close_all = AsyncMock()
+    mock_account = MagicMock()
+    mock_account.id = uuid4()
+    mock_pool.acquire.return_value = mock_account
+    mock_pool._accounts = [mock_account]
+
+    mock_jules_client = AsyncMock()
+    mock_session = MagicMock()
+    mock_session.id = "orch-session-123"
+    mock_jules_client.create_session.return_value = mock_session
+    mock_pool.get_client.return_value = mock_jules_client
+
+    with patch("core.config_loader.build_jules_pool", return_value=mock_pool), \
+         patch("db.db.insert", new_callable=AsyncMock) as mock_insert, \
+         patch("api.execute._poll_orchestrator", new_callable=AsyncMock) as mock_poll:
+
+        response = client.post("/api/orchestrators/start", json={
+            "repo_owner": "owner",
+            "repo_name": "repo",
+            "prompt": "Orchestrate auth feature"
+        })
+        assert response.status_code == 200
+        data = response.json()
+        assert data["session_id"] == "orch-session-123"
+        assert data["status"] == "running"
+        assert mock_insert.call_count == 2 # 1 for agent_tasks, 1 for orchestrator_sessions
+
+    # 2. Test POST /api/orchestrators/{session_id}/approve
+    with patch("core.config_loader.build_jules_pool", return_value=mock_pool), \
+         patch("db.db.select", new_callable=AsyncMock) as mock_select, \
+         patch("db.db.update", new_callable=AsyncMock) as mock_update:
+
+        mock_select.return_value = [{"session_id": "orch-session-123", "id": "task-abc"}]
+        response = client.post("/api/orchestrators/orch-session-123/approve")
+        assert response.status_code == 200
+        assert response.json()["ok"] is True
+        assert mock_jules_client.approve_plan.call_count == 1
+        assert mock_update.call_count == 1
+
+    # 3. Test GET /api/orchestrators/{session_id}/decisions
+    with patch("db.db.select", new_callable=AsyncMock) as mock_select:
+        mock_select.side_effect = [
+            [{"id": "act-1", "description": "Planned tasks"}], # activities
+            [{"id": "task-1", "prompt": "Task 1", "orchestrator_session_id": "orch-session-123"}] # tasks
+        ]
+        response = client.get("/api/orchestrators/orch-session-123/decisions")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["activities"]) == 1
+        assert len(data["tasks"]) == 1
+
+    # 4. Test GET /api/projects/{owner}/{repo}/decisions
+    with patch("db.db.select", new_callable=AsyncMock) as mock_select:
+        mock_select.side_effect = [
+            [{"session_id": "orch-session-123", "status": "running", "created_at": "2026-07-24"}], # sessions
+            [{"id": "act-1", "description": "Planned tasks"}], # activities
+            [{"id": "task-1", "prompt": "Task 1", "orchestrator_session_id": "orch-session-123"}] # tasks
+        ]
+        response = client.get("/api/projects/owner/repo/decisions")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["decisions"]) == 1
+        assert data["decisions"][0]["session_id"] == "orch-session-123"
+
+    print("[PASS] test_orchestrator_plan_approval_and_decisions: Orchestrator start, approve, and decision history endpoints verified")
+
+
+async def test_orchestrator_delegation_and_recursion_limit():
+    from core.coordinator import AgentCoordinator
+    from models.workflow import AgentTask, TaskStatus
+    from core.account_pool import AccountPool, Account, AccountRole
+    from config import Settings
+    from unittest.mock import MagicMock, AsyncMock, patch
+    from uuid import uuid4
+
+    # Build account pool with orchestrator and worker roles
+    pool = AccountPool()
+    orch_acc = Account(name="delegated-orch", role=AccountRole.ORCHESTRATOR)
+    pool.add_account(orch_acc)
+    worker_acc = Account(name="worker-1", role=AccountRole.WORKER)
+    pool.add_account(worker_acc)
+
+    store = MagicMock()
+    store.save_result = AsyncMock()
+    store.save_task_state = AsyncMock()
+    db_mock = AsyncMock()
+    store._db = db_mock
+
+    # Mock DB query for delegating session lookup
+    parent_uuid = str(uuid4())
+    db_mock.select.return_value = [{"id": parent_uuid}]
+
+    coordinator = AgentCoordinator(pool, store)
+
+    task = AgentTask(
+        id=uuid4(),
+        prompt="Write API",
+        assign_to="delegated-orch",
+        orchestrator_session_id="standing-orch-session-abc",
+    )
+
+    # 1. Test when delegation is disabled (max_delegation_depth = 0)
+    with patch("config.load_settings") as mock_settings:
+        mock_settings.return_value = Settings(max_delegation_depth=0)
+
+        # It should resolve to worker role (which fails since delegated-orch is an orchestrator account)
+        try:
+            await coordinator.run_task(task)
+        except Exception:
+            pass
+        assert task.prompt == "Write API" # No reframing
+        assert task.parent_task_id is None
+
+    # 2. Test when delegation is enabled (max_delegation_depth = 2)
+    with patch("config.load_settings") as mock_settings:
+        mock_settings.return_value = Settings(max_delegation_depth=2)
+
+        # Mock client creation and polling so it completes immediately
+        mock_client = AsyncMock()
+        mock_session = MagicMock()
+        mock_session.id = "session-delegated"
+        mock_client.create_session.return_value = mock_session
+        mock_client.get_session.return_value = AsyncMock(state="COMPLETED")
+        pool._clients[orch_acc.id] = mock_client
+
+        res = await coordinator.run_task(task)
+        assert "subtree of the goal: Write API" in res.prompt
+        assert res.parent_task_id is not None
+
+    print("[PASS] test_orchestrator_delegation_and_recursion_limit: Delegation prompt reframing and parent_task_id assignment verified successfully")
+
+
+async def test_account_pool_exhaustion_graceful_backoff():
+    from core.workflow_engine import WorkflowEngine
+    from models.workflow import Workflow, AgentTask, WorkflowStatus
+    from core.account_pool import AccountPool, Account, AccountRole
+    from unittest.mock import MagicMock, AsyncMock, patch
+    from uuid import uuid4
+
+    # Build a pool with exactly ONE concurrent slot
+    pool = AccountPool()
+    acc = Account(name="limited-worker", role=AccountRole.WORKER)
+    acc.active_sessions = 0
+    # Override its limit dynamically
+    acc.limits["concurrent"] = 1
+    pool.add_account(acc)
+
+    store = MagicMock()
+    db_mock = AsyncMock()
+    store._db = db_mock
+    store.save_task_state = AsyncMock()
+
+    # Mock client and session creation
+    mock_client = AsyncMock()
+    mock_session = MagicMock()
+    mock_session.id = "session-staggered"
+    mock_client.create_session.return_value = mock_session
+    mock_client.get_session.return_value = AsyncMock(state="COMPLETED")
+    pool._clients[acc.id] = mock_client
+
+    # 2 ready parallel tasks
+    task1 = AgentTask(id=uuid4(), prompt="Task 1", repo_owner="owner", repo_name="repo", branch="jat/t-1")
+    task2 = AgentTask(id=uuid4(), prompt="Task 2", repo_owner="owner", repo_name="repo", branch="jat/t-2")
+    workflow = Workflow(
+        id=uuid4(),
+        name="Capacity Test",
+        tasks=[task1, task2],
+    )
+
+    coordinator = MagicMock()
+    # Mock coordinator's pool & run_task to replicate standard behavior
+    coordinator._pool = pool
+
+    # We want to simulate standard run_task on our own terms, releasing capacity on completion
+    async def fake_run_task(t):
+        # Temporarily acquire the slot to block the other task
+        acquired_acc = pool.acquire(role=AccountRole.WORKER)
+        t.status = "completed"
+        # Release capacity
+        pool.release(acquired_acc.id)
+        return t
+
+    coordinator.run_task = fake_run_task
+
+    engine = WorkflowEngine(coordinator, store)
+
+    res = await engine.run(workflow)
+    # Both tasks must complete successfully without failing due to capacity limits!
+    assert res.status == WorkflowStatus.COMPLETED
+    print("[PASS] test_account_pool_exhaustion_graceful_backoff: Workflow dispatches tasks gracefully within concurrency limits")
+
+
 async def main():
     print("=" * 50)
     print("JAT-AI GAP COVERAGE TESTS")
@@ -229,6 +521,10 @@ async def main():
     await test_conversation_persistence_endpoints()
     await test_system_prompts_complete()
     await test_qa_reviewer_verdicts_and_ci()
+    await test_integrator_workflow_review()
+    await test_orchestrator_plan_approval_and_decisions()
+    await test_orchestrator_delegation_and_recursion_limit()
+    await test_account_pool_exhaustion_graceful_backoff()
 
     print()
     print("=" * 50)

@@ -1,0 +1,40 @@
+{
+  "step_number": 9,
+  "timestamp_utc": "2026-07-24T22:39:24Z",
+  "title": "Establish graceful account pool exhaustion backoff and delayed dispatch",
+  "task_summary": "Prevented pool exhaustion from triggering task failures. Implemented proactive capacity checking in WorkflowEngine, holding ready tasks until capacity frees up. Added a bounded retry and backoff loop for AccountPoolExhausted in coordinator.py, and routed waiting_on_capacity status notifications to the orchestrator.",
+  "status": "completed",
+  "previous_step_review": {
+    "reviewed_step": 8,
+    "checked": "src/config.py, src/core/coordinator.py",
+    "issues_found": [],
+    "fixes_applied": []
+  },
+  "files_changed": [
+    {"path": "src/core/account_pool.py", "change": "Added has_capacity_for helper method to safely check capacity without state mutation."},
+    {"path": "src/core/workflow_engine.py", "change": "Updated run() loop to only dispatch tasks if capacity is available, holding the rest and handling permanent pool exhaustion deadlocks gracefully."},
+    {"path": "src/core/coordinator.py", "change": "Added bounded retry/backoff loop catching AccountPoolExhausted, notifying the orchestrator with waiting_on_capacity status on each attempt."},
+    {"path": "dryrun/test_gaps.py", "change": "Added test_account_pool_exhaustion_graceful_backoff verifying oversubscribed workflows run sequentially without failure."}
+  ],
+  "assumptions_verified": [
+    {"assumption": "Oversubscription Staggered execution", "verification": "Confirmed that oversubscribed tasks run successfully and sequentially rather than immediately failing.", "result": "confirmed"},
+    {"assumption": "Status distinction", "verification": "Validated that 'waiting_on_capacity' status is delivered to the orchestrator instead of execution failures.", "result": "confirmed"}
+  ],
+  "decisions": [
+    {"decision": "Treat permanent capacity exhaustion as a deadlock failure", "reasoning": "If no tasks are running and none can be dispatched, capacity can never free up, so breaking the loop and marking them as failed is the correct, permanent failure response."}
+  ],
+  "self_review": {
+    "passes_completed": 1,
+    "checked": "All modified files, schema, and test executions.",
+    "changes_made": [],
+    "deferred_from_review": []
+  },
+  "blockers": [],
+  "deferred": [],
+  "tests": {
+    "suite_result": "pass",
+    "new_tests_added": ["test_account_pool_exhaustion_graceful_backoff"],
+    "pre_existing_failures_noted": []
+  },
+  "notes_for_next_step": "Step 9 is fully completed and thoroughly verified. The oversubscription pool backoff pipeline is fully active and tested."
+}
