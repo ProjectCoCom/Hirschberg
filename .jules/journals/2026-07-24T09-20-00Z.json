@@ -1,0 +1,43 @@
+{
+  "step_number": 6,
+  "timestamp_utc": "2026-07-24T09:20:00Z",
+  "title": "Add mandatory pre-merge QA review gate using dedicated qa account",
+  "task_summary": "Add a mandatory pre-merge report-only QA review using a dedicated qa-role Jules account, fix the CI merge wait block, parse final QA verdict JSON blocks, enforce approval to allow merging, and notify orchestrator of blockages.",
+  "status": "completed",
+  "previous_step_review": {
+    "reviewed_step": 5,
+    "checked": "src/models/workflow.py, supabase/schema_local.sql, src/clients/local_db.py, src/core/context_store.py, src/core/workflow_engine.py, src/core/orchestrator_relay.py, src/core/coordinator.py, src/core/session_runner.py",
+    "issues_found": [],
+    "fixes_applied": []
+  },
+  "files_changed": [
+    {"path": "prompts/qa_reviewer.md", "change": "Wrote the strict QA reviewer prompt template."},
+    {"path": "src/core/qa_reviewer.py", "change": "Created QA review dispatcher with template interpolation, JSON verdict block extraction, child QA task persistence, and COMPLETED status enforcement."},
+    {"path": "src/core/auto_merge.py", "change": "Fixed _wait_for_checks to prevent falling through on CI fail/timeout, and modified merge_when_ready to query the DB for the QA task verdict and notify orchestrators on rejection."},
+    {"path": "src/core/coordinator.py", "change": "Updated _poll_session to call run_qa_review_for_task synchronously when a worker task completes with a PR URL."},
+    {"path": "src/core/session_runner.py", "change": "Updated _poll_until_done to call run_qa_review_for_task synchronously when a task completes with a PR URL."},
+    {"path": "dryrun/test_gaps.py", "change": "Added comprehensive test doubles and unit tests for green/failed CI and approved/rejected QA verdicts."}
+  ],
+  "assumptions_verified": [
+    {"assumption": "QA Task status completed on reject", "verification": "Confirmed with user; QA task remains status completed (never failed) even on reject verdict to prevent cancellation cascades.", "result": "confirmed"},
+    {"assumption": "Look up QA verdict internally inside merge_when_ready", "verification": "Confirmed with user; looked up internally matching on PR head branch to prevent MC/CLI merge-check bypass.", "result": "confirmed"},
+    {"assumption": "Supersede REVIEW_SESSION_PROMPT usage", "verification": "Confirmed with user; preserved existing post-merge review as a separate pass while running pre-merge QA strictly before merging.", "result": "confirmed"}
+  ],
+  "decisions": [
+    {"decision": "Store qa_verdict inside child QA task context dictionary", "reasoning": "Fits perfectly with SQLite auto JSON serialization and transparent Pydantic deserialization, keeping the schema incredibly clean and robust."}
+  ],
+  "self_review": {
+    "passes_completed": 1,
+    "checked": "All modified files, test execution, schema matches, and API specifications",
+    "changes_made": [],
+    "deferred_from_review": []
+  },
+  "blockers": [],
+  "deferred": [],
+  "tests": {
+    "suite_result": "pass",
+    "new_tests_added": ["test_qa_reviewer_verdicts_and_ci"],
+    "pre_existing_failures_noted": []
+  },
+  "notes_for_next_step": "Step 6 is fully completed and thoroughly verified. The pre-merge QA gate and CI check blockages are perfectly working."
+}

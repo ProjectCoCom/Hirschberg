@@ -90,6 +90,130 @@ async def test_system_prompts_complete():
     print("[PASS] system_prompts: all 7 prompts have proper XML structure and placeholders")
 
 
+class MockGitHubClient:
+    def __init__(self, checks_pass=True, merged=False):
+        self.checks_pass = checks_pass
+        self.merged_called = False
+        self.merged_status = merged
+
+    async def get_pull_request(self, owner, repo, pr_number):
+        from models.github import PullRequest
+        return PullRequest(
+            number=pr_number,
+            title="Test PR",
+            state="open",
+            html_url=f"https://github.com/{owner}/{repo}/pull/{pr_number}",
+            head_ref="jat/agent-1-auth",
+            base_ref="main",
+            mergeable=True,
+            merged=self.merged_status,
+        )
+
+    async def list_check_runs(self, owner, repo, ref):
+        from models.github import CheckRun, CheckStatus, CheckConclusion
+        if self.checks_pass:
+            conclusion = CheckConclusion.SUCCESS
+        else:
+            conclusion = CheckConclusion.FAILURE
+        return [
+            CheckRun(id=1, name="ci/test", status=CheckStatus.COMPLETED, conclusion=conclusion)
+        ]
+
+    async def merge_pull_request(self, owner, repo, pr_number, merge_method="squash", commit_title=""):
+        from models.github import MergeResult
+        self.merged_called = True
+        return MergeResult(sha="new-sha-123", merged=True, message="Merged successfully")
+
+    async def close(self):
+        pass
+
+
+async def test_qa_reviewer_verdicts_and_ci():
+    from core.auto_merge import AutoMerge, MergeStrategy
+    from unittest.mock import patch, AsyncMock
+
+    # 1. Test failed CI checks
+    gh_fail = MockGitHubClient(checks_pass=False)
+    merger_fail = AutoMerge(gh_fail, strategy=MergeStrategy.SQUASH)
+    res_fail = await merger_fail.merge_when_ready("owner", "repo", 1)
+    assert res_fail.merged is False
+    assert "checks failed" in res_fail.message
+
+    # 2. Test QA verdict is reject
+    gh_reject = MockGitHubClient(checks_pass=True)
+    merger_reject = AutoMerge(gh_reject, strategy=MergeStrategy.SQUASH)
+
+    mock_db_reject_data = [
+        {
+            "id": "4795ba57-7977-4402-ba55-081e69dc52ee",
+            "repo_owner": "owner",
+            "repo_name": "repo",
+            "branch": "jat/agent-1-auth",
+            "status": "completed",
+            "orchestrator_session_id": "orch-1",
+            "context": {
+                "is_qa_task": True,
+                "qa_verdict": {
+                    "verdict": "reject",
+                    "blocking_issues": [{"file": "src/auth.py", "issue": "Syntax error", "severity": "blocking"}],
+                    "summary": "Tests failed."
+                }
+            }
+        }
+    ]
+
+    # Patch the db.select and notify_orchestrator
+    with patch("db.db.select", new_callable=AsyncMock) as mock_select, \
+         patch("core.orchestrator_relay.notify_orchestrator", new_callable=AsyncMock) as mock_notify:
+        mock_select.return_value = mock_db_reject_data
+
+        res_reject = await merger_reject.merge_when_ready("owner", "repo", 1)
+        assert res_reject.merged is False
+        assert "rejected" in res_reject.message
+        assert mock_notify.call_count == 1
+
+    # 3. Test QA verdict is approve
+    gh_approve = MockGitHubClient(checks_pass=True)
+    merger_approve = AutoMerge(gh_approve, strategy=MergeStrategy.SQUASH)
+
+    mock_db_approve_data = [
+        {
+            "id": "4795ba57-7977-4402-ba55-081e69dc52ee",
+            "repo_owner": "owner",
+            "repo_name": "repo",
+            "branch": "jat/agent-1-auth",
+            "status": "completed",
+            "context": {
+                "is_qa_task": True,
+                "qa_verdict": {
+                    "verdict": "approve",
+                    "blocking_issues": [],
+                    "summary": "Perfect."
+                }
+            }
+        }
+    ]
+
+    with patch("db.db.select", new_callable=AsyncMock) as mock_select:
+        mock_select.return_value = mock_db_approve_data
+
+        res_approve = await merger_approve.merge_when_ready("owner", "repo", 1)
+        assert res_approve.merged is True
+        assert gh_approve.merged_called is True
+
+    # 4. Test direct call with pending/missing QA verdict
+    gh_pending = MockGitHubClient(checks_pass=True)
+    merger_pending = AutoMerge(gh_pending, strategy=MergeStrategy.SQUASH)
+
+    with patch("db.db.select", new_callable=AsyncMock) as mock_select:
+        mock_select.return_value = [] # No QA task found
+
+        res_pending = await merger_pending.merge_when_ready("owner", "repo", 1)
+        assert res_pending.merged is False
+        assert "pending" in res_pending.message
+    print("[PASS] test_qa_reviewer_verdicts_and_ci: AutoMerge enforces green CI and approve QA verdict")
+
+
 async def main():
     print("=" * 50)
     print("JAT-AI GAP COVERAGE TESTS")
@@ -104,6 +228,7 @@ async def main():
     await test_agent_tasks_tracking()
     await test_conversation_persistence_endpoints()
     await test_system_prompts_complete()
+    await test_qa_reviewer_verdicts_and_ci()
 
     print()
     print("=" * 50)

@@ -159,7 +159,26 @@ async def _poll_until_done(
                 last_activity_time = activity.create_time.isoformat()
 
         if session.state == SessionState.COMPLETED:
-            return _build_result(session, "completed")
+            res = _build_result(session, "completed")
+            if task_id and res.get("pr_url"):
+                try:
+                    from core.qa_reviewer import run_qa_review_for_task
+                    from models.workflow import AgentTask
+                    from core.config_loader import load_config, build_jules_pool
+                    from core.context_store import ContextStore
+
+                    rows = await db.select("agent_tasks", {"id": task_id})
+                    if rows:
+                        task_obj = AgentTask.model_validate(rows[0])
+                        config = load_config()
+                        pool = build_jules_pool(config)
+                        store = ContextStore(db)
+
+                        await run_qa_review_for_task(pool, store, task_obj, res["pr_url"])
+                        await pool.close_all()
+                except Exception as e:
+                    log.warning("failed_to_trigger_qa_in_session_runner", error=str(e))
+            return res
 
         if session.state == SessionState.FAILED:
             return _build_result(session, "failed")

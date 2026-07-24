@@ -40,6 +40,14 @@
       "summary": "Implemented dependency-scoped transitive closure cancellation in WorkflowEngine. Created single state-transition notifications (COMPLETED, FAILED, AWAITING_USER_FEEDBACK, PAUSED) and worker-to-orchestrator feedback relay loops with lock-based turn serialization per orchestrator session. Fixed session activity tracking to store full Activity JSON payloads.",
       "status": "completed",
       "journal_ref": ".jules/journals/2026-07-24T08-40-00Z.json"
+    },
+    {
+      "step_number": 6,
+      "timestamp_utc": "2026-07-24T09:20:00Z",
+      "title": "Add mandatory pre-merge QA review gate using dedicated qa account",
+      "summary": "Added a mandatory, pre-merge, report-only QA review gate using a dedicated qa-role Jules account with prompt template interpolation and JSON verdict block extraction. Fixed the CI checks wait block in AutoMerge to prevent merging on CI failures or timeouts, and integrated internal QA verdict lookup inside merge_when_ready to ensure no merge-check bypass. Rejected verdicts notify the responsible orchestrator of the specific blocking issues.",
+      "status": "completed",
+      "journal_ref": ".jules/journals/2026-07-24T09-20-00Z.json"
     }
   ]
 }

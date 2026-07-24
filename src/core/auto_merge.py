@@ -40,7 +40,57 @@ class AutoMerge:
         if pr.merged:
             return MergeResult(merged=True, message="Already merged")
 
-        await self._wait_for_checks(owner, repo, pr.head_ref)
+        checks_passed = await self._wait_for_checks(owner, repo, pr.head_ref)
+        if not checks_passed:
+            return MergeResult(merged=False, message="CI checks failed or timed out")
+
+        # Query database for the QA task matching this branch
+        from db import db
+        from core.context_store import ContextStore
+        from core.config_loader import load_config, build_jules_pool
+        from models.workflow import AgentTask
+
+        rows = await db.select("agent_tasks", {
+            "repo_owner": owner,
+            "repo_name": repo,
+            "branch": pr.head_ref,
+        })
+        qa_verdict_data = None
+        qa_task_row = None
+        for r in rows:
+            ctx = r.get("context", {})
+            if isinstance(ctx, dict) and ctx.get("is_qa_task"):
+                qa_verdict_data = ctx.get("qa_verdict")
+                qa_task_row = r
+                break
+
+        if not qa_verdict_data:
+            return MergeResult(merged=False, message="QA review is pending")
+
+        verdict = qa_verdict_data.get("verdict", "").lower()
+        if verdict == "reject":
+            # Notify the orchestrator session on rejection
+            try:
+                task_obj = AgentTask.model_validate(qa_task_row)
+                config = load_config()
+                pool = build_jules_pool(config)
+                store = ContextStore(db)
+
+                issues_summary = ""
+                for issue in qa_verdict_data.get("blocking_issues", []):
+                    issues_summary += f"- {issue.get('file', 'unknown')}: {issue.get('issue', '')} (Severity: {issue.get('severity', 'blocking')})\n"
+                summary = f"QA Review Rejected:\n{issues_summary}"
+
+                from core.orchestrator_relay import notify_orchestrator
+                await notify_orchestrator(pool, store, task_obj, "rejected", summary=summary)
+                await pool.close_all()
+            except Exception as e:
+                log.warning("failed_to_notify_orchestrator_on_rejection", error=str(e))
+
+            return MergeResult(merged=False, message="QA review rejected the merge")
+
+        if verdict != "approve":
+            return MergeResult(merged=False, message=f"QA review has unhandled verdict: {verdict}")
 
         return await self._github.merge_pull_request(
             owner, repo, pr_number,
@@ -50,13 +100,13 @@ class AutoMerge:
 
     async def _wait_for_checks(
         self, owner: str, repo: str, ref: str
-    ) -> None:
+    ) -> bool:
         elapsed = 0
         while elapsed < CHECK_TIMEOUT:
             checks = await self._github.list_check_runs(owner, repo, ref)
 
             if not checks:
-                return
+                return True
 
             all_done = all(c.status == CheckStatus.COMPLETED for c in checks)
             if all_done:
@@ -67,9 +117,11 @@ class AutoMerge:
                 if failures:
                     names = ", ".join(c.name for c in failures)
                     log.warning("checks_failed", pr_ref=ref, failed=names)
-                return
+                    return False
+                return True
 
             await asyncio.sleep(CHECK_POLL_INTERVAL)
             elapsed += CHECK_POLL_INTERVAL
 
         log.warning("checks_timed_out", pr_ref=ref)
+        return False

@@ -148,6 +148,15 @@ class AgentCoordinator:
                 for output in session.outputs:
                     if output.pull_request:
                         task.pr_url = output.pull_request.url
+
+                # If a PR was created, run the pre-merge QA reviewer
+                if task.pr_url:
+                    try:
+                        from core.qa_reviewer import run_qa_review_for_task
+                        await run_qa_review_for_task(self._pool, self._store, task, task.pr_url)
+                    except Exception as e:
+                        log.warning("qa_trigger_failed", task_id=str(task.id), error=str(e))
+
                 return task
 
             if session.state == SessionState.FAILED:
