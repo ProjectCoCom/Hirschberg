@@ -1,1 +1,1 @@
-This is the directory for Jules AI to create amd maintain their journals. Use this file to maintain an index of the journals.
+This is the directory for Jules AI developer agents to create amd maintain their journals. This is for development of this application, not for use by the Jules AI instances in the application. Use this file to maintain an index of the journals.
