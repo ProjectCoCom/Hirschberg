@@ -44,59 +44,146 @@ class AutoMerge:
         if not checks_passed:
             return MergeResult(merged=False, message="CI checks failed or timed out")
 
-        # Query database for the QA task matching this branch
+        # Check if the head branch matches a known integration_branch of any workflow
         from db import db
-        from core.context_store import ContextStore
-        from core.config_loader import load_config, build_jules_pool
-        from models.workflow import AgentTask
+        is_integration_pr = False
+        try:
+            workflows = await db.select("workflows", {"integration_branch": pr.head_ref})
+            if workflows and isinstance(workflows[0], dict) and "integration_branch" in workflows[0]:
+                is_integration_pr = bool(workflows[0].get("integration_branch"))
+        except Exception:
+            pass
 
-        rows = await db.select("agent_tasks", {
-            "repo_owner": owner,
-            "repo_name": repo,
-            "branch": pr.head_ref,
-        })
-        qa_verdict_data = None
-        qa_task_row = None
-        for r in rows:
-            ctx = r.get("context", {})
-            if isinstance(ctx, dict) and ctx.get("is_qa_task"):
-                qa_verdict_data = ctx.get("qa_verdict")
-                qa_task_row = r
-                break
+        if is_integration_pr:
+            # Look for integrator task
+            rows = await db.select("agent_tasks", {
+                "repo_owner": owner,
+                "repo_name": repo,
+                "branch": pr.head_ref,
+            })
+            integrator_verdict_data = None
+            integrator_task_row = None
+            for r in rows:
+                ctx = r.get("context", {})
+                if isinstance(ctx, dict) and ctx.get("is_integrator_task"):
+                    integrator_verdict_data = ctx.get("integrator_verdict")
+                    integrator_task_row = r
+                    break
 
-        if not qa_verdict_data:
-            return MergeResult(merged=False, message="QA review is pending")
+            if not integrator_verdict_data:
+                return MergeResult(merged=False, message="Integrator review is pending")
 
-        verdict = qa_verdict_data.get("verdict", "").lower()
-        if verdict == "reject":
-            # Notify the orchestrator session on rejection
-            try:
-                task_obj = AgentTask.model_validate(qa_task_row)
-                config = load_config()
-                pool = build_jules_pool(config)
-                store = ContextStore(db)
+            verdict = integrator_verdict_data.get("verdict", "").lower()
+            if verdict == "reject":
+                # Notify responsible orchestrator
+                try:
+                    from models.workflow import AgentTask
+                    from core.config_loader import load_config, build_jules_pool
+                    from core.context_store import ContextStore
 
-                issues_summary = ""
-                for issue in qa_verdict_data.get("blocking_issues", []):
-                    issues_summary += f"- {issue.get('file', 'unknown')}: {issue.get('issue', '')} (Severity: {issue.get('severity', 'blocking')})\n"
-                summary = f"QA Review Rejected:\n{issues_summary}"
+                    task_obj = AgentTask.model_validate(integrator_task_row)
+                    config = load_config()
+                    pool = build_jules_pool(config)
+                    store = ContextStore(db)
 
-                from core.orchestrator_relay import notify_orchestrator
-                await notify_orchestrator(pool, store, task_obj, "rejected", summary=summary)
-                await pool.close_all()
-            except Exception as e:
-                log.warning("failed_to_notify_orchestrator_on_rejection", error=str(e))
+                    issues_summary = ""
+                    for issue in integrator_verdict_data.get("blocking_issues", []):
+                        issues_summary += f"- {issue.get('file', 'unknown')}: {issue.get('issue', '')} (Severity: {issue.get('severity', 'blocking')})\n"
+                    summary = f"Integrator Review Rejected:\n{issues_summary}"
 
-            return MergeResult(merged=False, message="QA review rejected the merge")
+                    from core.orchestrator_relay import notify_orchestrator
+                    await notify_orchestrator(pool, store, task_obj, "rejected", summary=summary)
+                    await pool.close_all()
+                except Exception as e:
+                    log.warning("failed_to_notify_orchestrator_on_integrator_rejection", error=str(e))
 
-        if verdict != "approve":
-            return MergeResult(merged=False, message=f"QA review has unhandled verdict: {verdict}")
+                return MergeResult(merged=False, message="Integrator review rejected the merge")
 
-        return await self._github.merge_pull_request(
+            if verdict != "approve":
+                return MergeResult(merged=False, message=f"Integrator review has unhandled verdict: {verdict}")
+        else:
+            # Query database for the QA task matching this branch
+            from core.context_store import ContextStore
+            from core.config_loader import load_config, build_jules_pool
+            from models.workflow import AgentTask
+
+            rows = await db.select("agent_tasks", {
+                "repo_owner": owner,
+                "repo_name": repo,
+                "branch": pr.head_ref,
+            })
+            qa_verdict_data = None
+            qa_task_row = None
+            for r in rows:
+                ctx = r.get("context", {})
+                if isinstance(ctx, dict) and ctx.get("is_qa_task"):
+                    qa_verdict_data = ctx.get("qa_verdict")
+                    qa_task_row = r
+                    break
+
+            if not qa_verdict_data:
+                return MergeResult(merged=False, message="QA review is pending")
+
+            verdict = qa_verdict_data.get("verdict", "").lower()
+            if verdict == "reject":
+                # Notify the orchestrator session on rejection
+                try:
+                    task_obj = AgentTask.model_validate(qa_task_row)
+                    config = load_config()
+                    pool = build_jules_pool(config)
+                    store = ContextStore(db)
+
+                    issues_summary = ""
+                    for issue in qa_verdict_data.get("blocking_issues", []):
+                        issues_summary += f"- {issue.get('file', 'unknown')}: {issue.get('issue', '')} (Severity: {issue.get('severity', 'blocking')})\n"
+                    summary = f"QA Review Rejected:\n{issues_summary}"
+
+                    from core.orchestrator_relay import notify_orchestrator
+                    await notify_orchestrator(pool, store, task_obj, "rejected", summary=summary)
+                    await pool.close_all()
+                except Exception as e:
+                    log.warning("failed_to_notify_orchestrator_on_rejection", error=str(e))
+
+                return MergeResult(merged=False, message="QA review rejected the merge")
+
+            if verdict != "approve":
+                return MergeResult(merged=False, message=f"QA review has unhandled verdict: {verdict}")
+
+        merge_res = await self._github.merge_pull_request(
             owner, repo, pr_number,
             merge_method=self._strategy.value,
             commit_title=commit_title,
         )
+
+        # Post-merge individual branch into integration branch for multi-task workflows
+        if merge_res.merged and not is_integration_pr:
+            try:
+                task_rows = await db.select("agent_tasks", {
+                    "repo_owner": owner,
+                    "repo_name": repo,
+                    "branch": pr.head_ref,
+                })
+                worker_task_row = None
+                for tr in task_rows:
+                    ctx = tr.get("context", {})
+                    if not (isinstance(ctx, dict) and (ctx.get("is_qa_task") or ctx.get("is_integrator_task"))):
+                        worker_task_row = tr
+                        break
+
+                if worker_task_row and worker_task_row.get("workflow_id"):
+                    wf_rows = await db.select("workflows", {"id": str(worker_task_row["workflow_id"])})
+                    if wf_rows:
+                        integration_branch = wf_rows[0].get("integration_branch")
+                        if integration_branch:
+                            log.info("merging_individual_task_branch_into_integration", branch=pr.base_ref, integration=integration_branch)
+                            await self._github.merge_branch(
+                                owner, repo, integration_branch, pr.base_ref,
+                                f"jat: merge task branch {pr.base_ref} into integration {integration_branch}"
+                            )
+            except Exception as e:
+                log.warning("failed_to_merge_branch_into_integration", error=str(e))
+
+        return merge_res
 
     async def _wait_for_checks(
         self, owner: str, repo: str, ref: str

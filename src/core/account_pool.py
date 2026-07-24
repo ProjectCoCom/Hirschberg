@@ -23,6 +23,7 @@ class AccountRole(StrEnum):
     ORCHESTRATOR = "orchestrator"
     WORKER = "worker"
     QA = "qa"
+    INTEGRATOR = "integrator"
 
 
 PLAN_LIMITS: dict[PlanTier, dict[str, int]] = {

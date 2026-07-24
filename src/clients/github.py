@@ -153,6 +153,63 @@ class GitHubClient:
         except Exception:
             return None
 
+    async def get_branch_sha(self, owner: str, repo: str, branch: str) -> str | None:
+        try:
+            ref_res = await self._client.get(f"/repos/{owner}/{repo}/git/ref/heads/{branch}")
+            if ref_res.status_code != 200:
+                return None
+            return ref_res.json()["object"]["sha"]
+        except Exception:
+            return None
+
+    async def create_branch_with_base(
+        self, owner: str, repo: str, branch_name: str, base_branch: str | None = None
+    ) -> bool:
+        sha = None
+        if base_branch:
+            sha = await self.get_branch_sha(owner, repo, base_branch)
+        if not sha:
+            sha = await self.get_default_branch_sha(owner, repo)
+        if not sha:
+            return False
+        return await self.create_branch_from_ref(owner, repo, branch_name, sha)
+
+    async def merge_branch(self, owner: str, repo: str, base: str, head: str, commit_message: str) -> str:
+        try:
+            res = await self._client.post(
+                f"/repos/{owner}/{repo}/merges",
+                json={"base": base, "head": head, "commit_message": commit_message}
+            )
+            if res.status_code == 201:
+                return "merged"
+            elif res.status_code == 204:
+                return "already_merged"
+            elif res.status_code == 409:
+                return "conflict"
+            else:
+                return f"error_{res.status_code}"
+        except Exception as e:
+            return f"error_{e}"
+
+    async def delete_branch(self, owner: str, repo: str, branch_name: str) -> bool:
+        try:
+            res = await self._client.delete(f"/repos/{owner}/{repo}/git/refs/heads/{branch_name}")
+            return res.status_code == 204
+        except Exception:
+            return False
+
+    async def create_pull_request(self, owner: str, repo: str, title: str, head: str, base: str, body: str) -> str | None:
+        try:
+            res = await self._client.post(
+                f"/repos/{owner}/{repo}/pulls",
+                json={"title": title, "head": head, "base": base, "body": body}
+            )
+            if res.status_code == 201:
+                return res.json().get("html_url")
+        except Exception:
+            pass
+        return None
+
     async def create_repo(
         self,
         name: str,
