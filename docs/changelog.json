@@ -24,6 +24,22 @@
       "summary": "Added role ('orchestrator', 'worker', 'qa') and label fields to Jules accounts, enforcing role during acquisition. Overhauled config loader to read accounts directly from the SQLite database with a one-time migration fallback. Exposed account roles/labels in list, create, and patch backend endpoints and the React Dashboard UI.",
       "status": "completed",
       "journal_ref": ".jules/journals/2026-07-24T07-20-00Z.json"
+    },
+    {
+      "step_number": 4,
+      "timestamp_utc": "2026-07-24T08:00:00Z",
+      "title": "Consolidate plan execution onto WorkflowEngine and retire System B",
+      "summary": "Consolidated plan execution entirely onto System A's robust, parallel WorkflowEngine and AgentCoordinator, retiring legacy standalone execution and buggy polling loops. Integrated GitHub-based branch creation and JDOCS-compliant prompt generation directly into task workflows. Enforced strict role-aware and assign-to constraints on accounts pool with hard-fail routing.",
+      "status": "completed",
+      "journal_ref": ".jules/journals/2026-07-24T08-00-00Z.json"
+    },
+    {
+      "step_number": 5,
+      "timestamp_utc": "2026-07-24T08:40:00Z",
+      "title": "Implement dependency-scoped cancellation and orchestrator notify/relay mechanisms",
+      "summary": "Implemented dependency-scoped transitive closure cancellation in WorkflowEngine. Created single state-transition notifications (COMPLETED, FAILED, AWAITING_USER_FEEDBACK, PAUSED) and worker-to-orchestrator feedback relay loops with lock-based turn serialization per orchestrator session. Fixed session activity tracking to store full Activity JSON payloads.",
+      "status": "completed",
+      "journal_ref": ".jules/journals/2026-07-24T08-40-00Z.json"
     }
   ]
 }

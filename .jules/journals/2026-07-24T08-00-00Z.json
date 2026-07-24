@@ -1,0 +1,53 @@
+{
+  "step_number": 4,
+  "timestamp_utc": "2026-07-24T08:00:00Z",
+  "title": "Consolidate plan execution onto WorkflowEngine and retire System B",
+  "task_summary": "Consolidate two non-integrated execution systems onto System A (WorkflowEngine + AgentCoordinator) with persistence, retries, and dependency-aware parallelism. Retire the legacy System B's standalone execution and polling loop.",
+  "status": "completed",
+  "previous_step_review": {
+    "reviewed_step": 3,
+    "checked": "src/core/account_pool.py, src/core/coordinator.py, src/clients/local_db.py, supabase/schema_local.sql, src/core/config_loader.py, src/api/jules_accounts.py",
+    "issues_found": [],
+    "fixes_applied": []
+  },
+  "files_changed": [
+    {"path": "src/models/workflow.py", "change": "Widen context type to dict[str, Any] and added assign_to, prompt_id, exit_criteria, and execution_mode fields."},
+    {"path": "supabase/schema_local.sql", "change": "Added assign_to, prompt_id, exit_criteria to agent_tasks table, and execution_mode to workflows table."},
+    {"path": "src/clients/local_db.py", "change": "Updated SQLite schema definition and added table migrations in _migrate_tables for the new fields."},
+    {"path": "src/core/plan_executor.py", "change": "Re-implemented parse_plan() to produce Workflow/AgentTask objects and translate string dependency references to UUID depends_on list. Retired legacy raw execution loops."},
+    {"path": "src/mcp/server.py", "change": "Refactored _get_jules() to resolve enabled accounts from DB/KeyVault directly and removed legacy plan_executor dependency."},
+    {"path": "src/core/merge_review.py", "change": "Updated run_review_session to use JulesClient directly with a clean, localized polling loop instead of retired plan_executor helpers."},
+    {"path": "src/core/auto_mode.py", "change": "Replaced imported get_jules_key with a clean, localized version utilizing Database and KeyVault."},
+    {"path": "src/api/server.py", "change": "Refactored _resume_polling and _resume_pending_tasks to use local polling and GitHubClient helpers, and updated _daily_reset_loop to update DB sessions_today directly."},
+    {"path": "src/cli.py", "change": "Updated retired get_jules_key import to reference core.auto_mode instead."},
+    {"path": "src/clients/github.py", "change": "Added create_branch_from_ref and get_default_branch_sha helper methods to GitHubClient."},
+    {"path": "src/core/coordinator.py", "change": "Updated run_task to acquire accounts with role/assign_to constraints, create branches dynamically via GitHubClient, and generate prompts using prompt_builder.build_session_prompt() for JDOCS compliance."},
+    {"path": "src/core/account_pool.py", "change": "Enhanced acquire() to enforce hard assign_to constraints matching against account name or label."},
+    {"path": "src/api/execute.py", "change": "Completely rewrote the execute_plan endpoint to leverage WorkflowEngine/AgentCoordinator (System A) with persistence, database updates, and correct integration branch/PR creation on completion."},
+    {"path": "dryrun/test_full_workflow.py", "change": "Updated test_plan_parser assertions to support UUID-based depends_on and Pydantic Workflow objects."},
+    {"path": "dryrun/test_gaps.py", "change": "Aligned gap tests with retired plan_executor functions, Pydantic AgentTask models, and localized API routing."}
+  ],
+  "assumptions_verified": [
+    {"assumption": "Retire legacy plan_executor loop entirely", "verification": "Confirmed with user; retired buggy get_jules_key and poll_session_status, repointed other files to clean local or client-based implementations.", "result": "confirmed"},
+    {"assumption": "Add branch creation to WorkflowEngine", "verification": "Confirmed with user; implemented create_branch_from_ref on GitHubClient and called it dynamically from AgentCoordinator.", "result": "confirmed"},
+    {"assumption": "JDOCS context support in coordinator", "verification": "Confirmed with user; switched AgentCoordinator prompt generation to use build_session_prompt(), utilizing its standard JDOCS master instructions.", "result": "confirmed"},
+    {"assumption": "Hard gating of assign_to", "verification": "Confirmed with user; enforced strict assign_to constraints raising AccountPoolExhausted with no fallback if not met.", "result": "confirmed"}
+  ],
+  "decisions": [
+    {"decision": "Implement localized polling/key helpers in non-workflow subsystems", "reasoning": "Insulates subsystems like server recovery, daily reset, auto-mode, and merge review from plan_executor removal while avoiding changing their scoped high-level business logic."}
+  ],
+  "self_review": {
+    "passes_completed": 1,
+    "checked": "All modified modules, schema files, test suite execution results, and import structures",
+    "changes_made": [],
+    "deferred_from_review": []
+  },
+  "blockers": [],
+  "deferred": [],
+  "tests": {
+    "suite_result": "pass",
+    "new_tests_added": [],
+    "pre_existing_failures_noted": []
+  },
+  "notes_for_next_step": "System B execution has been completely retired. All plan execution now runs consistently via the robust, role-aware, persistent System A engine."
+}

@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS workflows (
     name TEXT NOT NULL,
     description TEXT DEFAULT '',
     status TEXT DEFAULT 'created',
+    execution_mode TEXT DEFAULT 'sequential',
     created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT DEFAULT (datetime('now'))
 );
@@ -51,6 +52,10 @@ CREATE TABLE IF NOT EXISTS agent_tasks (
     pr_url TEXT NOT NULL DEFAULT '',
     context TEXT NOT NULL DEFAULT '{}',
     error TEXT NOT NULL DEFAULT '',
+    assign_to TEXT NOT NULL DEFAULT '',
+    prompt_id TEXT,
+    exit_criteria TEXT NOT NULL DEFAULT '',
+    orchestrator_session_id TEXT NOT NULL DEFAULT '',
     created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT DEFAULT (datetime('now'))
 );
@@ -169,6 +174,7 @@ CREATE TABLE IF NOT EXISTS plans (
 );
 
 CREATE INDEX IF NOT EXISTS idx_agent_tasks_workflow ON agent_tasks(workflow_id);
+CREATE INDEX IF NOT EXISTS idx_agent_tasks_orchestrator ON agent_tasks(orchestrator_session_id);
 CREATE INDEX IF NOT EXISTS idx_agent_tasks_status ON agent_tasks(status);
 CREATE INDEX IF NOT EXISTS idx_context_messages_to ON context_messages(to_task_id);
 CREATE INDEX IF NOT EXISTS idx_merge_queue_task ON merge_queue(task_id);

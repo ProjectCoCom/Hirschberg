@@ -56,6 +56,7 @@ class WorkflowEngine:
         pending: dict[UUID, AgentTask] = {t.id: t for t in workflow.tasks}
         running: dict[UUID, asyncio.Task] = {}
         completed: set[UUID] = set()
+        has_failures = False
 
         try:
             while pending or running:
@@ -74,16 +75,28 @@ class WorkflowEngine:
 
                 for future in done:
                     result: AgentTask = future.result()
-                    del running[result.id]
+                    running.pop(result.id, None)
 
                     if result.status == TaskStatus.FAILED:
-                        workflow.status = WorkflowStatus.FAILED
-                        await self._cancel_remaining(running)
-                        return workflow
+                        has_failures = True
+                        # Find all transitive dependents (full closure propagation)
+                        dependents = _get_transitive_dependents(result.id, workflow.tasks)
+                        for dep_id in dependents:
+                            if dep_id in pending:
+                                dep_task = pending[dep_id]
+                                dep_task.status = TaskStatus.CANCELLED
+                                dep_task.error = f"Dependency failed: parent task {result.id} failed."
+                                await self._store.save_task_state(dep_id, dep_task.model_dump(mode="json"))
+                                del pending[dep_id]
+                            if dep_id in running:
+                                running[dep_id].cancel()
+                    else:
+                        completed.add(result.id)
 
-                    completed.add(result.id)
-
-            workflow.status = WorkflowStatus.COMPLETED
+            if has_failures:
+                workflow.status = WorkflowStatus.FAILED
+            else:
+                workflow.status = WorkflowStatus.COMPLETED
 
         except Exception as exc:
             workflow.status = WorkflowStatus.FAILED
@@ -106,3 +119,15 @@ class WorkflowEngine:
         if running:
             await asyncio.gather(*running.values(), return_exceptions=True)
         running.clear()
+
+
+def _get_transitive_dependents(failed_task_id: UUID, tasks: list[AgentTask]) -> set[UUID]:
+    dependents = set()
+    queue = [failed_task_id]
+    while queue:
+        current = queue.pop(0)
+        for t in tasks:
+            if current in t.depends_on and t.id not in dependents:
+                dependents.add(t.id)
+                queue.append(t.id)
+    return dependents

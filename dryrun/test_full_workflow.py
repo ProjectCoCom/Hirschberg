@@ -53,8 +53,7 @@ async def test_plan_parser():
     from core.plan_executor import parse_plan
     plan = parse_plan(SAMPLE_PLAN, "iceyxsm", "TestRepo")
     assert len(plan.tasks) == 3
-    assert plan.tasks[0].id == "agent-1"
-    assert plan.tasks[2].dependencies == ["agent-1", "agent-2"]
+    assert len(plan.tasks[2].depends_on) == 2
     assert plan.execution_mode == "hybrid"
     print("[PASS] plan_parser: parsed 3 tasks with dependencies")
 

@@ -22,6 +22,13 @@ class ContextStore:
         rows = await self._db.select("agent_tasks", filters={"id": str(task_id)})
         return rows[0] if rows else {}
 
+    async def save_task_orchestrator(self, task_id: UUID, orchestrator_session_id: str) -> None:
+        await self._db.update("agent_tasks", {"orchestrator_session_id": orchestrator_session_id}, {"id": str(task_id)})
+
+    async def get_task_orchestrator(self, task_id: UUID) -> str | None:
+        rows = await self._db.select("agent_tasks", filters={"id": str(task_id)})
+        return rows[0].get("orchestrator_session_id") if rows else None
+
     async def save_result(self, task_id: UUID, result: dict) -> None:
         await self._db.upsert(
             "context_messages",
