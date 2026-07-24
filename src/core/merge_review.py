@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import asyncio
 import httpx
 
-from core.plan_executor import create_jules_session, poll_session_status
+from clients.jules import JulesClient
+from models.jules import SessionState
 
 
 async def merge_branches(owner: str, repo: str, branches: list[str], target_branch: str, token: str) -> dict:
@@ -54,15 +56,42 @@ async def run_review_session(
         "5. Create a REVIEW.md summarizing what was done and any issues found"
     )
 
-    session_id = await create_jules_session(
-        prompt=prompt, owner=owner, repo=repo,
-        branch=integration_branch, jules_key=jules_key,
-    )
-    if not session_id:
-        return {"status": "failed", "error": "Could not create review session"}
+    client = JulesClient(jules_key)
+    try:
+        session = await client.create_session(
+            prompt=prompt,
+            source=f"sources/github/{owner}/{repo}",
+            branch=integration_branch,
+            title="JAT-AI: Review Session",
+        )
+        session_id = session.id
+    except Exception as e:
+        await client.close()
+        return {"status": "failed", "error": f"Could not create review session: {e}"}
 
-    result = await poll_session_status(session_id, jules_key, timeout_minutes)
-    return {"status": result.get("state", "UNKNOWN"), "session_id": session_id, "data": result}
+    deadline = asyncio.get_event_loop().time() + (timeout_minutes * 60)
+    result_data = {}
+    try:
+        while asyncio.get_event_loop().time() < deadline:
+            try:
+                session = await client.get_session(session_id)
+                if session.state in (SessionState.COMPLETED, SessionState.FAILED):
+                    result_data = {
+                        "state": str(session.state),
+                        "outputs": [{"pull_request": {"url": o.pull_request.url}} for o in session.outputs if o.pull_request] if session.outputs else []
+                    }
+                    break
+                if session.state == SessionState.AWAITING_PLAN_APPROVAL:
+                    await client.approve_plan(session_id)
+            except Exception:
+                pass
+            await asyncio.sleep(15)
+        else:
+            result_data = {"state": "TIMEOUT"}
+    finally:
+        await client.close()
+
+    return {"status": result_data.get("state", "UNKNOWN"), "session_id": session_id, "data": result_data}
 
 
 async def cleanup_branches(owner: str, repo: str, branches: list[str], token: str) -> dict[str, bool]:

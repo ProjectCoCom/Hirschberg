@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from api.chat import _call_provider, _get_enabled_keys, _decrypt_key, MODE_SYSTEM_PROMPTS
-from core.plan_executor import parse_plan, get_jules_key
+from core.plan_executor import parse_plan
 from core.repomix import analyze_repo, get_cached_xml
 from config import load_settings
 
@@ -84,6 +84,31 @@ async def _planning_phase(config: AutoModeConfig, state: AutoModeState, repo_xml
         state.status = "failed"
         state.errors.append(f"Planning failed: {e}")
         return None
+
+
+async def get_jules_key() -> str | None:
+    from db import db
+    from core.ai_interface import KeyVault
+    from config import load_settings
+    try:
+        rows = await db.select("accounts")
+    except Exception:
+        return None
+    enabled = [r for r in rows if r.get("enabled", True)]
+    if not enabled:
+        return None
+    best = min(enabled, key=lambda r: r.get("sessions_today", 0))
+    daily_limit = best.get("max_daily_tasks", 300)
+    if best.get("sessions_today", 0) >= daily_limit:
+        return None
+    encrypted = best.get("api_key_encrypted", "")
+    if not encrypted:
+        return None
+    vault = KeyVault(load_settings().encryption_key)
+    try:
+        return vault.decrypt(encrypted)
+    except Exception:
+        return encrypted
 
 
 async def run_auto_mode(config: AutoModeConfig, state: AutoModeState) -> AutoModeState:

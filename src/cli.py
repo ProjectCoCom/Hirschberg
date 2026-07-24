@@ -246,7 +246,7 @@ def main() -> None:
 
     api_key = getattr(args, "api_key", None)
     if not api_key:
-        from core.plan_executor import get_jules_key
+        from core.auto_mode import get_jules_key
         api_key = asyncio.run(get_jules_key())
 
     if not api_key:

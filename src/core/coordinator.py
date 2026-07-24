@@ -46,7 +46,7 @@ class AgentCoordinator:
     async def run_task(self, task: AgentTask) -> AgentTask:
         source = f"sources/github/{task.repo_owner}/{task.repo_name}"
         from core.account_pool import AccountRole
-        account = self._pool.acquire(source, role=AccountRole.WORKER)
+        account = self._pool.acquire(source, role=AccountRole.WORKER, assign_to=task.assign_to)
         task.account_id = account.id
         task.status = TaskStatus.WAITING
 
@@ -54,12 +54,38 @@ class AgentCoordinator:
             dep_results = await self.wait_for_dependencies(task)
             task.status = TaskStatus.RUNNING
 
+            # Dynamically create Git branch on GitHub if token is available
+            from clients.github import GitHubClient
+            from config import load_settings
+            settings = load_settings()
+            if settings.github_token:
+                gh_client = GitHubClient(settings.github_token)
+                try:
+                    base_sha = await gh_client.get_default_branch_sha(task.repo_owner, task.repo_name)
+                    if base_sha:
+                        await gh_client.create_branch_from_ref(task.repo_owner, task.repo_name, task.branch, base_sha)
+                except Exception as e:
+                    log.warning("branch_creation_failed_ignored", error=str(e))
+                finally:
+                    await gh_client.close()
+
             client = self._pool.get_client(account.id)
 
-            prompt = task.prompt
-            if dep_results:
+            dep_contexts = []
+            if task.depends_on:
                 dep_contexts = await self._store.get_dependency_context(task.depends_on)
-                prompt = _build_prompt_with_context(task.prompt, dep_results, dep_contexts)
+
+            from core.prompt_builder import build_session_prompt
+            prompt = build_session_prompt(
+                task=task.prompt,
+                dependency_context=dep_contexts,
+                plan_tier=account.plan,
+                daily_used=account.daily_tasks_used,
+                daily_limit=account.limits["daily_tasks"],
+                concurrent_used=account.active_sessions,
+                concurrent_limit=account.limits["concurrent"],
+                account_name=account.name,
+            )
 
             session = await client.create_session(
                 prompt=prompt,

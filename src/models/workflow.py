@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import StrEnum
+from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -37,8 +38,11 @@ class AgentTask(BaseModel):
     status: TaskStatus = TaskStatus.PENDING
     depends_on: list[UUID] = []
     pr_url: str = ""
-    context: dict[str, str] = {}
+    context: dict[str, Any] = {}
     error: str = ""
+    assign_to: str = ""
+    prompt_id: str | None = None
+    exit_criteria: str = ""
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
@@ -49,5 +53,6 @@ class Workflow(BaseModel):
     description: str = ""
     status: WorkflowStatus = WorkflowStatus.CREATED
     tasks: list[AgentTask] = []
+    execution_mode: str = "sequential"
     created_at: datetime | None = None
     updated_at: datetime | None = None

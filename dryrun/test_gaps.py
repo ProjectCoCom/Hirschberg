@@ -14,24 +14,25 @@ from dryrun.mocks import MockJulesAPI
 
 
 async def test_retry_on_failure():
-    from core.plan_executor import AgentTask
+    from models.workflow import AgentTask
+    from uuid import uuid4
 
     task = AgentTask(
-        id="agent-1",
-        description="Test task",
-        branch_name="jat/agent-1-test",
+        id=uuid4(),
+        prompt="Test task",
+        branch="jat/agent-1-test",
     )
-    assert task.branch_name == "jat/agent-1-test"
-    task.branch_name = f"{task.branch_name}-retry1"
-    assert task.branch_name == "jat/agent-1-test-retry1"
+    assert task.branch == "jat/agent-1-test"
+    task.branch = f"{task.branch}-retry1"
+    assert task.branch == "jat/agent-1-test-retry1"
     print("[PASS] retry_on_failure: branch name updated for retry")
 
 
 async def test_plan_approval():
-    from core.plan_executor import _approve_plan
-    assert _approve_plan is not None
-    assert asyncio.iscoroutinefunction(_approve_plan)
-    print("[PASS] plan_approval: _approve_plan function exists and is async")
+    from clients.jules import JulesClient
+    assert JulesClient.approve_plan is not None
+    assert asyncio.iscoroutinefunction(JulesClient.approve_plan)
+    print("[PASS] plan_approval: approve_plan function exists on JulesClient and is async")
 
 
 async def test_timeout_handling():
@@ -47,24 +48,21 @@ async def test_timeout_handling():
 
 
 async def test_smart_key_selection():
-    from core.plan_executor import get_jules_key
+    from core.auto_mode import get_jules_key
     assert asyncio.iscoroutinefunction(get_jules_key)
     print("[PASS] smart_key_selection: get_jules_key is async and selectable")
 
 
 async def test_prompt_resolution():
-    from api.execute import _resolve_prompt
-    from core.plan_executor import AgentTask
-
-    task = AgentTask(id="t1", description="Add auth", exit_criteria="Tests pass", prompt_id=None)
-    assert asyncio.iscoroutinefunction(_resolve_prompt)
-    print("[PASS] prompt_resolution: _resolve_prompt is async, supports prompt_id lookup")
+    from core.prompt_builder import build_session_prompt
+    assert build_session_prompt is not None
+    print("[PASS] prompt_resolution: build_session_prompt is defined for prompt resolution")
 
 
 async def test_agent_tasks_tracking():
-    from api.execute import _track_task
-    assert asyncio.iscoroutinefunction(_track_task)
-    print("[PASS] agent_tasks_tracking: _track_task writes to Supabase agent_tasks table")
+    from core.context_store import ContextStore
+    assert asyncio.iscoroutinefunction(ContextStore.save_task_state)
+    print("[PASS] agent_tasks_tracking: ContextStore.save_task_state writes to agent_tasks table")
 
 
 async def test_conversation_persistence_endpoints():

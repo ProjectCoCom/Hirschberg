@@ -122,6 +122,37 @@ class GitHubClient:
         self._raise_on_error(response)
         return response.json()
 
+    async def create_branch_from_ref(
+        self, owner: str, repo: str, branch_name: str, sha: str
+    ) -> bool:
+        url = f"/repos/{owner}/{repo}/git/refs"
+        body = {"ref": f"refs/heads/{branch_name}", "sha": sha}
+        try:
+            res = await self._client.post(url, json=body)
+            if res.status_code == 201:
+                return True
+            if res.status_code == 422:
+                # Branch already exists — update it to the latest SHA
+                update_url = f"/repos/{owner}/{repo}/git/refs/heads/{branch_name}"
+                update_res = await self._client.patch(update_url, json={"sha": sha, "force": True})
+                return update_res.status_code == 200
+        except Exception as e:
+            log.warning("branch_creation_failed", owner=owner, repo=repo, branch=branch_name, error=str(e))
+        return False
+
+    async def get_default_branch_sha(self, owner: str, repo: str) -> str | None:
+        try:
+            res = await self._client.get(f"/repos/{owner}/{repo}")
+            if res.status_code != 200:
+                return None
+            default_branch = res.json().get("default_branch", "main")
+            ref_res = await self._client.get(f"/repos/{owner}/{repo}/git/ref/heads/{default_branch}")
+            if ref_res.status_code != 200:
+                return None
+            return ref_res.json()["object"]["sha"]
+        except Exception:
+            return None
+
     async def create_repo(
         self,
         name: str,
