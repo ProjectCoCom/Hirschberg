@@ -23,11 +23,15 @@ class AccountCreate(BaseModel):
     name: str
     api_key: str
     plan_tier: str = "free"
+    role: str = "worker"
+    label: str = ""
 
 
 class AccountPatch(BaseModel):
     enabled: bool | None = None
     plan_tier: str | None = None
+    role: str | None = None
+    label: str | None = None
 
 
 @router.get("/api/jules/accounts")
@@ -47,6 +51,8 @@ async def list_accounts():
             "name": r.get("name", ""),
             "api_key_masked": masked,
             "plan_tier": tier,
+            "role": r.get("role", "worker"),
+            "label": r.get("label", ""),
             "daily_limit": limits["daily"],
             "concurrent_limit": limits["concurrent"],
             "sessions_today": r.get("sessions_today", 0),
@@ -66,6 +72,8 @@ async def create_account(body: AccountCreate):
         "api_key_encrypted": encrypted,
         "plan_tier": body.plan_tier,
         "plan": body.plan_tier,
+        "role": body.role,
+        "label": body.label,
         "enabled": True,
         "sessions_today": 0,
         "daily_limit": limits["daily"],
@@ -87,6 +95,10 @@ async def patch_account(account_id: str, body: AccountPatch):
         if body.plan_tier not in PLAN_LIMITS:
             raise HTTPException(400, f"Invalid plan tier: {body.plan_tier}")
         updates["plan_tier"] = body.plan_tier
+    if body.role is not None:
+        updates["role"] = body.role
+    if body.label is not None:
+        updates["label"] = body.label
     if not updates:
         return {"ok": True}
     try:

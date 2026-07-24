@@ -1,0 +1,71 @@
+INFO:     Will watch for changes in these directories: ['/app']
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [1672391] using WatchFiles
+INFO:     Started server process [1672396]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:56744 - "GET /api/setup HTTP/1.1" 200 OK
+
+  VITE v6.4.2  ready in 337 ms
+
+  ➜  Local:   http://localhost:3000/
+  ➜  Network: use --host to expose
+(B)0[?1049h[1;24r[m[4l[?1h=[?1h=[39;49m[39;49m[37m[40m[1;1H                                                                                [2;1H                                                                                [3;1H                                                                                [4;1H                                                                                [5;1H                                                                                [6;1H                                                                                [7;1H                                                                                [8;1H                                                                                [9;1H                                                                                [10;1H                                                                                [11;1H                                                                                [12;1H                                                                                [13;1H                                                                                [14;1H                                                                                [15;1H                                                                                [16;1H                                                                                [17;1H                                                                                [18;1H                                                                                [19;1H                                                                                [20;1H                                                                                [21;1H                                                                                [22;1H                                                                                [23;1H                                                                                [24;1H                                                                                [1@[37m[40m [H[m[39;49m[37m[40m[39;49m[37m[40m                                                                                [2;1H                                                                                [3;1H                                                                                [4;1H                                                                                [5;1H                                                                                [6;1H                                                                                [7;1H                                                                                [8;1H                                                                                [9;1H                                                                                [10;1H                                                                                [11;1H                                                                                [12;1H                                                                                [13;1H                                                                                [14;1H                                                                                [15;1H                                                                                [16;1H                                                                                [17;1H                                                                                [18;1H                                                                                [19;1H                                                                                [20;1H                                                                                [21;1H                                                                                [22;1H                                                                                [23;1H                                                                                [24;1H                                                                                [1@ [H[39;49m[m[22d[93m[44mGetting http://localhost:3000/                                                  [22;31H[39;49m[m[93m[44mLooking up localhost:3000     [26G[39;49m[m[93m[44mMaking HTTP connection to localhost:3000[39;49m[m[24d[24;1H[?1049l[?1l>WARNING:  WatchFiles detected changes in '.venv/lib/python3.12/site-packages/playwright/async_api/_context_manager.py', '.venv/lib/python3.12/site-packages/greenlet/__init__.py', '.venv/lib/python3.12/site-packages/playwright/async_api/_generated.py', '.venv/lib/python3.12/site-packages/playwright/async_api/__init__.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [1672396]
+INFO:     Started server process [1755471]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:37416 - "GET /api/terminals HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37424 - "GET /api/conversations HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37436 - "GET /api/providers HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37444 - "GET /api/github/repos HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37452 - "GET /api/settings/summarizer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37458 - "GET /api/deck/tentacles HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37464 - "GET /api/canvas/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37472 - "GET /api/setup HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37474 - "GET /api/codex/usage HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37486 - "GET /api/claude/usage HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37490 - "GET /api/terminal-snapshots HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37492 - "GET /api/github/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37502 - "GET /api/terminals HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37516 - "GET /api/settings/summarizer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37522 - "GET /api/providers HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37538 - "GET /api/deck/tentacles HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37540 - "GET /api/conversations HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37552 - "GET /api/github/repos HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37558 - "GET /api/canvas/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37568 - "GET /api/setup HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37572 - "GET /api/terminal-snapshots HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37582 - "GET /api/terminals HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37590 - "GET /api/analytics/usage-heatmap?scope=all HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37598 - "GET /api/monitor/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37602 - "GET /api/terminals HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37606 - "PATCH /api/ui-state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54090 - "GET /api/providers HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54104 - "GET /api/providers HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54118 - "PATCH /api/ui-state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54122 - "GET /api/jules/accounts HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54138 - "GET /api/jules/accounts HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [1755471]
+INFO:     Stopping reloader process [1672391]
+
+  ========================================
+   JAT-AI - Starting...
+  ========================================
+
+[BACKEND] Starting FastAPI on port 8000...
+[BACKEND] Waiting for server...
+[BACKEND] Ready on http://localhost:8000
+[FRONTEND] Starting Vite on port 3000...
+[FRONTEND] Ready on http://localhost:3000
+
+  ========================================
+   JAT-AI running at http://localhost:3000
+   Press Ctrl+C to stop
+  ========================================

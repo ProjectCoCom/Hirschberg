@@ -16,6 +16,14 @@
       "summary": "Replaced Supabase with a fully-functional local SQLite database. No Supabase configuration, client, or dependency remains anywhere in the codebase. Implemented auto JSON serialization/deserialization for SQLite, unique task_id constraint for context_messages, and an in-process pub/sub mechanism to replace Supabase realtime features.",
       "status": "completed",
       "journal_ref": ".jules/journals/2026-07-24T06-40-00Z.json"
+    },
+    {
+      "step_number": 3,
+      "timestamp_utc": "2026-07-24T07:20:00Z",
+      "title": "Account roles + retire ai_providers planning",
+      "summary": "Added role ('orchestrator', 'worker', 'qa') and label fields to Jules accounts, enforcing role during acquisition. Overhauled config loader to read accounts directly from the SQLite database with a one-time migration fallback. Exposed account roles/labels in list, create, and patch backend endpoints and the React Dashboard UI.",
+      "status": "completed",
+      "journal_ref": ".jules/journals/2026-07-24T07-20-00Z.json"
     }
   ]
 }

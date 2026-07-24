@@ -12,6 +12,12 @@ class Database:
         self._mode = "local"
         self._local = LocalDB(local_path)
 
+    def select_sync(self, table: str, filters: dict[str, Any] | None = None, columns: str | None = None, order_by: str | None = None) -> list[dict]:
+        return self._local.select_sync(table, filters, columns, order_by)
+
+    def insert_sync(self, table: str, data: dict[str, Any]) -> dict:
+        return self._local.insert_sync(table, data)
+
     async def select(self, table: str, filters: dict[str, Any] | None = None, columns: str | None = None, order_by: str | None = None) -> list[dict]:
         return await self._local.select(table, filters, columns, order_by)
 

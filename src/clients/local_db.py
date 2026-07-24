@@ -63,6 +63,9 @@ class LocalDB:
                 name TEXT NOT NULL,
                 api_key_encrypted TEXT,
                 plan TEXT NOT NULL DEFAULT 'free',
+                plan_tier TEXT DEFAULT 'free',
+                role TEXT NOT NULL DEFAULT 'worker',
+                label TEXT NOT NULL DEFAULT '',
                 max_concurrent INTEGER DEFAULT 3,
                 max_daily_tasks INTEGER DEFAULT 15,
                 enabled INTEGER DEFAULT 1,
@@ -250,14 +253,28 @@ class LocalDB:
             )
         conn.commit()
 
+    def _migrate_tables(self) -> None:
+        conn = self._conn
+        assert conn is not None
+        cursor = conn.execute("PRAGMA table_info(accounts)")
+        columns = [row["name"] for row in cursor.fetchall()]
+        if "plan_tier" not in columns:
+            conn.execute("ALTER TABLE accounts ADD COLUMN plan_tier TEXT DEFAULT 'free'")
+        if "role" not in columns:
+            conn.execute("ALTER TABLE accounts ADD COLUMN role TEXT NOT NULL DEFAULT 'worker'")
+        if "label" not in columns:
+            conn.execute("ALTER TABLE accounts ADD COLUMN label TEXT NOT NULL DEFAULT ''")
+        conn.commit()
+
     def _init_tables(self) -> None:
         conn = self._conn
         assert conn is not None
         conn.executescript(self._schema())
         conn.commit()
+        self._migrate_tables()
         self._seed_prompts()
 
-    async def select(
+    def select_sync(
         self,
         table: str,
         filters: dict[str, Any] | None = None,
@@ -278,7 +295,16 @@ class LocalDB:
         rows = cursor.fetchall()
         return [_deserialize_row(row) for row in rows]
 
-    async def insert(self, table: str, data: dict[str, Any]) -> dict:
+    async def select(
+        self,
+        table: str,
+        filters: dict[str, Any] | None = None,
+        columns: str | None = None,
+        order_by: str | None = None,
+    ) -> list[dict]:
+        return self.select_sync(table, filters, columns, order_by)
+
+    def insert_sync(self, table: str, data: dict[str, Any]) -> dict:
         conn = self._get_conn()
         if "id" not in data and table != "app_settings":
             data["id"] = str(uuid.uuid4())
@@ -294,6 +320,12 @@ class LocalDB:
         # Notify
         self._notify(table, "INSERT", data)
         return data
+
+    async def insert(self, table: str, data: dict[str, Any]) -> dict:
+        res = self.insert_sync(table, data)
+        # Notify
+        self._notify(table, "INSERT", data)
+        return res
 
     async def upsert(self, table: str, data: dict[str, Any]) -> dict:
         filters = {}

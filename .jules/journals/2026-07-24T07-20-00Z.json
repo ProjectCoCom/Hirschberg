@@ -1,0 +1,44 @@
+{
+  "step_number": 3,
+  "timestamp_utc": "2026-07-24T07:20:00Z",
+  "title": "Account roles + retire ai_providers planning",
+  "task_summary": "Add a role field to Jules accounts and stop routing plan construction through the ai_providers pool.",
+  "status": "completed",
+  "previous_step_review": {
+    "reviewed_step": 2,
+    "checked": "All database changes, schema, in-process pub/sub, config.json, pyproject.toml",
+    "issues_found": ["The SQLite accounts schema was missing a plan_tier column, which caused create_account and config migration seeder insertions to fail with no column named plan_tier."],
+    "fixes_applied": ["Added plan_tier column to schema_local.sql, _schema in local_db.py, and implemented automatic table migrations checking/adding plan_tier if it is missing in existing on-disk database files."]
+  },
+  "files_changed": [
+    {"path": "src/core/account_pool.py", "change": "Added AccountRole StrEnum, role/label fields to Account, and mapped role/label in AccountPool.status() and AccountPool.acquire() role constraint enforcement."},
+    {"path": "src/core/coordinator.py", "change": "Enforced AccountRole.WORKER inside run_task() account acquisition."},
+    {"path": "src/clients/local_db.py", "change": "Added role/label/plan_tier fields to schema definition and implemented dynamic ALTER TABLE migrations to safely support on-disk updates. Added select_sync and insert_sync helper methods."},
+    {"path": "src/clients/database.py", "change": "Exposed select_sync and insert_sync on Database class wrapper."},
+    {"path": "supabase/schema_local.sql", "change": "Updated schema_local.sql to mirror the new SQLite table fields (role, label, plan_tier)."},
+    {"path": "src/core/config_loader.py", "change": "Overhauled build_jules_pool to load accounts synchronously from the accounts database table with automated config.json fallback/migration seeding if the table is empty."},
+    {"path": "src/api/jules_accounts.py", "change": "Exposed role and label fields in create, patch, and list backend API endpoints and models."},
+    {"path": "dashboard/src/components/apis/JulesAccountsPanel.tsx", "change": "Added role select options (worker, orchestrator, qa) and label text inputs to account creation, and displayed role/label on card list details."}
+  ],
+  "assumptions_verified": [
+    {"assumption": "Standard tasks run by coordinator require worker accounts only", "verification": "Confirmed with user; updated run_task() to always acquire with WORKER role.", "result": "confirmed"},
+    {"assumption": "Database load fallback on build_jules_pool", "verification": "Confirmed with user; implemented one-time migration to seed accounts from config.json to database if database accounts table is empty.", "result": "confirmed"}
+  ],
+  "decisions": [
+    {"decision": "Implement SQLite dynamic ALTER TABLE migrations for role, label, and plan_tier", "reasoning": "This makes database startup completely resilient to pre-existing on-disk databases that may be missing the new columns, preventing errors and data loss on column mismatch."}
+  ],
+  "self_review": {
+    "passes_completed": 1,
+    "checked": "All modified files, compilation flags, test suit coverage, and React frontend panel code",
+    "changes_made": [],
+    "deferred_from_review": []
+  },
+  "blockers": [],
+  "deferred": [],
+  "tests": {
+    "suite_result": "pass",
+    "new_tests_added": ["test_account_roles_filtered_acquisition", "test_build_jules_pool_migration"],
+    "pre_existing_failures_noted": []
+  },
+  "notes_for_next_step": "Step 3 is fully completed and thoroughly verified. Accounts can now have orchestrator, worker, and qa roles set and filtered perfectly."
+}
