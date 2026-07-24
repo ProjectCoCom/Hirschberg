@@ -316,6 +316,9 @@ class LocalDB:
 
         conn.execute(f"INSERT INTO {table} ({cols}) VALUES ({placeholders})", list(serialized_data.values()))
         conn.commit()
+
+        # Notify
+        self._notify(table, "INSERT", data)
         return data
 
     async def insert(self, table: str, data: dict[str, Any]) -> dict:
