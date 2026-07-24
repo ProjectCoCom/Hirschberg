@@ -3,14 +3,13 @@ from __future__ import annotations
 import json
 import sys
 
-from clients.supabase import SupabaseClient
+from db import db
 
 
 async def run_providers(settings, args) -> None:
     from core.ai_interface import AIInterface, KeyVault
     from clients.ai_providers import AIProviderPool
 
-    db = SupabaseClient(settings.supabase_url, settings.supabase_key)
     vault = KeyVault(settings.encryption_key)
     pool = AIProviderPool()
     ai = AIInterface(db, pool, vault)
@@ -44,7 +43,6 @@ async def run_chat(settings, args) -> None:
     from core.templates import get_template
     from clients.ai_providers import AIProviderPool
 
-    db = SupabaseClient(settings.supabase_url, settings.supabase_key)
     vault = KeyVault(settings.encryption_key)
     pool = AIProviderPool()
     ai = AIInterface(db, pool, vault)
@@ -96,7 +94,6 @@ async def run_decompose(settings, args) -> None:
     from core.decomposer import decompose_task
     from clients.ai_providers import AIProviderPool
 
-    db = SupabaseClient(settings.supabase_url, settings.supabase_key)
     vault = KeyVault(settings.encryption_key)
     pool = AIProviderPool()
     ai = AIInterface(db, pool, vault)

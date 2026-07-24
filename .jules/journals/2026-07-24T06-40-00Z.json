@@ -1,0 +1,56 @@
+{
+  "step_number": 2,
+  "timestamp_utc": "2026-07-24T06:40:00Z",
+  "title": "Remove Supabase, complete local database functionality",
+  "task_summary": "Replace Supabase with a fully-functional local SQLite database. Ensure no Supabase configuration, client, or dependency remains anywhere in the codebase.",
+  "status": "completed",
+  "previous_step_review": {
+    "reviewed_step": 1,
+    "checked": ".jules/refactor/v1/1.md and changelog.json",
+    "issues_found": [],
+    "fixes_applied": []
+  },
+  "files_changed": [
+    {"path": "src/clients/local_db.py", "change": "Fully implemented all SQLite operations, table-for-table schema, auto JSON serialization/deserialization, and in-process pub/sub trigger notifications."},
+    {"path": "supabase/schema_local.sql", "change": "Created local SQLite schema translated from Postgres schema.sql."},
+    {"path": "src/clients/database.py", "change": "Simplified to wrap LocalDB as the only supported local mode, forwarding CRUD and subscribe/unsubscribe calls."},
+    {"path": "src/db.py", "change": "Cleaned up remote Supabase loading, initializing Database in local mode only."},
+    {"path": "src/clients/__init__.py", "change": "Removed SupabaseClient and exposed LocalDB and Database."},
+    {"path": "src/core/context_store.py", "change": "Replaced SupabaseClient type annotation with Database."},
+    {"path": "src/core/tracker.py", "change": "Modified subscription methods to use local in-process pub/sub on the Database instance."},
+    {"path": "src/core/config_loader.py", "change": "Removed unused get_supabase_settings helper function."},
+    {"path": "src/config.py", "change": "Removed supabase_url and supabase_key from BaseSettings schema."},
+    {"path": "src/api/chat.py", "change": "Removed Postgres-specific hex-prefix stripping from _decrypt_key."},
+    {"path": "src/api/server.py", "change": "Removed conditional supabase connected check for fetchedAt."},
+    {"path": "src/api/settings.py", "change": "Removed supabase settings payload parameters, environment variable updates, and masking."},
+    {"path": "src/mcp/server.py", "change": "Updated _get_db() helper to return local db instead of building Supabase client from env."},
+    {"path": "src/cli.py", "change": "Imported db from db and removed SupabaseClient instantiations."},
+    {"path": "src/cli_ai.py", "change": "Imported db from db and removed SupabaseClient instantiations."},
+    {"path": "config.example.json", "change": "Removed supabase configuration block entirely and updated database block to local_path only."},
+    {"path": ".env.example", "change": "Removed SUPABASE_URL and SUPABASE_KEY environment variables."},
+    {"path": "pyproject.toml", "change": "Removed supabase from project dependencies."},
+    {"path": "uv.lock", "change": "Updated dependency lock file to remove supabase and its transitive dependencies."},
+    {"path": "tests/test_local_db_refactor.py", "change": "Added comprehensive test suite covering connection pragmas, json roundtripping, upsert constraints, and tracker pub/sub."}
+  ],
+  "assumptions_verified": [
+    {"assumption": "The dashboard subscribes to Supabase realtime from browser", "verification": "Grepped for supabase in dashboard/src/ and verified no imports or usages of supabase realtime are active except for unused client setup", "result": "confirmed"},
+    {"assumption": "save_result() upserts context_messages by task_id", "verification": "Added task_id as UNIQUE constraint in context_messages schema and updated local_db's upsert to match task_id", "result": "confirmed"}
+  ],
+  "decisions": [
+    {"decision": "Handle JSON columns automatically in LocalDB", "reasoning": "Adding automatic dictionary/list json serialization on write, and automatic json deserialization on read for context, raw_data, metadata, depends_on, artifacts, etc. keeps application code completely unaware of SQLite's lack of native json/array columns and prevents caller breakage."}
+  ],
+  "self_review": {
+    "passes_completed": 1,
+    "checked": "All modified files, compiler checks, pytest results, and schema files",
+    "changes_made": [],
+    "deferred_from_review": []
+  },
+  "blockers": [],
+  "deferred": [],
+  "tests": {
+    "suite_result": "pass",
+    "new_tests_added": ["tests/test_local_db_refactor.py"],
+    "pre_existing_failures_noted": []
+  },
+  "notes_for_next_step": "Step 2 is completely resolved. The local SQLite database is fully operational, thoroughly tested, and completely independent of Supabase."
+}

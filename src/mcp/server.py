@@ -32,8 +32,8 @@ def _get_github():
 
 
 def _get_db():
-    from clients.supabase import SupabaseClient
-    return SupabaseClient(os.environ["SUPABASE_URL"], os.environ["SUPABASE_KEY"])
+    from db import db
+    return db
 
 
 @mcp.tool()

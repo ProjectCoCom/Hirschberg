@@ -4,7 +4,7 @@ from uuid import UUID
 
 import structlog
 
-from clients.supabase import SupabaseClient
+from clients.database import Database
 
 log = structlog.get_logger()
 
@@ -12,8 +12,8 @@ MAX_CONTEXT_CHARS = 4000
 
 
 class ContextStore:
-    def __init__(self, supabase: SupabaseClient) -> None:
-        self._db = supabase
+    def __init__(self, db: Database) -> None:
+        self._db = db
 
     async def save_task_state(self, task_id: UUID, state: dict) -> None:
         await self._db.upsert("agent_tasks", {"id": str(task_id), **state})

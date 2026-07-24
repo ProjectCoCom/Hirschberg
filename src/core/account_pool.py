@@ -19,6 +19,12 @@ class PlanTier(StrEnum):
     ULTRA = "ultra"
 
 
+class AccountRole(StrEnum):
+    ORCHESTRATOR = "orchestrator"
+    WORKER = "worker"
+    QA = "qa"
+
+
 PLAN_LIMITS: dict[PlanTier, dict[str, int]] = {
     PlanTier.FREE: {"daily_tasks": 15, "concurrent": 3},
     PlanTier.PRO: {"daily_tasks": 100, "concurrent": 15},
@@ -32,6 +38,8 @@ class Account:
     name: str = ""
     api_key: str = ""
     plan: PlanTier = PlanTier.FREE
+    role: AccountRole = AccountRole.WORKER
+    label: str = ""
     active_sessions: int = 0
     daily_tasks_used: int = 0
     daily_reset_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
@@ -73,8 +81,14 @@ class AccountPool:
     def get_client(self, account_id: UUID) -> JulesClient:
         return self._clients[account_id]
 
-    def acquire(self, source: str | None = None) -> Account:
+    def acquire(self, source: str | None = None, role: AccountRole | None = None) -> Account:
         eligible = [a for a in self._accounts if a.has_capacity]
+
+        if role is not None:
+            eligible = [a for a in eligible if a.role == role]
+            if not eligible:
+                raise AccountPoolExhausted(f"No accounts available with role '{role}' and capacity")
+
         if source:
             with_source = [a for a in eligible if source in a.sources]
             if with_source:
@@ -109,6 +123,8 @@ class AccountPool:
                 "id": str(a.id),
                 "name": a.name,
                 "plan": a.plan,
+                "role": a.role,
+                "label": a.label,
                 "active": a.active_sessions,
                 "daily_used": a.daily_tasks_used,
                 "daily_limit": a.limits["daily_tasks"],

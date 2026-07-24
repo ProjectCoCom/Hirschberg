@@ -2,7 +2,6 @@ import json
 from pathlib import Path
 
 from clients.database import Database
-from clients.supabase import SupabaseClient
 from config import load_settings
 
 settings = load_settings()
@@ -17,10 +16,7 @@ if _config_path.exists():
         pass
 
 db = Database(
-    mode=_db_config.get("mode", "local"),
+    mode="local",
     local_path=_db_config.get("local_path", "./data/jat.db"),
     sync_interval=_db_config.get("sync_interval", 30),
 )
-
-if _db_config.get("mode") in ("supabase", "hybrid") and settings.supabase_url and settings.supabase_key:
-    db.set_remote(SupabaseClient(settings.supabase_url, settings.supabase_key))

@@ -5,13 +5,13 @@ from uuid import UUID
 import structlog
 
 from clients.ai_providers import AIProviderPool, ProviderAccount, ProviderType
-from clients.supabase import SupabaseClient
+from clients.database import Database
 
 log = structlog.get_logger()
 
 
 class ConversationManager:
-    def __init__(self, supabase: SupabaseClient, pool: AIProviderPool) -> None:
+    def __init__(self, supabase: Database, pool: AIProviderPool) -> None:
         self._db = supabase
         self._pool = pool
 

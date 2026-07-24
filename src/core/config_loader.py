@@ -23,16 +23,82 @@ def load_config(path: Path = CONFIG_PATH) -> dict:
 
 
 def build_jules_pool(config: dict) -> AccountPool:
+    from db import db
+    from core.account_pool import AccountPool, Account, PlanTier, AccountRole
+    from core.ai_interface import KeyVault
+    from config import load_settings
+    from uuid import UUID
+
     pool = AccountPool()
-    jules_cfg = config.get("jules", {})
-    for acc in jules_cfg.get("accounts", []):
-        if not acc.get("enabled", True):
+    vault = KeyVault(load_settings().encryption_key)
+
+    # 1. Fetch from database
+    try:
+        rows = db.select_sync("accounts")
+    except Exception as e:
+        log.warning("build_jules_pool_db_error", error=str(e))
+        rows = []
+
+    # 2. One-time migration if table is empty
+    if not rows:
+        jules_cfg = config.get("jules", {})
+        config_accounts = jules_cfg.get("accounts", [])
+        if config_accounts:
+            log.info("build_jules_pool_migration_started", count=len(config_accounts))
+            PLAN_LIMITS_MAP = {
+                "free": {"daily": 15, "concurrent": 3},
+                "pro": {"daily": 100, "concurrent": 15},
+                "ultra": {"daily": 300, "concurrent": 60},
+            }
+            for acc in config_accounts:
+                if not acc.get("enabled", True):
+                    continue
+                tier_str = acc.get("plan", "free").lower()
+                limits = PLAN_LIMITS_MAP.get(tier_str, PLAN_LIMITS_MAP["free"])
+                encrypted = vault.encrypt(acc.get("api_key", "")) if acc.get("api_key") else ""
+
+                db_acc = {
+                    "name": acc["name"],
+                    "api_key_encrypted": encrypted,
+                    "plan_tier": tier_str,
+                    "plan": tier_str,
+                    "role": acc.get("role", "worker").lower(),
+                    "label": acc.get("label", ""),
+                    "enabled": 1,
+                    "sessions_today": 0,
+                    "max_daily_tasks": limits["daily"],
+                    "max_concurrent": limits["concurrent"],
+                }
+                try:
+                    db.insert_sync("accounts", db_acc)
+                except Exception as e:
+                    log.warning("migration_insert_failed", name=acc["name"], error=str(e))
+
+            # Select again after insertion
+            try:
+                rows = db.select_sync("accounts")
+            except Exception:
+                rows = []
+
+    # 3. Load accounts from DB rows into pool
+    for r in rows:
+        if not r.get("enabled", True):
             continue
-        tier = PlanTier(acc.get("plan", "free").upper())
+        try:
+            decrypted_key = vault.decrypt(r["api_key_encrypted"]) if r.get("api_key_encrypted") else ""
+        except Exception:
+            decrypted_key = r.get("api_key_encrypted", "")
+
+        tier_str = r.get("plan_tier", r.get("plan", "free")).lower()
+        role_str = r.get("role", "worker").lower()
+
         pool.add_account(Account(
-            name=acc["name"],
-            api_key=acc.get("api_key", ""),
-            plan=tier,
+            id=UUID(r["id"]) if isinstance(r["id"], str) else r["id"],
+            name=r["name"],
+            api_key=decrypted_key,
+            plan=PlanTier(tier_str),
+            role=AccountRole(role_str),
+            label=r.get("label", ""),
         ))
     return pool
 
@@ -72,8 +138,6 @@ def get_prompt_settings(config: dict) -> dict:
     return config.get("prompts", {})
 
 
-def get_supabase_settings(config: dict) -> dict:
-    return config.get("supabase", {})
 
 
 def get_github_settings(config: dict) -> dict:

@@ -17,7 +17,6 @@ dependencies = [
     "structlog==25.4.0",
     "mcp==1.9.3",
     "python-dotenv==1.1.0",
-    "supabase==2.15.2",
     "cryptography==44.0.3",
     "fastapi==0.115.12",
     "uvicorn==0.34.3",

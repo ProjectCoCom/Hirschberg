@@ -1,22 +1,26 @@
-import { useCallback, useEffect, useState, type React } from "react";
+import { useCallback, useEffect, useState, type MutableRefObject } from "react";
 
 type JulesAccount = {
   id: string;
   name: string;
   api_key_masked: string;
   plan_tier: string;
+  role: "orchestrator" | "worker" | "qa";
+  label: string;
   daily_limit: number;
   concurrent_limit: number;
   sessions_today: number;
   enabled: boolean;
 };
 
-export const JulesAccountsPanel = ({ onAddRef }: { onAddRef: React.MutableRefObject<() => void> }) => {
+export const JulesAccountsPanel = ({ onAddRef }: { onAddRef: MutableRefObject<() => void> }) => {
   const [accounts, setAccounts] = useState<JulesAccount[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [formName, setFormName] = useState("");
   const [formKey, setFormKey] = useState("");
   const [formPlan, setFormPlan] = useState("free");
+  const [formRole, setFormRole] = useState("worker");
+  const [formLabel, setFormLabel] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [confirmInput, setConfirmInput] = useState("");
@@ -43,12 +47,20 @@ export const JulesAccountsPanel = ({ onAddRef }: { onAddRef: React.MutableRefObj
     fetch("/api/jules/accounts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: formName.trim(), api_key: formKey.trim(), plan_tier: formPlan }),
+      body: JSON.stringify({
+        name: formName.trim(),
+        api_key: formKey.trim(),
+        plan_tier: formPlan,
+        role: formRole,
+        label: formLabel.trim()
+      }),
     }).then(() => {
       setShowForm(false);
       setFormName("");
       setFormKey("");
       setFormPlan("free");
+      setFormRole("worker");
+      setFormLabel("");
       setSuccessMsg(`Jules account "${formName}" added`);
       setTimeout(() => setSuccessMsg(""), 4000);
       fetchAccounts();
@@ -84,6 +96,8 @@ export const JulesAccountsPanel = ({ onAddRef }: { onAddRef: React.MutableRefObj
               </span>
             </div>
             <div className="apis-card-details">
+              <span>Role: <strong>{a.role}</strong></span>
+              {a.label && <span>Label: <strong>{a.label}</strong></span>}
               <span>Daily: {a.sessions_today}/{a.daily_limit}</span>
               <span>Concurrent: {a.concurrent_limit}</span>
             </div>
@@ -117,6 +131,18 @@ export const JulesAccountsPanel = ({ onAddRef }: { onAddRef: React.MutableRefObj
                   <option value="pro">Pro (100/day, 15 concurrent)</option>
                   <option value="ultra">Ultra (300/day, 60 concurrent)</option>
                 </select>
+              </div>
+              <div className="apis-field">
+                <label>Account Role</label>
+                <select value={formRole} onChange={(e) => setFormRole(e.target.value)}>
+                  <option value="orchestrator">Orchestrator</option>
+                  <option value="worker">Worker</option>
+                  <option value="qa">QA</option>
+                </select>
+              </div>
+              <div className="apis-field">
+                <label>Label</label>
+                <input type="text" value={formLabel} onChange={(e) => setFormLabel(e.target.value)} placeholder="e.g. primary-worker" />
               </div>
             </div>
             <footer className="apis-popup-footer">

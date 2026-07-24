@@ -45,7 +45,8 @@ class AgentCoordinator:
 
     async def run_task(self, task: AgentTask) -> AgentTask:
         source = f"sources/github/{task.repo_owner}/{task.repo_name}"
-        account = self._pool.acquire(source)
+        from core.account_pool import AccountRole
+        account = self._pool.acquire(source, role=AccountRole.WORKER)
         task.account_id = account.id
         task.status = TaskStatus.WAITING
 
