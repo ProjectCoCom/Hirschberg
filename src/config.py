@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     default_repo_owner: str = ""
     default_repo_name: str = ""
     log_level: str = "INFO"
+    max_delegation_depth: int = 0
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 
