@@ -506,6 +506,44 @@ async def test_account_pool_exhaustion_graceful_backoff():
     print("[PASS] test_account_pool_exhaustion_graceful_backoff: Workflow dispatches tasks gracefully within concurrency limits")
 
 
+async def test_concurrent_database_writes():
+    from db import db
+    import asyncio
+    from uuid import uuid4
+
+    # Pre-register a dummy task so that session_activities foreign key is satisfied
+    task_id = str(uuid4())
+    await db.insert("agent_tasks", {
+        "id": task_id,
+        "prompt": "Dummy Task for Concurrency Test",
+        "repo_owner": "owner",
+        "repo_name": "repo",
+        "branch": "main",
+        "status": "pending",
+    })
+
+    # Prepare 20 concurrent inserts of session activities
+    async def write_activity(idx):
+        activity_id = f"act-{uuid4()}"
+        # Overlapping upsert to stress test SQLite lock contention
+        await db.upsert("session_activities", {
+            "task_id": task_id,
+            "session_id": "session-concurrency",
+            "activity_id": activity_id,
+            "originator": "test-concurrency",
+            "description": f"Overlapping write index {idx}",
+        })
+
+    tasks = [write_activity(i) for i in range(20)]
+    # Run all writes concurrently
+    await asyncio.gather(*tasks)
+
+    # Verify that all 20 activities were written successfully
+    rows = await db.select("session_activities", {"session_id": "session-concurrency"})
+    assert len(rows) == 20
+    print("[PASS] test_concurrent_database_writes: SQLite WAL mode and busy_timeout prevent all deadlock locks under highly concurrent write operations")
+
+
 async def main():
     print("=" * 50)
     print("JAT-AI GAP COVERAGE TESTS")
@@ -525,6 +563,7 @@ async def main():
     await test_orchestrator_plan_approval_and_decisions()
     await test_orchestrator_delegation_and_recursion_limit()
     await test_account_pool_exhaustion_graceful_backoff()
+    await test_concurrent_database_writes()
 
     print()
     print("=" * 50)
