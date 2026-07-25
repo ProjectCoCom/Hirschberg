@@ -1,0 +1,44 @@
+{
+  "step_number": 11,
+  "timestamp_utc": "2026-07-25T00:08:28Z",
+  "title": "Capacity-aware account routing using normalized headroom score",
+  "task_summary": "Implement capacity-aware account routing by sorting eligible accounts descending by a combined normalized score that balances remaining daily budget and active sessions concurrent capacity.",
+  "status": "completed",
+  "previous_step_review": {
+    "reviewed_step": 10,
+    "checked": "dryrun/test_gaps.py, src/clients/local_db.py",
+    "issues_found": [
+      "test_concurrent_database_writes wrote rows using a static session_id. In persistent environments, consecutive test runs would accumulate rows and fail the 20-row count assertion."
+    ],
+    "fixes_applied": [
+      "Updated test_concurrent_database_writes to use a unique uuid-based session_id per test execution to ensure test runs are completely idempotent."
+    ]
+  },
+  "files_changed": [
+    {"path": "src/core/account_pool.py", "change": "Refactored AccountPool.acquire() sorting key to use normalized score and tie-breaker. Surfaced remaining_budget_fraction in status()."},
+    {"path": "dryrun/test_gaps.py", "change": "Added test_capacity_aware_account_routing. Handled concurrent capacity cleanup in test_account_pool_exhaustion_graceful_backoff."}
+  ],
+  "assumptions_verified": [
+    {"assumption": "Score formula works fairly across tiers", "verification": "Validated using mathematical comparisons and test assertions that Free vs Ultra tier accounts are normalized properly.", "result": "confirmed"},
+    {"assumption": "Tie-breaker falls back to active sessions ascending", "verification": "Confirmed that if remaining budget fractions are equal, accounts with lower active sessions are selected.", "result": "confirmed"}
+  ],
+  "decisions": [
+    {"decision": "Use -score as the primary element and active_sessions as secondary element in a Python sort-key tuple", "reasoning": "Since Python sorts tuples lexicographically, this implements descending order on the score and ascending order on the active sessions in a single, stable, deterministic, and extremely elegant sort key."}
+  ],
+  "self_review": {
+    "passes_completed": 2,
+    "checked": "AccountPool, Account status logic, and all test coverage.",
+    "changes_made": [
+      "Explicitly ensured that daily task limits and concurrent limits are looked up directly from PLAN_LIMITS to match has_capacity's implementation style precisely."
+    ],
+    "deferred_from_review": []
+  },
+  "blockers": [],
+  "deferred": [],
+  "tests": {
+    "suite_result": "pass",
+    "new_tests_added": ["test_capacity_aware_account_routing"],
+    "pre_existing_failures_noted": []
+  },
+  "notes_for_next_step": "Step 11 is complete. Capacity-aware routing behaves beautifully under diverse tier allocations and tie-breaker conditions."
+}

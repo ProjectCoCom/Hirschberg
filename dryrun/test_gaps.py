@@ -500,9 +500,12 @@ async def test_account_pool_exhaustion_graceful_backoff():
 
     engine = WorkflowEngine(coordinator, store)
 
-    res = await engine.run(workflow)
-    # Both tasks must complete successfully without failing due to capacity limits!
-    assert res.status == WorkflowStatus.COMPLETED
+    try:
+        res = await engine.run(workflow)
+        # Both tasks must complete successfully without failing due to capacity limits!
+        assert res.status == WorkflowStatus.COMPLETED
+    finally:
+        acc.limits["concurrent"] = 3
     print("[PASS] test_account_pool_exhaustion_graceful_backoff: Workflow dispatches tasks gracefully within concurrency limits")
 
 
@@ -523,12 +526,13 @@ async def test_concurrent_database_writes():
     })
 
     # Prepare 20 concurrent inserts of session activities
+    session_id = f"session-concurrency-{uuid4()}"
     async def write_activity(idx):
         activity_id = f"act-{uuid4()}"
         # Overlapping upsert to stress test SQLite lock contention
         await db.upsert("session_activities", {
             "task_id": task_id,
-            "session_id": "session-concurrency",
+            "session_id": session_id,
             "activity_id": activity_id,
             "originator": "test-concurrency",
             "description": f"Overlapping write index {idx}",
@@ -539,9 +543,87 @@ async def test_concurrent_database_writes():
     await asyncio.gather(*tasks)
 
     # Verify that all 20 activities were written successfully
-    rows = await db.select("session_activities", {"session_id": "session-concurrency"})
+    rows = await db.select("session_activities", {"session_id": session_id})
     assert len(rows) == 20
     print("[PASS] test_concurrent_database_writes: SQLite WAL mode and busy_timeout prevent all deadlock locks under highly concurrent write operations")
+
+
+async def test_capacity_aware_account_routing():
+    from core.account_pool import AccountPool, Account, AccountRole, PlanTier
+
+    # 1. Budget Preference Test (Same Tier)
+    pool = AccountPool()
+
+    # Both are worker-role free plan accounts with 1 active session.
+    # Account A (fresher) has used 2 tasks, 13 remaining.
+    # Account B (more exhausted) has used 14 tasks, 1 remaining.
+    acc_a = Account(name="acc-fresher", plan=PlanTier.FREE, role=AccountRole.WORKER)
+    acc_a.active_sessions = 1
+    acc_a.daily_tasks_used = 2
+
+    acc_b = Account(name="acc-exhausted", plan=PlanTier.FREE, role=AccountRole.WORKER)
+    acc_b.active_sessions = 1
+    acc_b.daily_tasks_used = 14
+
+    pool.add_account(acc_a)
+    pool.add_account(acc_b)
+
+    chosen = pool.acquire(role=AccountRole.WORKER)
+    assert chosen.name == "acc-fresher"
+
+    # 2. Proportional Freshness / Normalization Test (Different Tiers)
+    pool2 = AccountPool()
+
+    # Ultra account: 300 daily limit. 240 used (60 remaining). Remaining fraction: 60/300 = 0.20
+    # Active: 1 session out of 60. Score: 0.20 - 1/60 = 0.1833
+    acc_ultra = Account(name="acc-ultra", plan=PlanTier.ULTRA, role=AccountRole.WORKER)
+    acc_ultra.active_sessions = 1
+    acc_ultra.daily_tasks_used = 240
+
+    # Free account: 15 daily limit. 2 used (13 remaining). Remaining fraction: 13/15 = 0.8667
+    # Active: 1 session out of 3. Score: 0.8667 - 1/3 = 0.5333
+    # Free has a lower raw budget (13 vs 60), but higher fraction and score.
+    acc_free = Account(name="acc-free", plan=PlanTier.FREE, role=AccountRole.WORKER)
+    acc_free.active_sessions = 1
+    acc_free.daily_tasks_used = 2
+
+    pool2.add_account(acc_ultra)
+    pool2.add_account(acc_free)
+
+    chosen = pool2.acquire(role=AccountRole.WORKER)
+    assert chosen.name == "acc-free"
+
+    # 3. Active sessions Tie-breaker Test
+    pool3 = AccountPool()
+
+    # Both have the same plan and daily tasks used, but different active sessions.
+    acc_idle = Account(name="acc-idle", plan=PlanTier.FREE, role=AccountRole.WORKER)
+    acc_idle.active_sessions = 0
+    acc_idle.daily_tasks_used = 1
+
+    acc_busy = Account(name="acc-busy", plan=PlanTier.FREE, role=AccountRole.WORKER)
+    acc_busy.active_sessions = 1
+    acc_busy.daily_tasks_used = 1
+
+    pool3.add_account(acc_idle)
+    pool3.add_account(acc_busy)
+
+    chosen = pool3.acquire(role=AccountRole.WORKER)
+    assert chosen.name == "acc-idle"
+
+    # 4. Status Output Test
+    status_list = pool3.status()
+    assert len(status_list) == 2
+    for s in status_list:
+        assert "remaining_budget_fraction" in s
+
+    status_dict = {s["name"]: s for s in status_list}
+    # acc-idle was acquired, so its daily_tasks_used became 2, remaining: 13/15
+    assert abs(status_dict["acc-idle"]["remaining_budget_fraction"] - (13 / 15)) < 1e-9
+    # acc-busy was not acquired, so its daily_tasks_used remains 1, remaining: 14/15
+    assert abs(status_dict["acc-busy"]["remaining_budget_fraction"] - (14 / 15)) < 1e-9
+
+    print("[PASS] test_capacity_aware_account_routing: Capacity-aware routing, score normalization, tie-breaking, and status fields verified successfully")
 
 
 async def main():
@@ -564,6 +646,7 @@ async def main():
     await test_orchestrator_delegation_and_recursion_limit()
     await test_account_pool_exhaustion_graceful_backoff()
     await test_concurrent_database_writes()
+    await test_capacity_aware_account_routing()
 
     print()
     print("=" * 50)
