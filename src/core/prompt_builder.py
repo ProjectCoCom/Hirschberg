@@ -83,12 +83,26 @@ def build_agent_xml_prompt(
     )
 
 
+_TEMPLATE_CACHE: dict[str, str] = {}
+
+
+def clear_template_cache() -> None:
+    """Clears the in-memory prompt template cache."""
+    _TEMPLATE_CACHE.clear()
+
+
 def _load_template(filename: str) -> str:
+    if filename in _TEMPLATE_CACHE:
+        return _TEMPLATE_CACHE[filename]
+
     path = PROMPTS_DIR / filename
     if not path.exists():
         log.warning("template_missing", file=filename)
         return ""
-    return path.read_text(encoding="utf-8").strip()
+
+    content = path.read_text(encoding="utf-8").strip()
+    _TEMPLATE_CACHE[filename] = content
+    return content
 
 
 def _format_dependency_context(contexts: list[dict]) -> str:

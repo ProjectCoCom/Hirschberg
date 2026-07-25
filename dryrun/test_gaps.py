@@ -984,6 +984,97 @@ async def test_mcp_server_non_blocking_concurrency():
     print("[PASS] test_mcp_server_non_blocking_concurrency: MCP tool functions are verified as async def and run fully concurrently without blocking")
 
 
+async def test_prompt_builder_and_config_loader_caching():
+    from core.prompt_builder import build_session_prompt, clear_template_cache
+    from core.config_loader import load_config, clear_config_cache
+    from unittest.mock import patch
+    from pathlib import Path
+    import os
+
+    # Write a dummy config.json so load_config actually opens a file on disk
+    dummy_config_path = Path(__file__).parent.parent / "config.json"
+    dummy_config_path.write_text('{"prompts": {}}', encoding="utf-8")
+
+    try:
+        clear_template_cache()
+        clear_config_cache()
+
+        task_desc = "Implement API rate limiting"
+        dep_ctx = [{"prompt": "Setup DB", "status": "completed", "pr_url": "https://github.com/pull/1"}]
+
+        prompt_before = build_session_prompt(
+            task=task_desc,
+            dependency_context=dep_ctx,
+            plan_tier="Pro",
+            daily_used=10,
+            daily_limit=100,
+            concurrent_used=2,
+            concurrent_limit=15,
+            account_name="test-account"
+        )
+
+        prompt_after = build_session_prompt(
+            task=task_desc,
+            dependency_context=dep_ctx,
+            plan_tier="Pro",
+            daily_used=10,
+            daily_limit=100,
+            concurrent_used=2,
+            concurrent_limit=15,
+            account_name="test-account"
+        )
+
+        assert prompt_before == prompt_after
+        assert len(prompt_before) > 0
+
+        clear_template_cache()
+        clear_config_cache()
+
+        original_read_text = Path.read_text
+        read_text_calls = []
+
+        def mock_read_text(self, *args, **kwargs):
+            read_text_calls.append(self.name)
+            return original_read_text(self, *args, **kwargs)
+
+        import builtins
+        original_open = builtins.open
+        open_calls = []
+
+        def mock_open_func(file, *args, **kwargs):
+            if "config.json" in str(file):
+                open_calls.append(str(file))
+            return original_open(file, *args, **kwargs)
+
+        with patch.object(Path, "read_text", mock_read_text), \
+             patch("builtins.open", mock_open_func):
+
+            res1 = build_session_prompt("My task")
+            assert len(open_calls) == 1
+            assert len(read_text_calls) == 4
+
+            res2 = build_session_prompt("My task")
+            assert res1 == res2
+            # Verify NO additional disk reads were performed
+            assert len(open_calls) == 1
+            assert len(read_text_calls) == 4
+
+            clear_template_cache()
+            clear_config_cache()
+
+            res3 = build_session_prompt("My task")
+            assert res3 == res1
+            # Verify clearing the cache forced re-reads from disk
+            assert len(open_calls) == 2
+            assert len(read_text_calls) == 8
+
+    finally:
+        if dummy_config_path.exists():
+            os.remove(dummy_config_path)
+
+    print("[PASS] test_prompt_builder_and_config_loader_caching: byte-for-byte output identical and disk reads successfully cached")
+
+
 async def main():
     print("=" * 50)
     print("JAT-AI GAP COVERAGE TESTS")
@@ -1010,6 +1101,7 @@ async def main():
     await test_auto_merge_polling_backoff()
     await test_github_client_merge_retry()
     await test_mcp_server_non_blocking_concurrency()
+    await test_prompt_builder_and_config_loader_caching()
 
     print()
     print("=" * 50)

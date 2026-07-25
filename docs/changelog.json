@@ -128,6 +128,14 @@
       "summary": "Converted the database and Jules client helper and all @mcp.tool() functions to async def, eliminating the overhead of creating and tearing down fresh event loops on every call. Added tests to verify non-blocking concurrent tool execution under a long-running jat_run_session.",
       "status": "completed",
       "journal_ref": ".jules/journals/2026-07-25T05-20-00Z.json"
+    },
+    {
+      "step_number": 16,
+      "timestamp_utc": "2026-07-25T05:40:00Z",
+      "title": "Implement XML prompt templates and config.json in-memory caching",
+      "summary": "Implemented in-memory caching for rules.xml, gates.xml, anti_patterns.xml, environment.xml, context.xml, and config.json to eliminate blocking file I/O operations from prompt building and configuration loading. Added tests verifying byte-for-byte correctness and avoided disk reads.",
+      "status": "completed",
+      "journal_ref": ".jules/journals/2026-07-25T05-40-00Z.json"
     }
   ]
 }

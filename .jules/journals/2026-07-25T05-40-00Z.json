@@ -1,0 +1,41 @@
+{
+  "step_number": 16,
+  "timestamp_utc": "2026-07-25T05:40:00Z",
+  "title": "Implement XML prompt templates and config.json in-memory caching",
+  "task_summary": "Stop re-reading template XML files and the configuration JSON file from disk on every single session dispatch, eliminating blocking file I/O operations from the async codebase.",
+  "status": "completed",
+  "previous_step_review": {
+    "reviewed_step": 15,
+    "checked": "src/mcp/server.py, dryrun/test_gaps.py",
+    "issues_found": [],
+    "fixes_applied": []
+  },
+  "files_changed": [
+    {"path": "src/core/prompt_builder.py", "change": "Implemented _TEMPLATE_CACHE and clear_template_cache() in _load_template() to cache rules.xml, gates.xml, anti_patterns.xml, environment.xml, and context.xml XML text."},
+    {"path": "src/core/config_loader.py", "change": "Implemented _CONFIG_CACHE and clear_config_cache() in load_config() to cache parsed config.json dictionary in-memory."},
+    {"path": "dryrun/test_gaps.py", "change": "Added test_prompt_builder_and_config_loader_caching unit test to assert identical byte output and count/verify avoided disk reads using low-level I/O mocks and custom dummy config file."}
+  ],
+  "assumptions_verified": [
+    {"assumption": "caching avoids redundant disk reads", "verification": "Confirmed via mock Path.read_text and builtins.open that subsequent build_session_prompt calls hit in-memory caches and register 0 additional disk reads, while cache clearers correctly force re-reads.", "result": "confirmed"},
+    {"assumption": "build_session_prompt output remains identical", "verification": "Asserted that calling build_session_prompt with identical input maps produces byte-for-byte identical output before and after cache population.", "result": "confirmed"}
+  ],
+  "decisions": [
+    {"decision": "Cache loaded config dict keyed by Path in config_loader.py", "reasoning": "Resolving Path objects to absolute paths prevents redundant file reads if callers use different relative paths to access the same configuration file, while maintaining simplicity."}
+  ],
+  "self_review": {
+    "passes_completed": 2,
+    "checked": "Prompt builder cache keys, config loader path resolutions, mock assertion triggers, and cache clear paths.",
+    "changes_made": [
+      "Wrote and cleaned up a physical config.json file in dryrun/test_gaps.py so that path.exists() correctly returns True under different environment conditions during tests, allowing load_config to run open() without throwing custom not-found blocks."
+    ],
+    "deferred_from_review": []
+  },
+  "blockers": [],
+  "deferred": [],
+  "tests": {
+    "suite_result": "pass",
+    "new_tests_added": ["test_prompt_builder_and_config_loader_caching"],
+    "pre_existing_failures_noted": []
+  },
+  "notes_for_next_step": "Step 16 is fully completed. All blocking template and config file I/O operations are optimized and cached."
+}

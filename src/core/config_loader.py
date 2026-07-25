@@ -13,13 +13,26 @@ log = structlog.get_logger()
 
 CONFIG_PATH = Path(__file__).parent.parent.parent / "config.json"
 
+_CONFIG_CACHE: dict[Path, dict] = {}
+
+
+def clear_config_cache() -> None:
+    """Clears the in-memory configuration cache."""
+    _CONFIG_CACHE.clear()
+
 
 def load_config(path: Path = CONFIG_PATH) -> dict:
+    abs_path = path.resolve() if path.exists() else path
+    if abs_path in _CONFIG_CACHE:
+        return _CONFIG_CACHE[abs_path]
+
     if not path.exists():
         log.warning("config_not_found", path=str(path))
         return {}
     with open(path, encoding="utf-8") as f:
-        return json.load(f)
+        data = json.load(f)
+        _CONFIG_CACHE[abs_path] = data
+        return data
 
 
 def build_jules_pool(config: dict) -> AccountPool:
