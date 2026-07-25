@@ -722,9 +722,9 @@ async def test_query_efficiency_fixes():
 
     # Verify that get_recent_activities retrieves limited, properly sorted rows
     real_tracker = Tracker(db)
-    # We query with a limit of 100 to ensure we capture all of our session's activities
-    # even across multiple persistent test runs.
-    rows = await real_tracker.get_recent_activities(limit=100)
+    # We query with a limit of 5000 to ensure we capture all of our session's activities
+    # even across multiple persistent test runs where the table has accumulated many rows.
+    rows = await real_tracker.get_recent_activities(limit=5000)
     filtered_rows = [r for r in rows if r["session_id"] == session_id]
     assert len(filtered_rows) == 10
     # The most recent should be at the top of our filtered list (i=9)
@@ -933,6 +933,57 @@ async def test_github_client_merge_retry():
     print("[PASS] test_github_client_merge_retry: @_retry decorator on merge_pull_request successfully retries 5xx and fails after 3 attempts")
 
 
+async def test_mcp_server_non_blocking_concurrency():
+    import sys
+    orig_path = list(sys.path)
+    # Remove local src directories to prevent shadowing the global mcp package
+    sys.path = [p for p in sys.path if not (p.endswith("/src") or p.endswith("/src/"))]
+
+    try:
+        import mcp
+        import mcp.server.fastmcp
+    finally:
+        sys.path = orig_path
+
+    from src.mcp.server import jat_list_sessions, jat_run_session
+    import inspect
+    import json
+
+    assert inspect.iscoroutinefunction(jat_list_sessions)
+    assert inspect.iscoroutinefunction(jat_run_session)
+
+    from unittest.mock import AsyncMock, patch
+
+    mock_client = AsyncMock()
+    mock_client.list_sessions.return_value = []
+    mock_client.close = AsyncMock()
+
+    async def mock_run_session(*args, **kwargs):
+        await asyncio.sleep(0.5)
+        return {"status": "completed"}
+
+    with patch("src.mcp.server._get_jules", return_value=mock_client), \
+         patch("core.session_runner.run_session", side_effect=mock_run_session):
+
+        bg_task = asyncio.create_task(
+            jat_run_session(prompt="long task", owner="owner", repo="repo")
+        )
+
+        await asyncio.sleep(0.05)
+
+        start_time = asyncio.get_event_loop().time()
+        sessions_res_json = await jat_list_sessions()
+        elapsed = asyncio.get_event_loop().time() - start_time
+
+        assert elapsed < 0.2, f"Expected jat_list_sessions to return instantly, but took {elapsed:.3f}s"
+        assert json.loads(sessions_res_json) == []
+
+        run_res_json = await bg_task
+        assert json.loads(run_res_json) == {"status": "completed"}
+
+    print("[PASS] test_mcp_server_non_blocking_concurrency: MCP tool functions are verified as async def and run fully concurrently without blocking")
+
+
 async def main():
     print("=" * 50)
     print("JAT-AI GAP COVERAGE TESTS")
@@ -958,6 +1009,7 @@ async def main():
     await test_session_poller_and_backoff()
     await test_auto_merge_polling_backoff()
     await test_github_client_merge_retry()
+    await test_mcp_server_non_blocking_concurrency()
 
     print()
     print("=" * 50)

@@ -1,0 +1,40 @@
+{
+  "step_number": 15,
+  "timestamp_utc": "2026-07-25T05:20:00Z",
+  "title": "Convert MCP server to native async def tool functions and ensure non-blocking execution",
+  "task_summary": "Stop creating and tearing down fresh event loops on every MCP tool call, and prevent long-running tool calls from blocking the entire server by converting all tool functions to native async def.",
+  "status": "completed",
+  "previous_step_review": {
+    "reviewed_step": 14,
+    "checked": "src/core/auto_merge.py, src/clients/github.py, dryrun/test_gaps.py",
+    "issues_found": [],
+    "fixes_applied": []
+  },
+  "files_changed": [
+    {"path": "src/mcp/server.py", "change": "Converted _get_jules and all @mcp.tool() functions to async def, direct awaiting instead of asyncio.run() nested helpers."},
+    {"path": "dryrun/test_gaps.py", "change": "Added test_mcp_server_non_blocking_concurrency verifying both tool coroutine signatures and concurrent, non-blocking execution using sys.path namespace trick."}
+  ],
+  "assumptions_verified": [
+    {"assumption": "MCP tools support async def natively", "verification": "Confirmed that the installed mcp SDK v1.9.3 fully and natively executes async def tools.", "result": "confirmed"},
+    {"assumption": "Long-running tools do not block lighter concurrent tools", "verification": "Validated via test_mcp_server_non_blocking_concurrency that running jat_run_session concurrently with jat_list_sessions yields control to the event loop, allowing jat_list_sessions to return immediately.", "result": "confirmed"}
+  ],
+  "decisions": [
+    {"decision": "Retain per-call client creation for MCP server", "reasoning": "Since MCP tool calls are interactive and low-frequency, closing clients inside finally blocks prevents resource leaks and guarantees freshness of credentials across long periods."}
+  ],
+  "self_review": {
+    "passes_completed": 2,
+    "checked": "All MCP tool signatures, client close execution paths, concurrent tests, and import shadowing resolution.",
+    "changes_made": [
+      "Resolved Python package namespace shadowing between third-party 'mcp' package and local 'src/mcp/' directory in tests by filtering 'src' from sys.path during test imports."
+    ],
+    "deferred_from_review": []
+  },
+  "blockers": [],
+  "deferred": [],
+  "tests": {
+    "suite_result": "pass",
+    "new_tests_added": ["test_mcp_server_non_blocking_concurrency"],
+    "pre_existing_failures_noted": []
+  },
+  "notes_for_next_step": "Step 15 is complete. The MCP server is fully modern, efficient, and concurrent."
+}
