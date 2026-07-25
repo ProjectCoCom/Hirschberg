@@ -39,13 +39,24 @@ class ContextStore:
         )
 
     async def get_dependency_context(self, dep_task_ids: list[UUID]) -> list[dict]:
+        if not dep_task_ids:
+            return []
+
+        # Batch-fetch all context_messages rows with a single query
+        tid_strs = [str(tid) for tid in dep_task_ids]
+        rows = await self._db.select(
+            "context_messages", filters={"task_id": tid_strs}
+        )
+
+        # Build a lookup map of task_id string to context dict
+        context_by_tid = {r["task_id"]: r.get("context", {}) for r in rows if r.get("task_id")}
+
+        # Preserve original dep_task_ids order, skipping any missing rows
         results = []
         for tid in dep_task_ids:
-            rows = await self._db.select(
-                "context_messages", filters={"task_id": str(tid)}
-            )
-            if rows:
-                results.append(rows[0].get("context", {}))
+            tid_str = str(tid)
+            if tid_str in context_by_tid:
+                results.append(context_by_tid[tid_str])
         return results
 
     async def publish_message(

@@ -119,7 +119,22 @@ class AccountPool:
         if not eligible:
             raise AccountPoolExhausted("No accounts with available capacity")
 
-        eligible.sort(key=lambda a: a.active_sessions)
+        def get_sort_key(a: Account) -> tuple[float, int]:
+            a._maybe_reset_daily()
+            limits = PLAN_LIMITS[a.plan]
+            daily_limit = limits["daily_tasks"]
+            max_concurrent = limits["concurrent"]
+            remaining_budget = daily_limit - a.daily_tasks_used
+
+            # score = (remaining_daily_budget / daily_task_limit) - (active_sessions / max_concurrent)
+            score = (remaining_budget / daily_limit) - (a.active_sessions / max_concurrent)
+
+            # Sort descending by score, ascending by active_sessions as tie-breaker.
+            # Python sorts tuples lexicographically, so returning (-score, a.active_sessions)
+            # places higher score first, and then lower active_sessions first.
+            return (-score, a.active_sessions)
+
+        eligible.sort(key=get_sort_key)
         chosen = eligible[0]
         chosen.active_sessions += 1
         chosen.daily_tasks_used += 1
@@ -140,8 +155,13 @@ class AccountPool:
                 return
 
     def status(self) -> list[dict]:
-        return [
-            {
+        res = []
+        for a in self._accounts:
+            a._maybe_reset_daily()
+            limits = PLAN_LIMITS[a.plan]
+            daily_limit = limits["daily_tasks"]
+            remaining_budget_fraction = (daily_limit - a.daily_tasks_used) / daily_limit
+            res.append({
                 "id": str(a.id),
                 "name": a.name,
                 "plan": a.plan,
@@ -149,13 +169,13 @@ class AccountPool:
                 "label": a.label,
                 "active": a.active_sessions,
                 "daily_used": a.daily_tasks_used,
-                "daily_limit": a.limits["daily_tasks"],
-                "concurrent_limit": a.limits["concurrent"],
+                "daily_limit": daily_limit,
+                "concurrent_limit": limits["concurrent"],
                 "has_capacity": a.has_capacity,
                 "sources": a.sources,
-            }
-            for a in self._accounts
-        ]
+                "remaining_budget_fraction": remaining_budget_fraction,
+            })
+        return res
 
     async def close_all(self) -> None:
         for client in self._clients.values():
