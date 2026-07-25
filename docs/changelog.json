@@ -96,6 +96,14 @@
       "summary": "Implemented capacity-aware account routing sorting key inside AccountPool.acquire(). Evaluated and ranked eligible accounts descending by a combined score of normalized remaining budget and concurrent slot capacity, reducing to active sessions ascending as a robust tie-breaker. Surfaced remaining_budget_fraction inside AccountPool.status().",
       "status": "completed",
       "journal_ref": ".jules/journals/2026-07-25T00-08-28Z.json"
+    },
+    {
+      "step_number": 12,
+      "timestamp_utc": "2026-07-25T03:17:05Z",
+      "title": "Fix unscalable database query patterns in ContextStore and Tracker",
+      "summary": "Optimized get_dependency_context() in context_store.py to use a single batched query with IN clause while preserving ordering, and optimized get_recent_activities() in tracker.py to push sorting and limits into SQLite utilizing a custom index.",
+      "status": "completed",
+      "journal_ref": ".jules/journals/2026-07-25T03-17-05Z.json"
     }
   ]
 }

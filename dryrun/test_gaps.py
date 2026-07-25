@@ -626,6 +626,114 @@ async def test_capacity_aware_account_routing():
     print("[PASS] test_capacity_aware_account_routing: Capacity-aware routing, score normalization, tie-breaking, and status fields verified successfully")
 
 
+async def test_query_efficiency_fixes():
+    from unittest.mock import AsyncMock, MagicMock
+    from uuid import uuid4
+    from core.context_store import ContextStore
+    from core.tracker import Tracker
+    from db import db
+
+    # 1. get_dependency_context: order preservation and single-query assertion
+    db_mock_ctx = AsyncMock()
+    tid1 = uuid4()
+    tid2 = uuid4()
+    tid_missing = uuid4()
+
+    db_mock_ctx.select.return_value = [
+        {"task_id": str(tid2), "context": {"val": "B"}},
+        {"task_id": str(tid1), "context": {"val": "A"}},
+    ]
+
+    store = ContextStore(db_mock_ctx)
+    results = await store.get_dependency_context([tid1, tid_missing, tid2])
+
+    # Assert exactly 1 database select was performed
+    assert db_mock_ctx.select.call_count == 1
+    args, kwargs = db_mock_ctx.select.call_args
+    assert args[0] == "context_messages"
+    assert kwargs["filters"] == {"task_id": [str(tid1), str(tid_missing), str(tid2)]}
+
+    # Assert exact order preservation and skipping of missing
+    assert results == [{"val": "A"}, {"val": "B"}]
+
+    # 1.1 Real SQLite integration for get_dependency_context
+    real_store = ContextStore(db)
+    real_tid1 = uuid4()
+    real_tid2 = uuid4()
+    await db.insert("agent_tasks", {
+        "id": str(real_tid1),
+        "prompt": "Dependency 1",
+        "repo_owner": "owner",
+        "repo_name": "repo",
+        "branch": "main",
+    })
+    await db.insert("agent_tasks", {
+        "id": str(real_tid2),
+        "prompt": "Dependency 2",
+        "repo_owner": "owner",
+        "repo_name": "repo",
+        "branch": "main",
+    })
+    await real_store.save_result(real_tid1, {"output": "result-1"})
+    await real_store.save_result(real_tid2, {"output": "result-2"})
+
+    real_results = await real_store.get_dependency_context([real_tid2, real_tid1])
+    assert real_results == [{"output": "result-2"}, {"output": "result-1"}]
+
+    # 2. get_recent_activities: ordering and limit pushed to database query
+    db_mock_tracker = AsyncMock()
+    db_mock_tracker.select.return_value = [{"id": "act-1", "created_at": "2026-07-25"}]
+
+    tracker = Tracker(db_mock_tracker)
+    res = await tracker.get_recent_activities(limit=10)
+
+    # Verify ordering and limit arguments were passed directly to SQLite select call
+    db_mock_tracker.select.assert_called_once_with(
+        "session_activities",
+        order_by="created_at DESC",
+        limit=10
+    )
+    assert res == [{"id": "act-1", "created_at": "2026-07-25"}]
+
+    # 3. Real integration test on SQLite DB
+    # Pre-register a dummy task so that session_activities foreign key is satisfied
+    task_id = str(uuid4())
+    await db.insert("agent_tasks", {
+        "id": task_id,
+        "prompt": "Dummy Task for Query Efficiency Integration",
+        "repo_owner": "owner",
+        "repo_name": "repo",
+        "branch": "main",
+        "status": "pending",
+    })
+
+    # Let's insert some session activities in the future (year 2030) so they are guaranteed
+    # to be the most recent entries in the table.
+    session_id = f"session-efficiency-{uuid4()}"
+    for i in range(10):
+        await db.insert("session_activities", {
+            "task_id": task_id,
+            "session_id": session_id,
+            "activity_id": f"act-{i}-{uuid4()}",
+            "originator": "test-efficiency",
+            "description": f"Activity {i}",
+            "created_at": f"2030-01-01 00:00:{i:02d}",
+        })
+
+    # Verify that get_recent_activities retrieves limited, properly sorted rows
+    real_tracker = Tracker(db)
+    # We query with a limit of 100 to ensure we capture all of our session's activities
+    # even across multiple persistent test runs.
+    rows = await real_tracker.get_recent_activities(limit=100)
+    filtered_rows = [r for r in rows if r["session_id"] == session_id]
+    assert len(filtered_rows) == 10
+    # The most recent should be at the top of our filtered list (i=9)
+    assert filtered_rows[0]["description"] == "Activity 9"
+    assert filtered_rows[4]["description"] == "Activity 5"
+
+    print("[PASS] test_query_efficiency_fixes: N+1 context_store select fixed, and tracker session_activities query ordering/limit optimized")
+
+
 async def main():
     print("=" * 50)
     print("JAT-AI GAP COVERAGE TESTS")
@@ -647,6 +755,7 @@ async def main():
     await test_account_pool_exhaustion_graceful_backoff()
     await test_concurrent_database_writes()
     await test_capacity_aware_account_routing()
+    await test_query_efficiency_fixes()
 
     print()
     print("=" * 50)

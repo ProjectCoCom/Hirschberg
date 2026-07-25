@@ -81,11 +81,17 @@ class Tracker:
         }
 
     async def get_recent_activities(self, limit: int = 50) -> list[dict]:
-        rows = await self._db.select("session_activities")
-        rows.sort(key=lambda r: r.get("created_at", ""), reverse=True)
-        self._activity_cache = rows[: self._config.max_cached_activities]
+        # self._activity_cache is vestigial (nothing else reads or writes to it),
+        # but to keep signatures and attributes completely compatible we populate
+        # it with the fetched rows. We push ORDER BY and LIMIT into SQLite.
+        rows = await self._db.select(
+            "session_activities",
+            order_by="created_at DESC",
+            limit=limit,
+        )
+        self._activity_cache = rows
         self._last_fetch = datetime.now(timezone.utc)
-        return rows[:limit]
+        return rows
 
     async def subscribe_task_updates(
         self, callback: Callable[[dict], None]

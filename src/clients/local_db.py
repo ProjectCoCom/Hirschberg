@@ -248,6 +248,7 @@ class LocalDB:
             CREATE INDEX IF NOT EXISTS idx_merge_queue_task ON merge_queue(task_id);
             CREATE INDEX IF NOT EXISTS idx_session_activities_task ON session_activities(task_id);
             CREATE INDEX IF NOT EXISTS idx_session_activities_session ON session_activities(session_id);
+            CREATE INDEX IF NOT EXISTS idx_session_activities_created ON session_activities(created_at);
             CREATE INDEX IF NOT EXISTS idx_conv_messages_conv ON conversation_messages(conversation_id);
             CREATE INDEX IF NOT EXISTS idx_conversations_status ON conversations(status);
             CREATE INDEX IF NOT EXISTS idx_ai_providers_type ON ai_providers(provider_type);
@@ -334,18 +335,30 @@ class LocalDB:
         filters: dict[str, Any] | None = None,
         columns: str | None = None,
         order_by: str | None = None,
+        limit: int | None = None,
     ) -> list[dict]:
         conn = self._get_conn()
         cols = columns if columns else "*"
         where = ""
         params: list[Any] = []
         if filters:
-            serialized_filters = {k: _serialize_val(v) for k, v in filters.items()}
-            clauses = [f"{k} = ?" for k in serialized_filters]
+            clauses = []
+            for k, v in filters.items():
+                if isinstance(v, (list, tuple, set)):
+                    if not v:
+                        clauses.append("1 = 0")
+                    else:
+                        serialized_vals = [_serialize_val(item) for item in v]
+                        placeholders = ", ".join(["?"] * len(serialized_vals))
+                        clauses.append(f"{k} IN ({placeholders})")
+                        params.extend(serialized_vals)
+                else:
+                    clauses.append(f"{k} = ?")
+                    params.append(_serialize_val(v))
             where = " WHERE " + " AND ".join(clauses)
-            params = list(serialized_filters.values())
         order = f" ORDER BY {order_by}" if order_by else ""
-        cursor = conn.execute(f"SELECT {cols} FROM {table}{where}{order}", params)
+        lim = f" LIMIT {limit}" if limit is not None else ""
+        cursor = conn.execute(f"SELECT {cols} FROM {table}{where}{order}{lim}", params)
         rows = cursor.fetchall()
         return [_deserialize_row(row) for row in rows]
 
@@ -355,8 +368,9 @@ class LocalDB:
         filters: dict[str, Any] | None = None,
         columns: str | None = None,
         order_by: str | None = None,
+        limit: int | None = None,
     ) -> list[dict]:
-        return self.select_sync(table, filters, columns, order_by)
+        return self.select_sync(table, filters, columns, order_by, limit)
 
     def insert_sync(self, table: str, data: dict[str, Any]) -> dict:
         conn = self._get_conn()
