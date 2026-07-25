@@ -844,6 +844,95 @@ async def test_session_poller_and_backoff():
     print("[PASS] test_session_poller_and_backoff: SessionPoller structural, backoff timing, and coordinator session activity storing verified successfully")
 
 
+async def test_auto_merge_polling_backoff():
+    from core.auto_merge import AutoMerge, MergeStrategy
+    from unittest.mock import AsyncMock, patch
+    from models.github import CheckRun, CheckStatus
+
+    gh_mock = AsyncMock()
+    gh_mock.list_check_runs.return_value = [
+        CheckRun(id=1, name="ci/test", status=CheckStatus.IN_PROGRESS, conclusion=None)
+    ]
+
+    merger = AutoMerge(gh_mock, strategy=MergeStrategy.SQUASH)
+
+    sleep_calls = []
+    async def mock_sleep(seconds):
+        sleep_calls.append(seconds)
+
+    with patch("asyncio.sleep", side_effect=mock_sleep), \
+         patch("random.uniform", return_value=1.0):
+        res = await merger._wait_for_checks("owner", "repo", "some-ref")
+
+    assert res is False
+    assert gh_mock.list_check_runs.call_count == 10
+    assert len(sleep_calls) == 10
+
+    total_slept = sum(sleep_calls)
+    assert abs(total_slept - 600.0) < 1e-9
+
+    base_intervals = [15.0, 22.5, 33.75, 50.625, 75.9375, 90.0, 90.0, 90.0, 90.0, 42.1875]
+    for i, base_val in enumerate(base_intervals):
+        assert abs(sleep_calls[i] - base_val) < 1e-9
+
+    print("[PASS] test_auto_merge_polling_backoff: backoff schedule and total call count (10) verified successfully")
+
+
+async def test_github_client_merge_retry():
+    from clients.github import GitHubClient
+    from exceptions import GitHubApiError
+    from unittest.mock import AsyncMock, patch, MagicMock
+    import httpx
+    import tenacity
+
+    client = GitHubClient(token="dummy-token")
+
+    mock_response_502 = MagicMock(spec=httpx.Response)
+    mock_response_502.status_code = 502
+    mock_response_502.text = "Bad Gateway"
+    mock_response_502.headers = {}
+
+    mock_response_200 = MagicMock(spec=httpx.Response)
+    mock_response_200.status_code = 200
+    mock_response_200.headers = {}
+    mock_response_200.json.return_value = {
+        "sha": "merged-sha-999",
+        "merged": True,
+        "message": "Pull Request successfully merged"
+    }
+
+    mock_put = AsyncMock()
+    mock_put.side_effect = [mock_response_502, mock_response_502, mock_response_200]
+    client._client.put = mock_put
+
+    with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
+        res = await client.merge_pull_request("owner", "repo", 42, "squash", "Merged PR")
+
+    assert mock_put.call_count == 3
+    assert res.merged is True
+    assert res.sha == "merged-sha-999"
+    assert mock_sleep.call_count == 2
+
+    mock_put_fail = AsyncMock()
+    mock_put_fail.return_value = mock_response_502
+    client._client.put = mock_put_fail
+
+    with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
+        try:
+            await client.merge_pull_request("owner", "repo", 42, "squash", "Merged PR")
+            assert False, "Should have raised RetryError"
+        except tenacity.RetryError as exc:
+            try:
+                raise exc.reraise()
+            except GitHubApiError as original_exc:
+                assert original_exc.status_code == 502
+
+    assert mock_put_fail.call_count == 3
+
+    await client.close()
+    print("[PASS] test_github_client_merge_retry: @_retry decorator on merge_pull_request successfully retries 5xx and fails after 3 attempts")
+
+
 async def main():
     print("=" * 50)
     print("JAT-AI GAP COVERAGE TESTS")
@@ -867,6 +956,8 @@ async def main():
     await test_capacity_aware_account_routing()
     await test_query_efficiency_fixes()
     await test_session_poller_and_backoff()
+    await test_auto_merge_polling_backoff()
+    await test_github_client_merge_retry()
 
     print()
     print("=" * 50)

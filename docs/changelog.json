@@ -112,6 +112,14 @@
       "summary": "Unify the two independent polling loops in coordinator.py and session_runner.py into a single modular polling engine SessionPoller with adaptive backoff and random jitter.",
       "status": "completed",
       "journal_ref": ".jules/journals/2026-07-25T04-07-11Z.json"
+    },
+    {
+      "step_number": 14,
+      "timestamp_utc": "2026-07-25T04:55:00Z",
+      "title": "Reduce auto_merge.py's check-polling overhead and add merge_pull_request retry protection",
+      "summary": "Implemented adaptive backoff with jitter and precise timeout-capping in _wait_for_checks (initial=15s, multiplier=1.5, max=90s), reducing worst-case polls by 50% (from 20 to 10 polls) over 10 minutes. Decorated merge_pull_request with @_retry to elegantly handle transient 5xx/429 errors.",
+      "status": "completed",
+      "journal_ref": ".jules/journals/2026-07-25T04-55-00Z.json"
     }
   ]
 }

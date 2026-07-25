@@ -88,6 +88,7 @@ class GitHubClient:
             for cr in data.get("check_runs", [])
         ]
 
+    @_retry
     async def merge_pull_request(
         self,
         owner: str,

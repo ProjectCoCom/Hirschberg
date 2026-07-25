@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from enum import StrEnum
+import random
 
 import structlog
 
@@ -10,8 +11,10 @@ from models.github import CheckConclusion, CheckStatus, MergeResult
 
 log = structlog.get_logger()
 
-CHECK_POLL_INTERVAL = 30
-CHECK_TIMEOUT = 600
+CHECK_INITIAL_INTERVAL = 15.0
+CHECK_MULTIPLIER = 1.5
+CHECK_MAX_INTERVAL = 90.0
+CHECK_TIMEOUT = 600.0
 
 
 class MergeStrategy(StrEnum):
@@ -188,7 +191,8 @@ class AutoMerge:
     async def _wait_for_checks(
         self, owner: str, repo: str, ref: str
     ) -> bool:
-        elapsed = 0
+        elapsed = 0.0
+        interval = CHECK_INITIAL_INTERVAL
         while elapsed < CHECK_TIMEOUT:
             checks = await self._github.list_check_runs(owner, repo, ref)
 
@@ -207,8 +211,25 @@ class AutoMerge:
                     return False
                 return True
 
-            await asyncio.sleep(CHECK_POLL_INTERVAL)
-            elapsed += CHECK_POLL_INTERVAL
+            # Calculate adaptive sleep interval with +/- 10% jitter
+            jitter = random.uniform(0.9, 1.1)
+            sleep_time = interval * jitter
 
-        log.warning("checks_timed_out", pr_ref=ref)
+            # Cap the final sleep to the exact remaining time before CHECK_TIMEOUT is reached
+            remaining = CHECK_TIMEOUT - elapsed
+            if sleep_time > remaining:
+                sleep_time = remaining
+
+            if sleep_time <= 0:
+                break
+
+            await asyncio.sleep(sleep_time)
+            elapsed += sleep_time
+
+            # Update the base interval for the next iteration
+            interval = min(interval * CHECK_MULTIPLIER, CHECK_MAX_INTERVAL)
+
+        if elapsed >= CHECK_TIMEOUT:
+            log.warning("checks_timed_out", pr_ref=ref)
+            return False
         return False

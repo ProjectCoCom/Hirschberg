@@ -121,7 +121,7 @@ async def simulate_step_2_plan():
 
     plan = parse_plan(MOCK_AI_PLAN_RESPONSE, "iceyxsm", "AnyWebApi")
     assert len(plan.tasks) == 3
-    assert plan.tasks[2].dependencies == ["agent-1", "agent-2"]
+    assert plan.tasks[2].depends_on == [plan.tasks[0].id, plan.tasks[1].id]
     print(f"  [SYSTEM] Plan parsed: {len(plan.tasks)} tasks, mode={plan.execution_mode}")
     print()
     print("[PASS] step_2: plan created with 3 tasks, hybrid execution")
@@ -148,16 +148,16 @@ async def simulate_step_4_dispatch():
         jules_prompt = JULES_MASTER_PROMPT.format(
             rules=RULES_TEMPLATE[:200],
             agent_context="No previous agents",
-            task_description=task.description,
+            task_description=task.prompt,
             exit_criteria=task.exit_criteria,
         )
         assert "<identity>" in jules_prompt
-        assert task.description in jules_prompt
+        assert task.prompt in jules_prompt
         assert task.exit_criteria in jules_prompt
 
-        await mock_github.create_branch("iceyxsm", "AnyWebApi", task.branch_name, MOCK_SHA, "token")
-        session_id = await mock_jules.create_session(jules_prompt, "iceyxsm", "AnyWebApi", task.branch_name, "key")
-        print(f"  [JULES] {task.id}: branch={task.branch_name}, session={session_id}")
+        await mock_github.create_branch("iceyxsm", "AnyWebApi", task.branch, MOCK_SHA, "token")
+        session_id = await mock_jules.create_session(jules_prompt, "iceyxsm", "AnyWebApi", task.branch, "key")
+        print(f"  [JULES] {task.id}: branch={task.branch}, session={session_id}")
 
     print(f"  [SYSTEM] 2 sessions running in parallel (agent-1, agent-2)")
     print(f"  [SYSTEM] agent-3 waiting for dependencies...")
