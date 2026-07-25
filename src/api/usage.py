@@ -1,3 +1,14 @@
+"""
+API router for token and task budget tracking.
+
+Responsibilities:
+- Returns detailed metrics of daily token consumption, costs, and remaining task budgets.
+
+Coupling:
+- Queries session activities and database logs.
+"""
+
+
 from __future__ import annotations
 
 from datetime import datetime, timezone, timedelta

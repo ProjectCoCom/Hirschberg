@@ -1,3 +1,14 @@
+/**
+ * Domain model definitions for 'Agentruntime'.
+ *
+ * Responsibilities:
+ * Defines TypeScript interfaces, validation types, and helper algorithms for 'Agentruntime' model states.
+ *
+ * Coupling:
+ * Core domain logic consumed by application ports, adapters, and UI presentation views.
+ */
+
+
 export type AgentRuntimeState =
   | "idle"
   | "processing"

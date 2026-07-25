@@ -1,3 +1,14 @@
+"""
+Thinking block XML parser.
+
+Responsibilities:
+- Extracts '<thought>' blocks from raw LLM responses to isolate reasoning from code output.
+
+Coupling:
+- Used by 'src/core/ai_interface.py'.
+"""
+
+
 from __future__ import annotations
 
 import re

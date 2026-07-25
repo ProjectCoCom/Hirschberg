@@ -1,3 +1,14 @@
+/**
+ * Vite bundler configuration.
+ *
+ * Responsibilities:
+ * Configures development port, asset proxies, and bundling plugins for building dashboard assets.
+ *
+ * Coupling:
+ * Used by pnpm build/dev commands.
+ */
+
+
 import react from "@vitejs/plugin-react";
 import { resolve } from "node:path";
 import { defineConfig } from "vite";

@@ -1,3 +1,14 @@
+/**
+ * React UI component 'Statusbadge'.
+ *
+ * Responsibilities:
+ * Renders the 'Statusbadge' dashboard interface, manages localized state, and handles user actions.
+ *
+ * Coupling:
+ * Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
+ */
+
+
 export type StatusBadgeTone = "live" | "idle" | "processing" | "queued" | "blocked" | "warning";
 
 type StatusBadgeProps = {

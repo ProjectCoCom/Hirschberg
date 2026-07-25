@@ -1,3 +1,14 @@
+"""
+Dashboard seeding script.
+
+Responsibilities:
+- Seeds SQLite databases with initial active worker sessions, budgets, and mock tasks for testing dashboard renders.
+
+Coupling:
+- Used for development or manual verifications.
+"""
+
+
 # Usage: python examples/seed_dashboard.py
 from __future__ import annotations
 

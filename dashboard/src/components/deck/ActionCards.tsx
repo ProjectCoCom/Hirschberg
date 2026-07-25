@@ -1,3 +1,14 @@
+/**
+ * React UI component 'Actioncards'.
+ *
+ * Responsibilities:
+ * Renders the 'Actioncards' dashboard interface, manages localized state, and handles user actions.
+ *
+ * Coupling:
+ * Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
+ */
+
+
 import { Check } from "lucide-react";
 
 import type { TerminalAgentProvider } from "../../app/types";

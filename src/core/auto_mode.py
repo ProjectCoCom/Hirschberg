@@ -1,3 +1,14 @@
+"""
+Auto-run orchestrator loop for standalone agent sessions.
+
+Responsibilities:
+- Parses goals, maintains loop state, and automatically proceeds with agent instructions.
+
+Coupling:
+- Integrates with 'src/core/ai_interface.py'.
+"""
+
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

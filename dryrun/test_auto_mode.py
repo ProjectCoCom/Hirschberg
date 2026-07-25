@@ -1,8 +1,14 @@
 """
-Dry run test for auto mode.
-Run with: python -m dryrun.test_auto_mode
-Tests the autonomous planning and execution flow with mocked APIs.
+Dry-run integration test suite 'Test Auto Mode'.
+
+Responsibilities:
+- Implements automated tests, mock execution environments, or workflow assertions to verify core features.
+
+Coupling:
+- Triggered by pytest or CI workflows to guarantee codebase stability without making active live API requests.
 """
+
+
 from __future__ import annotations
 
 import asyncio

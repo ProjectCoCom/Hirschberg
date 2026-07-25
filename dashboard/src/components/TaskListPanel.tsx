@@ -1,3 +1,14 @@
+/**
+ * React UI component 'Tasklistpanel'.
+ *
+ * Responsibilities:
+ * Renders the 'Tasklistpanel' dashboard interface, manages localized state, and handles user actions.
+ *
+ * Coupling:
+ * Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
+ */
+
+
 import type { LiveTask } from "../app/hooks/useLiveTaskStatus";
 
 type Props = {

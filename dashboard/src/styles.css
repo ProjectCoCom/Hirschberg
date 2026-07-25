@@ -1,4 +1,13 @@
-/* Foundation */
+/* Custom CSS style sheet 'Styles'.
+ *
+ * Responsibilities:
+ * Specifies UI class designs, responsive layouts, animations, and color scheme tokens.
+ *
+ * Coupling:
+ * Loaded by 'main.tsx' or 'App.tsx' to style React dashboard views.
+ */
+
+
 @import "./styles/foundation.css";
 
 /* Shared UI primitives and surfaces */

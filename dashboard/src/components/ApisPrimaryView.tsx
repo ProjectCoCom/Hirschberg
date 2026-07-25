@@ -1,3 +1,14 @@
+/**
+ * React UI component 'Apisprimaryview'.
+ *
+ * Responsibilities:
+ * Renders the 'Apisprimaryview' dashboard interface, manages localized state, and handles user actions.
+ *
+ * Coupling:
+ * Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
+ */
+
+
 import { useRef, useState } from "react";
 import { AiProvidersPanel } from "./apis/AiProvidersPanel";
 import { JulesAccountsPanel } from "./apis/JulesAccountsPanel";

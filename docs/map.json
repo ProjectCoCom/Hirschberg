@@ -1,0 +1,1062 @@
+[
+  {
+    "path": "config.example.json",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/config.example.json",
+    "description": "Configuration template file."
+  },
+  {
+    "path": "dashboard/api-mock.mjs",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/api-mock.mjs",
+    "description": "Mock server script for dashboard API prototyping."
+  },
+  {
+    "path": "dashboard/core/adapters/InMemoryTerminalSnapshotReader.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/core/adapters/InMemoryTerminalSnapshotReader.ts",
+    "description": "Frontend JavaScript/TypeScript module 'Inmemoryterminalsnapshotreader'."
+  },
+  {
+    "path": "dashboard/core/application/buildTerminalList.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/core/application/buildTerminalList.ts",
+    "description": "Frontend JavaScript/TypeScript module 'Buildterminallist'."
+  },
+  {
+    "path": "dashboard/core/domain/agentRuntime.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/core/domain/agentRuntime.ts",
+    "description": "Domain model definitions for 'Agentruntime'."
+  },
+  {
+    "path": "dashboard/core/domain/channel.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/core/domain/channel.ts",
+    "description": "Domain model definitions for 'Channel'."
+  },
+  {
+    "path": "dashboard/core/domain/completionSound.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/core/domain/completionSound.ts",
+    "description": "Domain model definitions for 'Completionsound'."
+  },
+  {
+    "path": "dashboard/core/domain/conversation.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/core/domain/conversation.ts",
+    "description": "Domain model definitions for 'Conversation'."
+  },
+  {
+    "path": "dashboard/core/domain/deck.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/core/domain/deck.ts",
+    "description": "Domain model definitions for 'Deck'."
+  },
+  {
+    "path": "dashboard/core/domain/git.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/core/domain/git.ts",
+    "description": "Domain model definitions for 'Git'."
+  },
+  {
+    "path": "dashboard/core/domain/monitor.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/core/domain/monitor.ts",
+    "description": "Domain model definitions for 'Monitor'."
+  },
+  {
+    "path": "dashboard/core/domain/setup.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/core/domain/setup.ts",
+    "description": "Domain model definitions for 'Setup'."
+  },
+  {
+    "path": "dashboard/core/domain/terminal.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/core/domain/terminal.ts",
+    "description": "Domain model definitions for 'Terminal'."
+  },
+  {
+    "path": "dashboard/core/domain/uiState.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/core/domain/uiState.ts",
+    "description": "Domain model definitions for 'Uistate'."
+  },
+  {
+    "path": "dashboard/core/domain/usage.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/core/domain/usage.ts",
+    "description": "Domain model definitions for 'Usage'."
+  },
+  {
+    "path": "dashboard/core/index.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/core/index.ts",
+    "description": "Frontend JavaScript/TypeScript module 'Index'."
+  },
+  {
+    "path": "dashboard/core/ports/TerminalSnapshotReader.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/core/ports/TerminalSnapshotReader.ts",
+    "description": "Frontend JavaScript/TypeScript module 'Terminalsnapshotreader'."
+  },
+  {
+    "path": "dashboard/core/util/typeCoercion.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/core/util/typeCoercion.ts",
+    "description": "Frontend JavaScript/TypeScript module 'Typecoercion'."
+  },
+  {
+    "path": "dashboard/dist/assets/index-5yBLDPn3.css",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/dist/assets/index-5yBLDPn3.css",
+    "description": ""
+  },
+  {
+    "path": "dashboard/dist/index.html",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/dist/index.html",
+    "description": "Main HTML template for React dashboard."
+  },
+  {
+    "path": "dashboard/index.html",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/index.html",
+    "description": "Main HTML template for React dashboard."
+  },
+  {
+    "path": "dashboard/package.json",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/package.json",
+    "description": "React dashboard NPM packages and scripts."
+  },
+  {
+    "path": "dashboard/src/App.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/App.tsx",
+    "description": "Frontend JavaScript/TypeScript module 'App'."
+  },
+  {
+    "path": "dashboard/src/app/canvas/types.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/app/canvas/types.ts",
+    "description": "Frontend JavaScript/TypeScript module 'Types'."
+  },
+  {
+    "path": "dashboard/src/app/constants.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/app/constants.ts",
+    "description": "Frontend JavaScript/TypeScript module 'Constants'."
+  },
+  {
+    "path": "dashboard/src/app/conversationNormalizers.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/app/conversationNormalizers.ts",
+    "description": "Frontend JavaScript/TypeScript module 'Conversationnormalizers'."
+  },
+  {
+    "path": "dashboard/src/app/formatTimestamp.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/app/formatTimestamp.ts",
+    "description": "Frontend JavaScript/TypeScript module 'Formattimestamp'."
+  },
+  {
+    "path": "dashboard/src/app/githubMetrics.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/app/githubMetrics.ts",
+    "description": "Frontend JavaScript/TypeScript module 'Githubmetrics'."
+  },
+  {
+    "path": "dashboard/src/app/githubNormalizers.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/app/githubNormalizers.ts",
+    "description": "Frontend JavaScript/TypeScript module 'Githubnormalizers'."
+  },
+  {
+    "path": "dashboard/src/app/hooks/useAgentRuntimeStates.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/app/hooks/useAgentRuntimeStates.ts",
+    "description": "Custom React hook 'Useagentruntimestates'."
+  },
+  {
+    "path": "dashboard/src/app/hooks/useBackendLivenessPolling.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/app/hooks/useBackendLivenessPolling.ts",
+    "description": "Custom React hook 'Usebackendlivenesspolling'."
+  },
+  {
+    "path": "dashboard/src/app/hooks/useCanvasGraphData.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/app/hooks/useCanvasGraphData.ts",
+    "description": "Custom React hook 'Usecanvasgraphdata'."
+  },
+  {
+    "path": "dashboard/src/app/hooks/useCanvasTransform.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/app/hooks/useCanvasTransform.ts",
+    "description": "Custom React hook 'Usecanvastransform'."
+  },
+  {
+    "path": "dashboard/src/app/hooks/useClaudeUsagePolling.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/app/hooks/useClaudeUsagePolling.ts",
+    "description": "Custom React hook 'Useclaudeusagepolling'."
+  },
+  {
+    "path": "dashboard/src/app/hooks/useClickOutside.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/app/hooks/useClickOutside.ts",
+    "description": "Custom React hook 'Useclickoutside'."
+  },
+  {
+    "path": "dashboard/src/app/hooks/useCodexUsagePolling.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/app/hooks/useCodexUsagePolling.ts",
+    "description": "Custom React hook 'Usecodexusagepolling'."
+  },
+  {
+    "path": "dashboard/src/app/hooks/useConsoleKeyboardShortcuts.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/app/hooks/useConsoleKeyboardShortcuts.ts",
+    "description": "Custom React hook 'Useconsolekeyboardshortcuts'."
+  },
+  {
+    "path": "dashboard/src/app/hooks/useConversationsRuntime.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/app/hooks/useConversationsRuntime.ts",
+    "description": "Custom React hook 'Useconversationsruntime'."
+  },
+  {
+    "path": "dashboard/src/app/hooks/useForceSimulation.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/app/hooks/useForceSimulation.ts",
+    "description": "Custom React hook 'Useforcesimulation'."
+  },
+  {
+    "path": "dashboard/src/app/hooks/useGitHubPrimaryViewModel.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/app/hooks/useGitHubPrimaryViewModel.ts",
+    "description": "Custom React hook 'Usegithubprimaryviewmodel'."
+  },
+  {
+    "path": "dashboard/src/app/hooks/useGithubSummaryPolling.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/app/hooks/useGithubSummaryPolling.ts",
+    "description": "Custom React hook 'Usegithubsummarypolling'."
+  },
+  {
+    "path": "dashboard/src/app/hooks/useLiveTaskStatus.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/app/hooks/useLiveTaskStatus.ts",
+    "description": "Custom React hook 'Uselivetaskstatus'."
+  },
+  {
+    "path": "dashboard/src/app/hooks/useMonitorRuntime.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/app/hooks/useMonitorRuntime.ts",
+    "description": "Custom React hook 'Usemonitorruntime'."
+  },
+  {
+    "path": "dashboard/src/app/hooks/usePersistedUiState.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/app/hooks/usePersistedUiState.ts",
+    "description": "Custom React hook 'Usepersisteduistate'."
+  },
+  {
+    "path": "dashboard/src/app/hooks/usePollingData.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/app/hooks/usePollingData.ts",
+    "description": "Custom React hook 'Usepollingdata'."
+  },
+  {
+    "path": "dashboard/src/app/hooks/usePromptLibrary.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/app/hooks/usePromptLibrary.ts",
+    "description": "Custom React hook 'Usepromptlibrary'."
+  },
+  {
+    "path": "dashboard/src/app/hooks/useTentacleGitLifecycle.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/app/hooks/useTentacleGitLifecycle.ts",
+    "description": "Custom React hook 'Usetentaclegitlifecycle'."
+  },
+  {
+    "path": "dashboard/src/app/hooks/useTerminalMutations.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/app/hooks/useTerminalMutations.ts",
+    "description": "Custom React hook 'Useterminalmutations'."
+  },
+  {
+    "path": "dashboard/src/app/hooks/useUsageHeatmapPolling.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/app/hooks/useUsageHeatmapPolling.ts",
+    "description": "Custom React hook 'Useusageheatmappolling'."
+  },
+  {
+    "path": "dashboard/src/app/hooks/useWorkspaceSetup.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/app/hooks/useWorkspaceSetup.ts",
+    "description": "Custom React hook 'Useworkspacesetup'."
+  },
+  {
+    "path": "dashboard/src/app/hotkeys.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/app/hotkeys.ts",
+    "description": "Frontend JavaScript/TypeScript module 'Hotkeys'."
+  },
+  {
+    "path": "dashboard/src/app/monitorNormalizers.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/app/monitorNormalizers.ts",
+    "description": "Frontend JavaScript/TypeScript module 'Monitornormalizers'."
+  },
+  {
+    "path": "dashboard/src/app/notificationSounds.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/app/notificationSounds.ts",
+    "description": "Frontend JavaScript/TypeScript module 'Notificationsounds'."
+  },
+  {
+    "path": "dashboard/src/app/terminalRuntimeStateStore.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/app/terminalRuntimeStateStore.ts",
+    "description": "Frontend JavaScript/TypeScript module 'Terminalruntimestatestore'."
+  },
+  {
+    "path": "dashboard/src/app/terminalState.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/app/terminalState.ts",
+    "description": "Frontend JavaScript/TypeScript module 'Terminalstate'."
+  },
+  {
+    "path": "dashboard/src/app/types.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/app/types.ts",
+    "description": "Frontend JavaScript/TypeScript module 'Types'."
+  },
+  {
+    "path": "dashboard/src/app/uiStateNormalizers.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/app/uiStateNormalizers.ts",
+    "description": "Frontend JavaScript/TypeScript module 'Uistatenormalizers'."
+  },
+  {
+    "path": "dashboard/src/app/usageNormalizers.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/app/usageNormalizers.ts",
+    "description": "Frontend JavaScript/TypeScript module 'Usagenormalizers'."
+  },
+  {
+    "path": "dashboard/src/components/ActiveAgentsSidebar.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/ActiveAgentsSidebar.tsx",
+    "description": "React UI component 'Activeagentssidebar'."
+  },
+  {
+    "path": "dashboard/src/components/ActivityPrimaryView.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/ActivityPrimaryView.tsx",
+    "description": "React UI component 'Activityprimaryview'."
+  },
+  {
+    "path": "dashboard/src/components/AgentStateBadge.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/AgentStateBadge.tsx",
+    "description": "React UI component 'Agentstatebadge'."
+  },
+  {
+    "path": "dashboard/src/components/ApisPrimaryView.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/ApisPrimaryView.tsx",
+    "description": "React UI component 'Apisprimaryview'."
+  },
+  {
+    "path": "dashboard/src/components/CanvasPrimaryView.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/CanvasPrimaryView.tsx",
+    "description": "React UI component 'Canvasprimaryview'."
+  },
+  {
+    "path": "dashboard/src/components/ChatPrimaryView.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/ChatPrimaryView.tsx",
+    "description": "React UI component 'Chatprimaryview'."
+  },
+  {
+    "path": "dashboard/src/components/ClearAllConversationsDialog.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/ClearAllConversationsDialog.tsx",
+    "description": "React UI component 'Clearallconversationsdialog'."
+  },
+  {
+    "path": "dashboard/src/components/ConsolePrimaryNav.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/ConsolePrimaryNav.tsx",
+    "description": "React UI component 'Consoleprimarynav'."
+  },
+  {
+    "path": "dashboard/src/components/DeckPrimaryView.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/DeckPrimaryView.tsx",
+    "description": "React UI component 'Deckprimaryview'."
+  },
+  {
+    "path": "dashboard/src/components/EmptyOctopus.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/EmptyOctopus.tsx",
+    "description": "React UI component 'Emptyoctopus'."
+  },
+  {
+    "path": "dashboard/src/components/GitHubPrimaryView.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/GitHubPrimaryView.tsx",
+    "description": "React UI component 'Githubprimaryview'."
+  },
+  {
+    "path": "dashboard/src/components/JulesPrimaryView.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/JulesPrimaryView.tsx",
+    "description": "React UI component 'Julesprimaryview'."
+  },
+  {
+    "path": "dashboard/src/components/MonitorPrimaryView.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/MonitorPrimaryView.tsx",
+    "description": "React UI component 'Monitorprimaryview'."
+  },
+  {
+    "path": "dashboard/src/components/PrimaryViewRouter.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/PrimaryViewRouter.tsx",
+    "description": "React UI component 'Primaryviewrouter'."
+  },
+  {
+    "path": "dashboard/src/components/PromptsPrimaryView.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/PromptsPrimaryView.tsx",
+    "description": "React UI component 'Promptsprimaryview'."
+  },
+  {
+    "path": "dashboard/src/components/ReposPrimaryView.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/ReposPrimaryView.tsx",
+    "description": "React UI component 'Reposprimaryview'."
+  },
+  {
+    "path": "dashboard/src/components/RuntimeStatusStrip.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/RuntimeStatusStrip.tsx",
+    "description": "React UI component 'Runtimestatusstrip'."
+  },
+  {
+    "path": "dashboard/src/components/SettingsPrimaryView.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/SettingsPrimaryView.tsx",
+    "description": "React UI component 'Settingsprimaryview'."
+  },
+  {
+    "path": "dashboard/src/components/SidebarActionPanel.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/SidebarActionPanel.tsx",
+    "description": "React UI component 'Sidebaractionpanel'."
+  },
+  {
+    "path": "dashboard/src/components/SidebarConversationsList.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/SidebarConversationsList.tsx",
+    "description": "React UI component 'Sidebarconversationslist'."
+  },
+  {
+    "path": "dashboard/src/components/SidebarPromptsList.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/SidebarPromptsList.tsx",
+    "description": "React UI component 'Sidebarpromptslist'."
+  },
+  {
+    "path": "dashboard/src/components/TaskListPanel.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/TaskListPanel.tsx",
+    "description": "React UI component 'Tasklistpanel'."
+  },
+  {
+    "path": "dashboard/src/components/TelemetryTape.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/TelemetryTape.tsx",
+    "description": "React UI component 'Telemetrytape'."
+  },
+  {
+    "path": "dashboard/src/components/ToastNotification.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/ToastNotification.tsx",
+    "description": "React UI component 'Toastnotification'."
+  },
+  {
+    "path": "dashboard/src/components/UsageHeatmap.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/UsageHeatmap.tsx",
+    "description": "React UI component 'Usageheatmap'."
+  },
+  {
+    "path": "dashboard/src/components/UsagePrimaryView.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/UsagePrimaryView.tsx",
+    "description": "React UI component 'Usageprimaryview'."
+  },
+  {
+    "path": "dashboard/src/components/apis/AiProvidersPanel.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/apis/AiProvidersPanel.tsx",
+    "description": "React UI component 'Aiproviderspanel'."
+  },
+  {
+    "path": "dashboard/src/components/apis/JulesAccountsPanel.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/apis/JulesAccountsPanel.tsx",
+    "description": "React UI component 'Julesaccountspanel'."
+  },
+  {
+    "path": "dashboard/src/components/canvas/CanvasTentaclePanel.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/canvas/CanvasTentaclePanel.tsx",
+    "description": "React UI component 'Canvastentaclepanel'."
+  },
+  {
+    "path": "dashboard/src/components/canvas/OctopusNode.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/canvas/OctopusNode.tsx",
+    "description": "React UI component 'Octopusnode'."
+  },
+  {
+    "path": "dashboard/src/components/canvas/SessionNode.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/canvas/SessionNode.tsx",
+    "description": "React UI component 'Sessionnode'."
+  },
+  {
+    "path": "dashboard/src/components/chat/SearchableDropdown.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/chat/SearchableDropdown.tsx",
+    "description": "React UI component 'Searchabledropdown'."
+  },
+  {
+    "path": "dashboard/src/components/chat/useExecutionActions.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/chat/useExecutionActions.ts",
+    "description": "React UI component 'Useexecutionactions'."
+  },
+  {
+    "path": "dashboard/src/components/deck/ActionCards.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/deck/ActionCards.tsx",
+    "description": "React UI component 'Actioncards'."
+  },
+  {
+    "path": "dashboard/src/components/deck/AddTentacleForm.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/deck/AddTentacleForm.tsx",
+    "description": "React UI component 'Addtentacleform'."
+  },
+  {
+    "path": "dashboard/src/components/deck/DeckBottomActions.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/deck/DeckBottomActions.tsx",
+    "description": "React UI component 'Deckbottomactions'."
+  },
+  {
+    "path": "dashboard/src/components/deck/TentaclePod.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/deck/TentaclePod.tsx",
+    "description": "React UI component 'Tentaclepod'."
+  },
+  {
+    "path": "dashboard/src/components/deck/WorkspaceSetupCard.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/deck/WorkspaceSetupCard.tsx",
+    "description": "React UI component 'Workspacesetupcard'."
+  },
+  {
+    "path": "dashboard/src/components/deck/octopusVisuals.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/deck/octopusVisuals.ts",
+    "description": "React UI component 'Octopusvisuals'."
+  },
+  {
+    "path": "dashboard/src/components/prompt-templates.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/prompt-templates.ts",
+    "description": "React UI component 'Prompt Templates'."
+  },
+  {
+    "path": "dashboard/src/components/ui/ActionButton.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/ui/ActionButton.tsx",
+    "description": "React UI component 'Actionbutton'."
+  },
+  {
+    "path": "dashboard/src/components/ui/ConfirmationDialog.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/ui/ConfirmationDialog.tsx",
+    "description": "React UI component 'Confirmationdialog'."
+  },
+  {
+    "path": "dashboard/src/components/ui/MarkdownContent.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/ui/MarkdownContent.tsx",
+    "description": "React UI component 'Markdowncontent'."
+  },
+  {
+    "path": "dashboard/src/components/ui/SettingsToggle.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/ui/SettingsToggle.tsx",
+    "description": "React UI component 'Settingstoggle'."
+  },
+  {
+    "path": "dashboard/src/components/ui/StatusBadge.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/components/ui/StatusBadge.tsx",
+    "description": "React UI component 'Statusbadge'."
+  },
+  {
+    "path": "dashboard/src/lib/supabase.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/lib/supabase.ts",
+    "description": "Frontend JavaScript/TypeScript module 'Supabase'."
+  },
+  {
+    "path": "dashboard/src/main.tsx",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/main.tsx",
+    "description": "Frontend JavaScript/TypeScript module 'Main'."
+  },
+  {
+    "path": "dashboard/src/runtime/runtimeEndpoints.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/runtime/runtimeEndpoints.ts",
+    "description": "Frontend JavaScript/TypeScript module 'Runtimeendpoints'."
+  },
+  {
+    "path": "dashboard/src/styles.css",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/styles.css",
+    "description": "Custom CSS style sheet 'Styles'."
+  },
+  {
+    "path": "dashboard/src/styles/chrome-and-buttons.css",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/styles/chrome-and-buttons.css",
+    "description": "Custom CSS style sheet 'Chrome And Buttons'."
+  },
+  {
+    "path": "dashboard/src/styles/console-apis.css",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/styles/console-apis.css",
+    "description": "Custom CSS style sheet 'Console Apis'."
+  },
+  {
+    "path": "dashboard/src/styles/console-canvas-activity.css",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/styles/console-canvas-activity.css",
+    "description": "Custom CSS style sheet 'Console Canvas Activity'."
+  },
+  {
+    "path": "dashboard/src/styles/console-canvas-canvas.css",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/styles/console-canvas-canvas.css",
+    "description": "Custom CSS style sheet 'Console Canvas Canvas'."
+  },
+  {
+    "path": "dashboard/src/styles/console-canvas-code-intel.css",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/styles/console-canvas-code-intel.css",
+    "description": "Custom CSS style sheet 'Console Canvas Code Intel'."
+  },
+  {
+    "path": "dashboard/src/styles/console-canvas-conversations.css",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/styles/console-canvas-conversations.css",
+    "description": "Custom CSS style sheet 'Console Canvas Conversations'."
+  },
+  {
+    "path": "dashboard/src/styles/console-canvas-deck.css",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/styles/console-canvas-deck.css",
+    "description": "Custom CSS style sheet 'Console Canvas Deck'."
+  },
+  {
+    "path": "dashboard/src/styles/console-canvas-github.css",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/styles/console-canvas-github.css",
+    "description": "Custom CSS style sheet 'Console Canvas Github'."
+  },
+  {
+    "path": "dashboard/src/styles/console-canvas-monitor.css",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/styles/console-canvas-monitor.css",
+    "description": "Custom CSS style sheet 'Console Canvas Monitor'."
+  },
+  {
+    "path": "dashboard/src/styles/console-canvas-pixpack.css",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/styles/console-canvas-pixpack.css",
+    "description": "Custom CSS style sheet 'Console Canvas Pixpack'."
+  },
+  {
+    "path": "dashboard/src/styles/console-canvas-prompts.css",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/styles/console-canvas-prompts.css",
+    "description": "Custom CSS style sheet 'Console Canvas Prompts'."
+  },
+  {
+    "path": "dashboard/src/styles/console-canvas-settings.css",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/styles/console-canvas-settings.css",
+    "description": "Custom CSS style sheet 'Console Canvas Settings'."
+  },
+  {
+    "path": "dashboard/src/styles/console-chat.css",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/styles/console-chat.css",
+    "description": "Custom CSS style sheet 'Console Chat'."
+  },
+  {
+    "path": "dashboard/src/styles/console-chrome-status-nav.css",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/styles/console-chrome-status-nav.css",
+    "description": "Custom CSS style sheet 'Console Chrome Status Nav'."
+  },
+  {
+    "path": "dashboard/src/styles/console-jules.css",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/styles/console-jules.css",
+    "description": "Custom CSS style sheet 'Console Jules'."
+  },
+  {
+    "path": "dashboard/src/styles/console-overrides-telemetry.css",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/styles/console-overrides-telemetry.css",
+    "description": "Custom CSS style sheet 'Console Overrides Telemetry'."
+  },
+  {
+    "path": "dashboard/src/styles/console-repos.css",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/styles/console-repos.css",
+    "description": "Custom CSS style sheet 'Console Repos'."
+  },
+  {
+    "path": "dashboard/src/styles/console-tasks.css",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/styles/console-tasks.css",
+    "description": "Custom CSS style sheet 'Console Tasks'."
+  },
+  {
+    "path": "dashboard/src/styles/console-theme-tokens.css",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/styles/console-theme-tokens.css",
+    "description": "Custom CSS style sheet 'Console Theme Tokens'."
+  },
+  {
+    "path": "dashboard/src/styles/console-usage.css",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/styles/console-usage.css",
+    "description": "Custom CSS style sheet 'Console Usage'."
+  },
+  {
+    "path": "dashboard/src/styles/foundation.css",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/styles/foundation.css",
+    "description": "Custom CSS style sheet 'Foundation'."
+  },
+  {
+    "path": "dashboard/src/styles/sidebar-and-scrollbars.css",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/styles/sidebar-and-scrollbars.css",
+    "description": "Custom CSS style sheet 'Sidebar And Scrollbars'."
+  },
+  {
+    "path": "dashboard/src/types/ws.d.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/src/types/ws.d.ts",
+    "description": "Frontend JavaScript/TypeScript module 'Ws.D'."
+  },
+  {
+    "path": "dashboard/tsconfig.json",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/tsconfig.json",
+    "description": "TypeScript project compiler configurations."
+  },
+  {
+    "path": "dashboard/vite.config.ts",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/vite.config.ts",
+    "description": "Vite bundler configuration."
+  },
+  {
+    "path": "docs/changelog.json",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/docs/changelog.json",
+    "description": "JSON configuration/data file 'Changelog'."
+  },
+  {
+    "path": "dryrun/mocks.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dryrun/mocks.py",
+    "description": "Dry-run integration test suite 'Mocks'."
+  },
+  {
+    "path": "dryrun/run_all.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dryrun/run_all.py",
+    "description": "Dry-run integration test suite 'Run All'."
+  },
+  {
+    "path": "dryrun/test_auto_mode.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dryrun/test_auto_mode.py",
+    "description": "Dry-run integration test suite 'Test Auto Mode'."
+  },
+  {
+    "path": "dryrun/test_e2e_simulation.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dryrun/test_e2e_simulation.py",
+    "description": "Dry-run integration test suite 'Test E2E Simulation'."
+  },
+  {
+    "path": "dryrun/test_full_workflow.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dryrun/test_full_workflow.py",
+    "description": "Dry-run integration test suite 'Test Full Workflow'."
+  },
+  {
+    "path": "dryrun/test_gaps.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dryrun/test_gaps.py",
+    "description": "Dry-run integration test suite 'Test Gaps'."
+  },
+  {
+    "path": "dryrun/test_jdocs.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dryrun/test_jdocs.py",
+    "description": "Dry-run integration test suite 'Test Jdocs'."
+  },
+  {
+    "path": "examples/seed_dashboard.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/examples/seed_dashboard.py",
+    "description": "Dashboard seeding script."
+  },
+  {
+    "path": "examples/workflow_parallel.json",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/examples/workflow_parallel.json",
+    "description": "Sample workflow JSON schema."
+  },
+  {
+    "path": "pyproject.toml",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/pyproject.toml",
+    "description": "Python project metadata and dev dependency settings."
+  },
+  {
+    "path": "scripts/generate_headers.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/scripts/generate_headers.py",
+    "description": "Python logic module 'Generate Headers'."
+  },
+  {
+    "path": "scripts/generate_map.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/scripts/generate_map.py",
+    "description": "Responsibilities:"
+  },
+  {
+    "path": "scripts/install.bat",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/scripts/install.bat",
+    "description": "Windows setup and installation batch script."
+  },
+  {
+    "path": "scripts/install.sh",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/scripts/install.sh",
+    "description": "!/usr/bin/env bash"
+  },
+  {
+    "path": "scripts/jat.bat",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/scripts/jat.bat",
+    "description": "Windows CLI command wrapper."
+  },
+  {
+    "path": "scripts/jat.sh",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/scripts/jat.sh",
+    "description": "!/usr/bin/env bash"
+  },
+  {
+    "path": "src/__init__.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/__init__.py",
+    "description": "Python logic module '  Init  '."
+  },
+  {
+    "path": "src/api/chat.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/api/chat.py",
+    "description": "API router for interactive chat sessions."
+  },
+  {
+    "path": "src/api/conversations.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/api/conversations.py",
+    "description": "API router for conversation logs and history."
+  },
+  {
+    "path": "src/api/execute.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/api/execute.py",
+    "description": "API router for task and session execution."
+  },
+  {
+    "path": "src/api/github.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/api/github.py",
+    "description": "API router for GitHub repository integration."
+  },
+  {
+    "path": "src/api/jules_accounts.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/api/jules_accounts.py",
+    "description": "API router for managing Jules account configurations."
+  },
+  {
+    "path": "src/api/plans.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/api/plans.py",
+    "description": "API router for parsing and managing agent workflow plans."
+  },
+  {
+    "path": "src/api/providers.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/api/providers.py",
+    "description": "API router for model providers (e.g., Anthropic, OpenAI)."
+  },
+  {
+    "path": "src/api/repos.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/api/repos.py",
+    "description": "API router for workspace repository metadata."
+  },
+  {
+    "path": "src/api/server.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/api/server.py",
+    "description": "FastAPI application entrypoint and middleware setup."
+  },
+  {
+    "path": "src/api/settings.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/api/settings.py",
+    "description": "API router for workspace settings."
+  },
+  {
+    "path": "src/api/usage.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/api/usage.py",
+    "description": "API router for token and task budget tracking."
+  },
+  {
+    "path": "src/cli.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/cli.py",
+    "description": "CLI entrypoint for running tasks and workflows."
+  },
+  {
+    "path": "src/cli_ai.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/cli_ai.py",
+    "description": "Interactive AI-assisted CLI command runner."
+  },
+  {
+    "path": "src/clients/__init__.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/clients/__init__.py",
+    "description": "Python logic module '  Init  '."
+  },
+  {
+    "path": "src/clients/ai_providers.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/clients/ai_providers.py",
+    "description": "Client factory for Anthropic, OpenAI, and other LLM services."
+  },
+  {
+    "path": "src/clients/database.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/clients/database.py",
+    "description": "High-level database transaction helper."
+  },
+  {
+    "path": "src/clients/github.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/clients/github.py",
+    "description": "High-level GitHub API client wrapper."
+  },
+  {
+    "path": "src/clients/jules.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/clients/jules.py",
+    "description": "HTTP client for interacting with Jules APIs."
+  },
+  {
+    "path": "src/clients/local_db.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/clients/local_db.py",
+    "description": "Low-level SQLite database client."
+  },
+  {
+    "path": "src/config.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/config.py",
+    "description": "Core application configuration loaded from the environment."
+  },
+  {
+    "path": "src/core/__init__.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/core/__init__.py",
+    "description": "Python logic module '  Init  '."
+  },
+  {
+    "path": "src/core/account_pool.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/core/account_pool.py",
+    "description": "Jules account pool manager."
+  },
+  {
+    "path": "src/core/adaptive_context.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/core/adaptive_context.py",
+    "description": "RAG and adaptive workspace context builder."
+  },
+  {
+    "path": "src/core/ai_interface.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/core/ai_interface.py",
+    "description": "Structured interface for LLM calls."
+  },
+  {
+    "path": "src/core/auto_merge.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/core/auto_merge.py",
+    "description": "Automated PR merger with checks validation."
+  },
+  {
+    "path": "src/core/auto_mode.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/core/auto_mode.py",
+    "description": "Auto-run orchestrator loop for standalone agent sessions."
+  },
+  {
+    "path": "src/core/config_loader.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/core/config_loader.py",
+    "description": "Configuration loader with in-memory caching."
+  },
+  {
+    "path": "src/core/context_compressor.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/core/context_compressor.py",
+    "description": "Text and context compressor helper."
+  },
+  {
+    "path": "src/core/context_store.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/core/context_store.py",
+    "description": "Context store for tracking task dependencies."
+  },
+  {
+    "path": "src/core/conversation.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/core/conversation.py",
+    "description": "Session message history manager."
+  },
+  {
+    "path": "src/core/conversation_summarizer.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/core/conversation_summarizer.py",
+    "description": "LLM-based conversation summarization helper."
+  },
+  {
+    "path": "src/core/coordinator.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/core/coordinator.py",
+    "description": "Task coordinator for running multi-step agent workflows."
+  },
+  {
+    "path": "src/core/decomposer.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/core/decomposer.py",
+    "description": "Goal decomposer and DAG plan planner."
+  },
+  {
+    "path": "src/core/jdocs.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/core/jdocs.py",
+    "description": "JDOCS prompt template manager."
+  },
+  {
+    "path": "src/core/logging.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/core/logging.py",
+    "description": "Structured logger setup."
+  },
+  {
+    "path": "src/core/merge_review.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/core/merge_review.py",
+    "description": "Evaluator for pull request merge reviews."
+  },
+  {
+    "path": "src/core/orchestrator_relay.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/core/orchestrator_relay.py",
+    "description": "Feedback relay loop between workers and orchestrators."
+  },
+  {
+    "path": "src/core/plan_executor.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/core/plan_executor.py",
+    "description": "Script-level plan executor."
+  },
+  {
+    "path": "src/core/prompt_builder.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/core/prompt_builder.py",
+    "description": "Builder for agent system and user prompts with template caching."
+  },
+  {
+    "path": "src/core/qa_reviewer.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/core/qa_reviewer.py",
+    "description": "Automated QA reviewer gatekeeper."
+  },
+  {
+    "path": "src/core/rag_store.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/core/rag_store.py",
+    "description": "Simple text vector store for codebase RAG."
+  },
+  {
+    "path": "src/core/repomix.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/core/repomix.py",
+    "description": "Repomix file tree compiler."
+  },
+  {
+    "path": "src/core/session_limiter.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/core/session_limiter.py",
+    "description": "Session rate and limit guard."
+  },
+  {
+    "path": "src/core/session_poller.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/core/session_poller.py",
+    "description": "Shared adaptive polling engine."
+  },
+  {
+    "path": "src/core/session_runner.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/core/session_runner.py",
+    "description": "Runner for standalone agent sessions."
+  },
+  {
+    "path": "src/core/state_recovery.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/core/state_recovery.py",
+    "description": "Crash recovery state manager."
+  },
+  {
+    "path": "src/core/templates.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/core/templates.py",
+    "description": "XML string helpers and raw templates."
+  },
+  {
+    "path": "src/core/think_block.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/core/think_block.py",
+    "description": "Thinking block XML parser."
+  },
+  {
+    "path": "src/core/tracker.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/core/tracker.py",
+    "description": "Realtime state and activity tracker."
+  },
+  {
+    "path": "src/core/workflow_engine.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/core/workflow_engine.py",
+    "description": "Multi-task parallel workflow engine."
+  },
+  {
+    "path": "src/db.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/db.py",
+    "description": "Database connection and session management."
+  },
+  {
+    "path": "src/exceptions.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/exceptions.py",
+    "description": "System-wide custom exception classes."
+  },
+  {
+    "path": "src/mcp/__init__.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/mcp/__init__.py",
+    "description": "Python logic module '  Init  '."
+  },
+  {
+    "path": "src/mcp/server.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/mcp/server.py",
+    "description": "Model Context Protocol (MCP) server."
+  },
+  {
+    "path": "src/models/__init__.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/models/__init__.py",
+    "description": "Python logic module '  Init  '."
+  },
+  {
+    "path": "src/models/github.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/models/github.py",
+    "description": "Python logic module 'Github'."
+  },
+  {
+    "path": "src/models/jules.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/models/jules.py",
+    "description": "Python logic module 'Jules'."
+  },
+  {
+    "path": "src/models/workflow.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/models/workflow.py",
+    "description": "Python logic module 'Workflow'."
+  },
+  {
+    "path": "src/prompts/system_prompts.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/prompts/system_prompts.py",
+    "description": "Python logic module 'System Prompts'."
+  },
+  {
+    "path": "src/server_launcher.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/server_launcher.py",
+    "description": "Launcher script to spin up the API server."
+  },
+  {
+    "path": "supabase/schema.sql",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/supabase/schema.sql",
+    "description": "Supabase-compatible PostgreSQL schema definitions."
+  },
+  {
+    "path": "supabase/schema_local.sql",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/supabase/schema_local.sql",
+    "description": "Local SQLite schema definition."
+  }
+]

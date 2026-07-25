@@ -1,3 +1,14 @@
+"""
+Simple text vector store for codebase RAG.
+
+Responsibilities:
+- Embeds text fragments, retrieves nearest matches, and supports localized codebase searches.
+
+Coupling:
+- Backing store for 'src/core/adaptive_context.py'.
+"""
+
+
 from __future__ import annotations
 
 import asyncio

@@ -1,3 +1,14 @@
+/**
+ * React UI component 'Primaryviewrouter'.
+ *
+ * Responsibilities:
+ * Renders the 'Primaryviewrouter' dashboard interface, manages localized state, and handles user actions.
+ *
+ * Coupling:
+ * Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
+ */
+
+
 import type { ComponentProps, ReactNode } from "react";
 
 import type { PrimaryNavIndex } from "../app/constants";

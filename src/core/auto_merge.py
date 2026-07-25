@@ -1,3 +1,14 @@
+"""
+Automated PR merger with checks validation.
+
+Responsibilities:
+- Monitors CI status with adaptive backoff, and safely merges PRs with retry-protected API calls.
+
+Coupling:
+- Uses 'src/clients/github.py'.
+"""
+
+
 from __future__ import annotations
 
 import asyncio

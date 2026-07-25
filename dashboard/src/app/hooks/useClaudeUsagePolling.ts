@@ -1,3 +1,14 @@
+/**
+ * Custom React hook 'Useclaudeusagepolling'.
+ *
+ * Responsibilities:
+ * Abstracts state management, data polling, or backend API actions for 'Useclaudeusagepolling' into a reusable hook.
+ *
+ * Coupling:
+ * Consumed by React UI components inside the 'dashboard/src/components' component tree.
+ */
+
+
 import { useRef } from "react";
 
 import { buildClaudeUsageUrl } from "../../runtime/runtimeEndpoints";

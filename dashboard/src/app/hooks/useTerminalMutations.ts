@@ -1,3 +1,14 @@
+/**
+ * Custom React hook 'Useterminalmutations'.
+ *
+ * Responsibilities:
+ * Abstracts state management, data polling, or backend API actions for 'Useterminalmutations' into a reusable hook.
+ *
+ * Coupling:
+ * Consumed by React UI components inside the 'dashboard/src/components' component tree.
+ */
+
+
 export type PendingDeleteTerminal = {
   terminalId: string;
   tentacleName: string;

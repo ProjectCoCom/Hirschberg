@@ -1,7 +1,14 @@
 """
-Run all dry run tests.
-Usage: python -m dryrun.run_all
+Dry-run integration test suite 'Run All'.
+
+Responsibilities:
+- Implements automated tests, mock execution environments, or workflow assertions to verify core features.
+
+Coupling:
+- Triggered by pytest or CI workflows to guarantee codebase stability without making active live API requests.
 """
+
+
 from __future__ import annotations
 
 import asyncio

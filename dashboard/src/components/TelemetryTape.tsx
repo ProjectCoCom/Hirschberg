@@ -1,3 +1,14 @@
+/**
+ * React UI component 'Telemetrytape'.
+ *
+ * Responsibilities:
+ * Renders the 'Telemetrytape' dashboard interface, manages localized state, and handles user actions.
+ *
+ * Coupling:
+ * Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
+ */
+
+
 import { useMemo } from "react";
 
 import type { MonitorFeedSnapshot } from "../app/types";

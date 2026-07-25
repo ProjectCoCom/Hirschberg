@@ -1,3 +1,14 @@
+"""
+Structured logger setup.
+
+Responsibilities:
+- Configures structlog, console formatters, and outputs logs to server.log.
+
+Coupling:
+- Base utility used by every backend module.
+"""
+
+
 from __future__ import annotations
 
 import logging

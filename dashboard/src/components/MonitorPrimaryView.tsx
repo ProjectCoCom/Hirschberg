@@ -1,3 +1,14 @@
+/**
+ * React UI component 'Monitorprimaryview'.
+ *
+ * Responsibilities:
+ * Renders the 'Monitorprimaryview' dashboard interface, manages localized state, and handles user actions.
+ *
+ * Coupling:
+ * Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
+ */
+
+
 import { useEffect, useMemo, useState } from "react";
 
 import { formatTimestamp } from "../app/formatTimestamp";

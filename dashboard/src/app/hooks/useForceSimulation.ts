@@ -1,3 +1,14 @@
+/**
+ * Custom React hook 'Useforcesimulation'.
+ *
+ * Responsibilities:
+ * Abstracts state management, data polling, or backend API actions for 'Useforcesimulation' into a reusable hook.
+ *
+ * Coupling:
+ * Consumed by React UI components inside the 'dashboard/src/components' component tree.
+ */
+
+
 import {
   type Simulation,
   type SimulationLinkDatum,

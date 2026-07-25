@@ -1,3 +1,14 @@
+/**
+ * Custom React hook 'Usebackendlivenesspolling'.
+ *
+ * Responsibilities:
+ * Abstracts state management, data polling, or backend API actions for 'Usebackendlivenesspolling' into a reusable hook.
+ *
+ * Coupling:
+ * Consumed by React UI components inside the 'dashboard/src/components' component tree.
+ */
+
+
 import { useEffect, useState } from "react";
 
 import { buildTerminalSnapshotsUrl } from "../../runtime/runtimeEndpoints";

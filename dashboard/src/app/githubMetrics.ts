@@ -1,3 +1,14 @@
+/**
+ * Frontend JavaScript/TypeScript module 'Githubmetrics'.
+ *
+ * Responsibilities:
+ * Provides application-level UI helper functions, adapters, or configurations for 'Githubmetrics'.
+ *
+ * Coupling:
+ * Used to build or bundle the React dashboard application.
+ */
+
+
 import { GITHUB_COMMIT_SERIES_LENGTH } from "./constants";
 import type { GitHubCommitPoint, GitHubCommitSparkPoint, GitHubRepoSummarySnapshot } from "./types";
 

@@ -1,3 +1,14 @@
+"""
+Database connection and session management.
+
+Responsibilities:
+- Initializes the SQLite database engine, sets WAL mode, enforces foreign keys, and manages thread-local connection sessions.
+
+Coupling:
+- Used by 'src/clients/database.py' and across the API controllers to interact with the database.
+"""
+
+
 import json
 from pathlib import Path
 

@@ -1,3 +1,14 @@
+/**
+ * React UI component 'Markdowncontent'.
+ *
+ * Responsibilities:
+ * Renders the 'Markdowncontent' dashboard interface, manages localized state, and handles user actions.
+ *
+ * Coupling:
+ * Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
+ */
+
+
 import { marked } from "marked";
 import { useMemo } from "react";
 

@@ -1,3 +1,14 @@
+/**
+ * Domain model definitions for 'Setup'.
+ *
+ * Responsibilities:
+ * Defines TypeScript interfaces, validation types, and helper algorithms for 'Setup' model states.
+ *
+ * Coupling:
+ * Core domain logic consumed by application ports, adapters, and UI presentation views.
+ */
+
+
 export type WorkspaceSetupStepId =
   | "initialize-workspace"
   | "ensure-gitignore"

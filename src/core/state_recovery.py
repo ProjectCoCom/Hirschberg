@@ -1,3 +1,14 @@
+"""
+Crash recovery state manager.
+
+Responsibilities:
+- Scans SQLite for crashed/hanging tasks on startup and moves them to failed states cleanly.
+
+Coupling:
+- Runs at backend startup.
+"""
+
+
 from __future__ import annotations
 
 import json

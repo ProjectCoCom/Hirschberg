@@ -1,3 +1,14 @@
+"""
+Multi-task parallel workflow engine.
+
+Responsibilities:
+- Orchestrates parallel DAG task executions, manages integration branches, and coordinates multi-agent merges.
+
+Coupling:
+- Orchestrates coordinator, AutoMerge, and QAReviewer.
+"""
+
+
 from __future__ import annotations
 
 import asyncio

@@ -1,3 +1,14 @@
+"""
+Jules account pool manager.
+
+Responsibilities:
+- Loads, tracks, and manages concurrency slots and daily budgets; sorts accounts by headroom score for balanced routing.
+
+Coupling:
+- Used by 'src/core/workflow_engine.py' and 'src/core/coordinator.py'.
+"""
+
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

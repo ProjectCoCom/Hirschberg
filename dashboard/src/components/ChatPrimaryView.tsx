@@ -1,3 +1,14 @@
+/**
+ * React UI component 'Chatprimaryview'.
+ *
+ * Responsibilities:
+ * Renders the 'Chatprimaryview' dashboard interface, manages localized state, and handles user actions.
+ *
+ * Coupling:
+ * Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
+ */
+
+
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { marked } from "marked";
 import { TaskListPanel } from "./TaskListPanel";

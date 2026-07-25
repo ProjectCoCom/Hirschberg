@@ -1,5 +1,12 @@
--- JAT-AI SQLite Local Setup
--- Translated table-for-table from Postgres schema.sql
+-- Local SQLite schema definition.
+--
+-- Responsibilities:
+-- Establishes SQLite database tables, indexes, busy timeouts, and WAL configuration.
+--
+-- Coupling:
+-- Used to initialize 'data/jat.db' database instances.
+
+
 
 CREATE TABLE IF NOT EXISTS accounts (
     id TEXT PRIMARY KEY,

@@ -1,3 +1,14 @@
+/**
+ * Frontend JavaScript/TypeScript module 'Ws.D'.
+ *
+ * Responsibilities:
+ * Provides application-level UI helper functions, adapters, or configurations for 'Ws.D'.
+ *
+ * Coupling:
+ * Used to build or bundle the React dashboard application.
+ */
+
+
 declare module "ws" {
   import type { IncomingMessage } from "node:http";
   import type { Socket } from "node:net";

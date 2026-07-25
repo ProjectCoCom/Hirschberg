@@ -1,3 +1,14 @@
+/**
+ * React UI component 'Octopusnode'.
+ *
+ * Responsibilities:
+ * Renders the 'Octopusnode' dashboard interface, manages localized state, and handles user actions.
+ *
+ * Coupling:
+ * Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
+ */
+
+
 import { useMemo } from "react";
 
 import type { GraphNode } from "../../app/canvas/types";

@@ -1,4 +1,13 @@
-/* Canvas tab — force-directed graph view (Obsidian-style) */
+/* Custom CSS style sheet 'Console Canvas Canvas'.
+ *
+ * Responsibilities:
+ * Specifies UI class designs, responsive layouts, animations, and color scheme tokens.
+ *
+ * Coupling:
+ * Loaded by 'main.tsx' or 'App.tsx' to style React dashboard views.
+ */
+
+
 
 .console-shell .canvas-view {
   position: relative;

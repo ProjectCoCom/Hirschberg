@@ -1,3 +1,14 @@
+"""
+Shared adaptive polling engine.
+
+Responsibilities:
+- Centralizes polling for both tasks and standalone sessions using adaptive backoff and jitter.
+
+Coupling:
+- Direct replacement of scattered thread-loops.
+"""
+
+
 from __future__ import annotations
 
 import asyncio

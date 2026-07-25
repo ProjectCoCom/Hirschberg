@@ -1,3 +1,14 @@
+/**
+ * React UI component 'Activeagentssidebar'.
+ *
+ * Responsibilities:
+ * Renders the 'Activeagentssidebar' dashboard interface, manages localized state, and handles user actions.
+ *
+ * Coupling:
+ * Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
+ */
+
+
 import { useRef } from "react";
 import type { ReactNode } from "react";
 import type { MouseEvent as ReactMouseEvent } from "react";

@@ -1,3 +1,14 @@
+"""
+Dry-run integration test suite 'Mocks'.
+
+Responsibilities:
+- Implements automated tests, mock execution environments, or workflow assertions to verify core features.
+
+Coupling:
+- Triggered by pytest or CI workflows to guarantee codebase stability without making active live API requests.
+"""
+
+
 from __future__ import annotations
 
 MOCK_JULES_SESSION_ID = "dry-run-session-001"

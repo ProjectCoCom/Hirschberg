@@ -1,3 +1,14 @@
+"""
+API router for workspace repository metadata.
+
+Responsibilities:
+- Manages target repo details and configurations for the agent runtime.
+
+Coupling:
+- Interacts with database.
+"""
+
+
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException

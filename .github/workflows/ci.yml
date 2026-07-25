@@ -29,6 +29,12 @@ jobs:
         env:
           ENCRYPTION_KEY: "dGVzdGtleXRlc3RrZXl0ZXN0a2V5dGVzdGs="
 
+      - name: Verify repository map is up to date
+        run: |
+          python scripts/generate_map.py
+          git diff --exit-code docs/map.json
+        working-directory: .
+
       - name: Run dry run tests
         run: python -m dryrun.run_all
         working-directory: .

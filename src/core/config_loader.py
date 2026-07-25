@@ -1,3 +1,14 @@
+"""
+Configuration loader with in-memory caching.
+
+Responsibilities:
+- Loads and caches database accounts and global configurations to eliminate redundant disk reads.
+
+Coupling:
+- Used by startup initialization and account pool loaders.
+"""
+
+
 from __future__ import annotations
 
 import json

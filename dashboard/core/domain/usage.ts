@@ -1,3 +1,14 @@
+/**
+ * Domain model definitions for 'Usage'.
+ *
+ * Responsibilities:
+ * Defines TypeScript interfaces, validation types, and helper algorithms for 'Usage' model states.
+ *
+ * Coupling:
+ * Core domain logic consumed by application ports, adapters, and UI presentation views.
+ */
+
+
 export type ClaudeUsageSnapshot = {
   status: "ok" | "unavailable" | "error";
   fetchedAt: string;

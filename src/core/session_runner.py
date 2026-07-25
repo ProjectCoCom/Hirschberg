@@ -1,3 +1,14 @@
+"""
+Runner for standalone agent sessions.
+
+Responsibilities:
+- Sets up, runs, and monitors standalone agent tasks from creation through completion.
+
+Coupling:
+- Connected to API execution endpoints.
+"""
+
+
 from __future__ import annotations
 
 import asyncio

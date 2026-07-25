@@ -1,3 +1,14 @@
+/**
+ * Custom React hook 'Usegithubprimaryviewmodel'.
+ *
+ * Responsibilities:
+ * Abstracts state management, data polling, or backend API actions for 'Usegithubprimaryviewmodel' into a reusable hook.
+ *
+ * Coupling:
+ * Consumed by React UI components inside the 'dashboard/src/components' component tree.
+ */
+
+
 import { useEffect, useMemo } from "react";
 import type { Dispatch, SetStateAction } from "react";
 

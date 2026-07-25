@@ -1,3 +1,14 @@
+"""
+Goal decomposer and DAG plan planner.
+
+Responsibilities:
+- Takes a high-level user objective and decomposes it into a parallelizable DAG plan of AgentTasks.
+
+Coupling:
+- Used during workflow instantiation.
+"""
+
+
 from __future__ import annotations
 
 import json

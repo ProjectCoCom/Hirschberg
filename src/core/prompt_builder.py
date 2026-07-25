@@ -1,3 +1,14 @@
+"""
+Builder for agent system and user prompts with template caching.
+
+Responsibilities:
+- Interpolates rules, anti-patterns, and environment details into an integrated agent prompt.
+
+Coupling:
+- Core component for session initialization.
+"""
+
+
 from __future__ import annotations
 
 from pathlib import Path

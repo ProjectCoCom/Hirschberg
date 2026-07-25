@@ -1,3 +1,14 @@
+"""
+Launcher script to spin up the API server.
+
+Responsibilities:
+- Configures Uvicorn parameters, resolves host/port settings, and starts the FastAPI server instance.
+
+Coupling:
+- Depends on 'src/api/server.py' to run the actual FastAPI app.
+"""
+
+
 from __future__ import annotations
 
 import os

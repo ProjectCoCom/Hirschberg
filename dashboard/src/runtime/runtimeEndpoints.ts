@@ -1,3 +1,14 @@
+/**
+ * Frontend JavaScript/TypeScript module 'Runtimeendpoints'.
+ *
+ * Responsibilities:
+ * Provides application-level UI helper functions, adapters, or configurations for 'Runtimeendpoints'.
+ *
+ * Coupling:
+ * Used to build or bundle the React dashboard application.
+ */
+
+
 type LocationLike = Pick<Location, "host" | "protocol">;
 
 const readRuntimeBaseUrl = (): string | null => {
