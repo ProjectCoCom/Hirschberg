@@ -1,4 +1,13 @@
 #!/usr/bin/env bash
+# Unix CLI command wrapper.
+#
+# Responsibilities:
+# Executes the python-based JAT commands on Unix machines.
+#
+# Coupling:
+# CLI command script.
+
+
 set -e
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"

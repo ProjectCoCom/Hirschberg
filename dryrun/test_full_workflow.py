@@ -1,9 +1,14 @@
 """
-Dry run test for the full JAT-AI workflow.
-Run with: python -m dryrun.test_full_workflow
-Mocks all external APIs (Jules, GitHub, AI providers) to validate
-the orchestration logic without making real API calls.
+Dry-run integration test suite 'Test Full Workflow'.
+
+Responsibilities:
+- Implements automated tests, mock execution environments, or workflow assertions to verify core features.
+
+Coupling:
+- Triggered by pytest or CI workflows to guarantee codebase stability without making active live API requests.
 """
+
+
 from __future__ import annotations
 
 import asyncio

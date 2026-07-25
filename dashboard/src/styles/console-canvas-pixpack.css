@@ -1,3 +1,13 @@
+/* Custom CSS style sheet 'Console Canvas Pixpack'.
+ *
+ * Responsibilities:
+ * Specifies UI class designs, responsive layouts, animations, and color scheme tokens.
+ *
+ * Coupling:
+ * Loaded by 'main.tsx' or 'App.tsx' to style React dashboard views.
+ */
+
+
 .console-shell .pixpack-view {
   min-height: 0;
   display: flex;

@@ -1,0 +1,42 @@
+{
+  "step_number": 17,
+  "timestamp_utc": "2026-07-25T06:15:00Z",
+  "title": "Document repo using standardized header comments and generate machine-readable map",
+  "task_summary": "Scan the entire repository to add a descriptive three-part header to all hand-authored code/config files, and generate a machine-readable JSON map of the repository structure with Raw GitHub URLs.",
+  "status": "completed",
+  "previous_step_review": {
+    "reviewed_step": 16,
+    "checked": "src/core/prompt_builder.py, src/core/config_loader.py, dryrun/test_gaps.py",
+    "issues_found": [],
+    "fixes_applied": []
+  },
+  "files_changed": [
+    {"path": "scripts/generate_headers.py", "change": "Created script to automatically write standardized 3-part headers to all 209 hand-authored files."},
+    {"path": "scripts/generate_map.py", "change": "Created script to walk repository, extract summaries, and output docs/map.json with Raw GitHub URLs on development branch."},
+    {"path": ".github/workflows/ci.yml", "change": "Added CI step to verify that docs/map.json is up-to-date and fails if there is a diff."},
+    {"path": "docs/map.json", "change": "Generated repository map containing path, raw_url, and description for every non-excluded hand-authored file."}
+  ],
+  "assumptions_verified": [
+    {"assumption": "all hand-authored files documented", "verification": "Confirmed scripts/generate_headers.py walked and updated all 209 matching code/config files.", "result": "confirmed"},
+    {"assumption": "raw url format complies with spec", "verification": "Confirmed docs/map.json contains raw URLs with dynamically resolved owner/repo and development branch.", "result": "confirmed"}
+  ],
+  "decisions": [
+    {"decision": "Use development branch for raw URLs in maps", "reasoning": "Using the development branch prevents CI check failures when merging features to development, since the merge build runs on development."}
+  ],
+  "self_review": {
+    "passes_completed": 3,
+    "checked": "Header syntaxes, JSON validation, Raw URL schemas, CI diff validation",
+    "changes_made": [
+      "Hardcoded development branch name inside generate_map.py's URL builder to prevent CI regressions on detached HEAD or custom feature branch checks."
+    ],
+    "deferred_from_review": []
+  },
+  "blockers": [],
+  "deferred": [],
+  "tests": {
+    "suite_result": "pass",
+    "new_tests_added": [],
+    "pre_existing_failures_noted": []
+  },
+  "notes_for_next_step": "Step 17 is fully complete. All hand-authored files are fully documented and map.json is automatically verified in CI."
+}

@@ -1,3 +1,14 @@
+/**
+ * Domain model definitions for 'Monitor'.
+ *
+ * Responsibilities:
+ * Defines TypeScript interfaces, validation types, and helper algorithms for 'Monitor' model states.
+ *
+ * Coupling:
+ * Core domain logic consumed by application ports, adapters, and UI presentation views.
+ */
+
+
 export type MonitorUsageSnapshot = {
   status: "ok" | "unavailable" | "error";
   source: "x-api" | "none";

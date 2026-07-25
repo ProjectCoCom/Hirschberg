@@ -1,3 +1,14 @@
+/**
+ * React UI component 'Consoleprimarynav'.
+ *
+ * Responsibilities:
+ * Renders the 'Consoleprimarynav' dashboard interface, manages localized state, and handles user actions.
+ *
+ * Coupling:
+ * Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
+ */
+
+
 import { PRIMARY_NAV_ITEMS, type PrimaryNavIndex } from "../app/constants";
 
 type ConsolePrimaryNavProps = {

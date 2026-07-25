@@ -1,3 +1,14 @@
+/**
+ * Domain model definitions for 'Uistate'.
+ *
+ * Responsibilities:
+ * Defines TypeScript interfaces, validation types, and helper algorithms for 'Uistate' model states.
+ *
+ * Coupling:
+ * Core domain logic consumed by application ports, adapters, and UI presentation views.
+ */
+
+
 import type { TerminalCompletionSoundId } from "./completionSound";
 
 export type PersistedUiState = {

@@ -1,3 +1,13 @@
+/* Custom CSS style sheet 'Chrome And Buttons'.
+ *
+ * Responsibilities:
+ * Specifies UI class designs, responsive layouts, animations, and color scheme tokens.
+ *
+ * Coupling:
+ * Loaded by 'main.tsx' or 'App.tsx' to style React dashboard views.
+ */
+
+
 .chrome {
   border-bottom: 1px solid var(--border-subtle);
   background: var(--bg-surface-2);

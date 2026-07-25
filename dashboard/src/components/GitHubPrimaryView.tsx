@@ -1,3 +1,14 @@
+/**
+ * React UI component 'Githubprimaryview'.
+ *
+ * Responsibilities:
+ * Renders the 'Githubprimaryview' dashboard interface, manages localized state, and handles user actions.
+ *
+ * Coupling:
+ * Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
+ */
+
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { GITHUB_OVERVIEW_GRAPH_HEIGHT, GITHUB_OVERVIEW_GRAPH_WIDTH } from "../app/constants";

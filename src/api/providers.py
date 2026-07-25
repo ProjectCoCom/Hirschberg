@@ -1,3 +1,14 @@
+"""
+API router for model providers (e.g., Anthropic, OpenAI).
+
+Responsibilities:
+- Lists available models, verifies API keys, and checks provider health.
+
+Coupling:
+- Uses 'src/clients/ai_providers.py'.
+"""
+
+
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException

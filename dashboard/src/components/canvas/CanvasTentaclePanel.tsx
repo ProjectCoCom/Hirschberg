@@ -1,3 +1,14 @@
+/**
+ * React UI component 'Canvastentaclepanel'.
+ *
+ * Responsibilities:
+ * Renders the 'Canvastentaclepanel' dashboard interface, manages localized state, and handles user actions.
+ *
+ * Coupling:
+ * Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
+ */
+
+
 import { Terminal, X } from "lucide-react";
 import { type Ref, useCallback, useMemo, useState } from "react";
 

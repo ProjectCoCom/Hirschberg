@@ -1,4 +1,5 @@
 {
+  "_description": "1. TypeScript project compiler configurations. 2. Specifies module resolution, typing paths, and target output specifications for frontend source code. 3. Governs TypeScript checking during development and Vite builds.",
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",
@@ -13,11 +14,19 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "noEmit": true,
-    "types": ["vite/client"],
+    "types": [
+      "vite/client"
+    ],
     "paths": {
-      "@octogent/core": ["./core/index.ts"]
+      "@octogent/core": [
+        "./core/index.ts"
+      ]
     },
     "baseUrl": "."
   },
-  "include": ["src", "core", "vite.config.ts"]
+  "include": [
+    "src",
+    "core",
+    "vite.config.ts"
+  ]
 }

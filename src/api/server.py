@@ -1,3 +1,14 @@
+"""
+FastAPI application entrypoint and middleware setup.
+
+Responsibilities:
+- Instantiates the FastAPI app, configures CORS and JSON response overrides, and registers all feature routers.
+
+Coupling:
+- Relies on router modules in 'src/api/*.py' and database initialization.
+"""
+
+
 from __future__ import annotations
 
 import asyncio

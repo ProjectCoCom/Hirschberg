@@ -1,3 +1,14 @@
+/**
+ * Frontend JavaScript/TypeScript module 'Constants'.
+ *
+ * Responsibilities:
+ * Provides application-level UI helper functions, adapters, or configurations for 'Constants'.
+ *
+ * Coupling:
+ * Used to build or bundle the React dashboard application.
+ */
+
+
 export const CODEX_USAGE_SCAN_INTERVAL_MS = 600_000;
 export const GITHUB_SUMMARY_SCAN_INTERVAL_MS = 60_000;
 export const MONITOR_SCAN_INTERVAL_MS = 60_000;

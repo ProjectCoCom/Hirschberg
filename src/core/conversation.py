@@ -1,3 +1,14 @@
+"""
+Session message history manager.
+
+Responsibilities:
+- Appends and retrieves message models for ongoing chats and records them in SQLite.
+
+Coupling:
+- Connected to backend chat endpoints.
+"""
+
+
 from __future__ import annotations
 
 from uuid import UUID

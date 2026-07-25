@@ -1,3 +1,13 @@
+/* Custom CSS style sheet 'Console Theme Tokens'.
+ *
+ * Responsibilities:
+ * Specifies UI class designs, responsive layouts, animations, and color scheme tokens.
+ *
+ * Coupling:
+ * Loaded by 'main.tsx' or 'App.tsx' to style React dashboard views.
+ */
+
+
 :root {
   --bg-canvas: #050607;
   --bg-surface-1: #0b0d10;

@@ -1,3 +1,14 @@
+/**
+ * Frontend JavaScript/TypeScript module 'Uistatenormalizers'.
+ *
+ * Responsibilities:
+ * Provides application-level UI helper functions, adapters, or configurations for 'Uistatenormalizers'.
+ *
+ * Coupling:
+ * Used to build or bundle the React dashboard application.
+ */
+
+
 import { asRecord } from "@octogent/core";
 
 import { MAX_SIDEBAR_WIDTH, MIN_SIDEBAR_WIDTH, PRIMARY_NAV_MAX } from "./constants";

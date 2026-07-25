@@ -1,4 +1,5 @@
 {
+  "_description": "1. React dashboard NPM packages and scripts. 2. Directs frontend dependency downloads, Vite build operations, and dev server configurations. 3. Key build manifest for pnpm.",
   "name": "jat-ui",
   "version": "0.1.0",
   "private": true,

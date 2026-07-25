@@ -1,3 +1,14 @@
+/**
+ * Custom React hook 'Usepromptlibrary'.
+ *
+ * Responsibilities:
+ * Abstracts state management, data polling, or backend API actions for 'Usepromptlibrary' into a reusable hook.
+ *
+ * Coupling:
+ * Consumed by React UI components inside the 'dashboard/src/components' component tree.
+ */
+
+
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { buildPromptItemUrl, buildPromptsUrl } from "../../runtime/runtimeEndpoints";

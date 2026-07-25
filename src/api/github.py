@@ -1,3 +1,14 @@
+"""
+API router for GitHub repository integration.
+
+Responsibilities:
+- Exposes endpoints for listing files, branches, PRs, and triggers file-write or branch operations.
+
+Coupling:
+- Depends on 'src/clients/github.py'.
+"""
+
+
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone

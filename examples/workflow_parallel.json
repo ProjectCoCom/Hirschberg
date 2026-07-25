@@ -1,4 +1,5 @@
 {
+  "_description": "1. Sample workflow JSON schema. 2. Details structured parallel/dependent multi-task agent workflow instructions. 3. Used as standard target input for workflow engine test dispatches.",
   "name": "parallel-review",
   "description": "Review two repos in parallel, then create a summary",
   "tasks": [
@@ -22,7 +23,10 @@
       "owner": "iceyxsm",
       "repo": "Abhiacharyaji",
       "branch": "master",
-      "depends_on": ["review-frontend", "review-api"]
+      "depends_on": [
+        "review-frontend",
+        "review-api"
+      ]
     }
   ]
 }

@@ -1,3 +1,13 @@
+/* Custom CSS style sheet 'Console Tasks'.
+ *
+ * Responsibilities:
+ * Specifies UI class designs, responsive layouts, animations, and color scheme tokens.
+ *
+ * Coupling:
+ * Loaded by 'main.tsx' or 'App.tsx' to style React dashboard views.
+ */
+
+
 .task-list-panel {
   width: 260px;
   border-left: 1px solid #2b2f36;

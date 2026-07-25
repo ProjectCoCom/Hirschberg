@@ -1,3 +1,14 @@
+"""
+Script-level plan executor.
+
+Responsibilities:
+- Triggers serial plan run execution for manual plans.
+
+Coupling:
+- Used by legacy CLI runner.
+"""
+
+
 from __future__ import annotations
 
 import json

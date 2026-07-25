@@ -1,3 +1,14 @@
+"""
+Realtime state and activity tracker.
+
+Responsibilities:
+- Maintains pub/sub mechanism to broadcast session updates and writes activity logs using custom database indexes.
+
+Coupling:
+- Supplies real-time events to React dashboard.
+"""
+
+
 from __future__ import annotations
 
 from datetime import datetime, timezone

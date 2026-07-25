@@ -1,4 +1,13 @@
 @echo off
+REM Windows CLI command wrapper.
+REM
+REM Responsibilities:
+REM Executes the python-based JAT commands on Windows machines.
+REM
+REM Coupling:
+REM Windows equivalent of jat.sh.
+
+
 title JAT-AI
 echo.
 echo  ========================================

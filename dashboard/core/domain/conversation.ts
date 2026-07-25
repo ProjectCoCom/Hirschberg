@@ -1,3 +1,14 @@
+/**
+ * Domain model definitions for 'Conversation'.
+ *
+ * Responsibilities:
+ * Defines TypeScript interfaces, validation types, and helper algorithms for 'Conversation' model states.
+ *
+ * Coupling:
+ * Core domain logic consumed by application ports, adapters, and UI presentation views.
+ */
+
+
 export type ConversationTurn = {
   turnId: string;
   role: "user" | "assistant";

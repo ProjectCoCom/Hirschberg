@@ -1,11 +1,14 @@
 """
-Full end-to-end simulation of the JAT-AI pipeline.
-Simulates: user starts chat -> AI analyzes repo -> user requests feature ->
-AI creates plan -> user approves -> backend dispatches Jules sessions ->
-sessions complete -> merge + review -> final PR.
+Dry-run integration test suite 'Test E2E Simulation'.
 
-Run with: python -m dryrun.test_e2e_simulation
+Responsibilities:
+- Implements automated tests, mock execution environments, or workflow assertions to verify core features.
+
+Coupling:
+- Triggered by pytest or CI workflows to guarantee codebase stability without making active live API requests.
 """
+
+
 from __future__ import annotations
 
 import asyncio

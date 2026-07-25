@@ -1,3 +1,14 @@
+/**
+ * Frontend JavaScript/TypeScript module 'Types'.
+ *
+ * Responsibilities:
+ * Provides application-level UI helper functions, adapters, or configurations for 'Types'.
+ *
+ * Coupling:
+ * Used to build or bundle the React dashboard application.
+ */
+
+
 import type { GitHubCommitPoint, buildTerminalList } from "@octogent/core";
 
 export type TerminalView = Awaited<ReturnType<typeof buildTerminalList>>;

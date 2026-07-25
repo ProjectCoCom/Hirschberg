@@ -1,4 +1,5 @@
 {
+  "_description": "1. Configuration template file. 2. Details standard settings, recursion limits, default models, and provider keys for the agent workspace. 3. Template for creating actual 'config.json' instances.",
   "jules": {
     "accounts": [
       {

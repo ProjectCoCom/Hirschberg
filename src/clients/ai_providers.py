@@ -1,3 +1,14 @@
+"""
+Client factory for Anthropic, OpenAI, and other LLM services.
+
+Responsibilities:
+- Resolves API credentials, instantiates clients, and standardizes completion payloads.
+
+Coupling:
+- Foundation for 'src/core/ai_interface.py'.
+"""
+
+
 from __future__ import annotations
 
 import json

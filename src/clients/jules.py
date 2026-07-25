@@ -1,3 +1,14 @@
+"""
+HTTP client for interacting with Jules APIs.
+
+Responsibilities:
+- Manages connection sessions, runs workspace command executions, and fetches agent logs.
+
+Coupling:
+- Tightly coupled to Jules execution services.
+"""
+
+
 from __future__ import annotations
 
 import httpx

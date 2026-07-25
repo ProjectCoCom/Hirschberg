@@ -1,3 +1,13 @@
+/* Custom CSS style sheet 'Console Jules'.
+ *
+ * Responsibilities:
+ * Specifies UI class designs, responsive layouts, animations, and color scheme tokens.
+ *
+ * Coupling:
+ * Loaded by 'main.tsx' or 'App.tsx' to style React dashboard views.
+ */
+
+
 .console-shell .jules-view {
   display: grid;
   align-content: start;

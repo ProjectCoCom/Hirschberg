@@ -1,4 +1,13 @@
 @echo off
+REM Windows setup and installation batch script.
+REM
+REM Responsibilities:
+REM Installs python dependencies and configures PNPM packages on Windows.
+REM
+REM Coupling:
+REM Windows equivalent of install.sh.
+
+
 title JAT-AI Installer
 echo.
 echo  ========================================

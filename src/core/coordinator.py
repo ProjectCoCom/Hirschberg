@@ -1,3 +1,14 @@
+"""
+Task coordinator for running multi-step agent workflows.
+
+Responsibilities:
+- Coordinates task runs, creates git branches, builds prompts, handles pool exhaustions, and notifies orchestrators.
+
+Coupling:
+- Heart of task-dispatch system; couples with WorkflowEngine.
+"""
+
+
 from __future__ import annotations
 
 import asyncio

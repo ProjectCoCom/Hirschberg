@@ -1,3 +1,13 @@
+/* Custom CSS style sheet 'Console Overrides Telemetry'.
+ *
+ * Responsibilities:
+ * Specifies UI class designs, responsive layouts, animations, and color scheme tokens.
+ *
+ * Coupling:
+ * Loaded by 'main.tsx' or 'App.tsx' to style React dashboard views.
+ */
+
+
 .console-shell .dashboard-deck-shell {
   border-right: 1px solid #2b2f36;
 }

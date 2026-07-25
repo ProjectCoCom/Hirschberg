@@ -1,3 +1,14 @@
+"""
+Text and context compressor helper.
+
+Responsibilities:
+- Compresses excessive token streams and long histories to keep agent contexts within model limits.
+
+Coupling:
+- Assists prompt construction.
+"""
+
+
 from __future__ import annotations
 
 import re

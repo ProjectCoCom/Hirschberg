@@ -1,6 +1,12 @@
--- JAT-AI Supabase Setup
--- Run this ONCE on a fresh project, or re-run anytime to update constraints.
--- Safe to run multiple times.
+-- Supabase-compatible PostgreSQL schema definitions.
+--
+-- Responsibilities:
+-- Defines tables, triggers, and views for the remote workspace database layout.
+--
+-- Coupling:
+-- Kept for reference and documentation of schema structure.
+
+
 
 create extension if not exists "uuid-ossp";
 create extension if not exists "pgcrypto";

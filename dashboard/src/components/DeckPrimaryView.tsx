@@ -1,3 +1,14 @@
+/**
+ * React UI component 'Deckprimaryview'.
+ *
+ * Responsibilities:
+ * Renders the 'Deckprimaryview' dashboard interface, manages localized state, and handles user actions.
+ *
+ * Coupling:
+ * Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
+ */
+
+
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type {

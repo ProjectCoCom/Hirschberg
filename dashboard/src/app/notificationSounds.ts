@@ -1,3 +1,14 @@
+/**
+ * Frontend JavaScript/TypeScript module 'Notificationsounds'.
+ *
+ * Responsibilities:
+ * Provides application-level UI helper functions, adapters, or configurations for 'Notificationsounds'.
+ *
+ * Coupling:
+ * Used to build or bundle the React dashboard application.
+ */
+
+
 export type TerminalCompletionSoundId = "none" | "chime" | "bell";
 
 export const DEFAULT_TERMINAL_COMPLETION_SOUND: TerminalCompletionSoundId = "none";

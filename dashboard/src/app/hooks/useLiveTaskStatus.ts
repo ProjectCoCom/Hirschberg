@@ -1,3 +1,14 @@
+/**
+ * Custom React hook 'Uselivetaskstatus'.
+ *
+ * Responsibilities:
+ * Abstracts state management, data polling, or backend API actions for 'Uselivetaskstatus' into a reusable hook.
+ *
+ * Coupling:
+ * Consumed by React UI components inside the 'dashboard/src/components' component tree.
+ */
+
+
 import { useEffect, useRef, useState } from "react";
 
 export type LiveTask = {

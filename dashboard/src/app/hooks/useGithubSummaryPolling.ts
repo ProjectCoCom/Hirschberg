@@ -1,3 +1,14 @@
+/**
+ * Custom React hook 'Usegithubsummarypolling'.
+ *
+ * Responsibilities:
+ * Abstracts state management, data polling, or backend API actions for 'Usegithubsummarypolling' into a reusable hook.
+ *
+ * Coupling:
+ * Consumed by React UI components inside the 'dashboard/src/components' component tree.
+ */
+
+
 import { buildGithubSummaryUrl } from "../../runtime/runtimeEndpoints";
 import { GITHUB_SUMMARY_SCAN_INTERVAL_MS } from "../constants";
 import { normalizeGitHubRepoSummarySnapshot } from "../githubNormalizers";

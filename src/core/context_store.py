@@ -1,3 +1,14 @@
+"""
+Context store for tracking task dependencies.
+
+Responsibilities:
+- Batch-queries dependency context messages in a single query to maintain scalable context forwarding.
+
+Coupling:
+- Feeds context into 'src/core/prompt_builder.py'.
+"""
+
+
 from __future__ import annotations
 
 from uuid import UUID

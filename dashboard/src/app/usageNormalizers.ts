@@ -1,3 +1,14 @@
+/**
+ * Frontend JavaScript/TypeScript module 'Usagenormalizers'.
+ *
+ * Responsibilities:
+ * Provides application-level UI helper functions, adapters, or configurations for 'Usagenormalizers'.
+ *
+ * Coupling:
+ * Used to build or bundle the React dashboard application.
+ */
+
+
 import { asNumber, asRecord, asString } from "@octogent/core";
 
 import type { ClaudeUsageSnapshot, CodexUsageSnapshot } from "./types";

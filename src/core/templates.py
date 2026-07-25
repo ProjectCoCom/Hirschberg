@@ -1,3 +1,14 @@
+"""
+XML string helpers and raw templates.
+
+Responsibilities:
+- Holds hardcoded fallbacks and templates for quick XML construction.
+
+Coupling:
+- Used by JDocs.
+"""
+
+
 from __future__ import annotations
 
 TEMPLATES: dict[str, dict] = {

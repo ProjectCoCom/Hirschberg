@@ -136,6 +136,14 @@
       "summary": "Implemented in-memory caching for rules.xml, gates.xml, anti_patterns.xml, environment.xml, context.xml, and config.json to eliminate blocking file I/O operations from prompt building and configuration loading. Added tests verifying byte-for-byte correctness and avoided disk reads.",
       "status": "completed",
       "journal_ref": ".jules/journals/2026-07-25T05-40-00Z.json"
+    },
+    {
+      "step_number": 17,
+      "timestamp_utc": "2026-07-25T06:15:00Z",
+      "title": "Document repo using standardized header comments and generate machine-readable map",
+      "summary": "Added standardized three-part header comments (Summary, Responsibilities, Coupling) to all 209 hand-authored repository files. Created a Python generator script to output docs/map.json containing file paths, raw GitHub URLs on development, and descriptions. Configured a backend CI step to enforce that the repository map is kept up to date.",
+      "status": "completed",
+      "journal_ref": ".jules/journals/2026-07-25T06-15-00Z.json"
     }
   ]
 }

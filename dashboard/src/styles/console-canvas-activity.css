@@ -1,3 +1,13 @@
+/* Custom CSS style sheet 'Console Canvas Activity'.
+ *
+ * Responsibilities:
+ * Specifies UI class designs, responsive layouts, animations, and color scheme tokens.
+ *
+ * Coupling:
+ * Loaded by 'main.tsx' or 'App.tsx' to style React dashboard views.
+ */
+
+
 .console-shell .activity-view {
   min-height: 0;
   background: #0b0d10;

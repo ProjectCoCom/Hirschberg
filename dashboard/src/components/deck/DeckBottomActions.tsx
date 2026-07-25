@@ -1,3 +1,14 @@
+/**
+ * React UI component 'Deckbottomactions'.
+ *
+ * Responsibilities:
+ * Renders the 'Deckbottomactions' dashboard interface, manages localized state, and handles user actions.
+ *
+ * Coupling:
+ * Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
+ */
+
+
 import { useState } from "react";
 
 // ─── Bottom actions (compact cards + clear all for populated state) ──────────

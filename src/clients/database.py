@@ -1,3 +1,14 @@
+"""
+High-level database transaction helper.
+
+Responsibilities:
+- Exposes typed operations (e.g. select, insert, update) for accounts, sessions, tasks, and activities.
+
+Coupling:
+- Utilized by API endpoints and core state poller.
+"""
+
+
 import asyncio
 import structlog
 from typing import Any, Callable

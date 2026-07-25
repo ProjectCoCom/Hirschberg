@@ -1,4 +1,13 @@
-/* ─── Deck View ───────────────────────────────────────────────── */
+/* Custom CSS style sheet 'Console Canvas Deck'.
+ *
+ * Responsibilities:
+ * Specifies UI class designs, responsive layouts, animations, and color scheme tokens.
+ *
+ * Coupling:
+ * Loaded by 'main.tsx' or 'App.tsx' to style React dashboard views.
+ */
+
+
 /* Layout is driven entirely by [data-mode="grid"|"detail"] on the root.     */
 /* Pods container is a CSS grid in grid mode, a sidebar column in detail.    */
 /* Non-focused pods collapse; focused pod stretches; detail panel expands.   */

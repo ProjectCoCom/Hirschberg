@@ -1,3 +1,14 @@
+/**
+ * React UI component 'Agentstatebadge'.
+ *
+ * Responsibilities:
+ * Renders the 'Agentstatebadge' dashboard interface, manages localized state, and handles user actions.
+ *
+ * Coupling:
+ * Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
+ */
+
+
 import { type AgentRuntimeState, isAgentRuntimeState } from "@octogent/core";
 import { StatusBadge, type StatusBadgeTone } from "./ui/StatusBadge";
 
