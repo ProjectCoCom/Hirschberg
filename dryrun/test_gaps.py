@@ -734,6 +734,116 @@ async def test_query_efficiency_fixes():
     print("[PASS] test_query_efficiency_fixes: N+1 context_store select fixed, and tracker session_activities query ordering/limit optimized")
 
 
+async def test_session_poller_and_backoff():
+    from core.session_poller import SessionPoller
+    from models.jules import Session, SessionState
+    from unittest.mock import AsyncMock, patch, MagicMock
+    import inspect
+    from uuid import uuid4
+    from db import db
+
+    # 1. Structural signature check (SessionPoller constructor takes NO pool or store argument)
+    sig = inspect.signature(SessionPoller.__init__)
+    assert "pool" not in sig.parameters
+    assert "store" not in sig.parameters
+
+    # 2. Backoff arithmetic and poll count verification
+    jules_mock = AsyncMock()
+    # Mock get_session to return session in running state then completed
+    running_session = MagicMock(state=SessionState.IN_PROGRESS)
+    completed_session = MagicMock(state=SessionState.COMPLETED)
+    jules_mock.get_session.side_effect = [running_session, running_session, completed_session]
+    jules_mock.list_activities.return_value = []
+
+    callback_mock = AsyncMock()
+    # Run with small/fast variables so it finishes quickly in tests, but check logic
+    poller = SessionPoller(
+        jules=jules_mock,
+        session_id="session-test-abc",
+        on_transition=callback_mock,
+        initial_interval=1.0,
+        multiplier=2.0,
+        max_interval=5.0,
+        timeout=10.0,
+    )
+
+    with patch("asyncio.sleep", new_callable=AsyncMock) as sleep_mock:
+        res_session = await poller.poll()
+        assert res_session.state == SessionState.COMPLETED
+        # The poll ran 3 times (get_session called 3 times)
+        assert jules_mock.get_session.call_count == 3
+        # It slept twice: first for 1.0s, second for 2.0s
+        assert sleep_mock.call_count == 2
+        calls = [args[0] for args, _ in sleep_mock.call_args_list]
+        # Verify first sleep was around 1.0s, second around 2.0s (accounting for jitter range)
+        assert 0.9 <= calls[0] <= 1.1
+        assert 1.8 <= calls[1] <= 2.2
+
+    # 3. Verify coordinator DAG-task path now correctly populates session_activities
+    from core.coordinator import AgentCoordinator
+    from core.account_pool import AccountPool, Account, AccountRole
+    from core.context_store import ContextStore
+    from models.workflow import AgentTask
+
+    # Setup real AccountPool and ContextStore
+    pool = AccountPool()
+    acc = Account(name="coord-worker", role=AccountRole.WORKER)
+    pool.add_account(acc)
+
+    # Insert the account into the DB to satisfy FOREIGN KEY constraint on agent_tasks
+    await db.insert("accounts", {
+        "id": str(acc.id),
+        "name": acc.name,
+        "plan": acc.plan,
+        "role": acc.role,
+        "enabled": 1,
+    })
+
+    store = ContextStore(db)
+    coordinator = AgentCoordinator(pool, store)
+
+    # Pre-register a dummy task so that session_activities foreign key is satisfied
+    task = AgentTask(
+        id=uuid4(),
+        prompt="Unified Poller Test Task",
+        repo_owner="owner",
+        repo_name="repo",
+        branch="main",
+        status="pending",
+    )
+    await store.save_task_state(task.id, task.model_dump(mode="json"))
+
+    # Mock client and get_session / list_activities
+    mock_client = AsyncMock()
+    mock_session = MagicMock(id="session-coord-test", state=SessionState.COMPLETED, outputs=[])
+    mock_client.create_session.return_value = mock_session
+    mock_client.get_session.return_value = mock_session
+
+    # Mock list_activities to return some activities that MUST be stored
+    from models.jules import Activity
+    act = Activity(
+        id="act-coord-xyz",
+        originator="Jules",
+        description="Completed task implementation",
+        create_time=None,
+    )
+    mock_client.list_activities.return_value = [act]
+    pool._clients[acc.id] = mock_client
+
+    with patch("config.load_settings") as mock_settings:
+        from config import Settings
+        mock_settings.return_value = Settings()
+        # Run task which triggers polling
+        await coordinator.run_task(task)
+
+    # Verify that session_activities table was populated correctly!
+    activities = await db.select("session_activities", {"session_id": "session-coord-test"})
+    assert len(activities) == 1
+    assert activities[0]["description"] == "Completed task implementation"
+
+    print("[PASS] test_session_poller_and_backoff: SessionPoller structural, backoff timing, and coordinator session activity storing verified successfully")
+
+
 async def main():
     print("=" * 50)
     print("JAT-AI GAP COVERAGE TESTS")
@@ -756,6 +866,7 @@ async def main():
     await test_concurrent_database_writes()
     await test_capacity_aware_account_routing()
     await test_query_efficiency_fixes()
+    await test_session_poller_and_backoff()
 
     print()
     print("=" * 50)

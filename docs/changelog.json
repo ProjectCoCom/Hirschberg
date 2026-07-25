@@ -104,6 +104,14 @@
       "summary": "Optimized get_dependency_context() in context_store.py to use a single batched query with IN clause while preserving ordering, and optimized get_recent_activities() in tracker.py to push sorting and limits into SQLite utilizing a custom index.",
       "status": "completed",
       "journal_ref": ".jules/journals/2026-07-25T03-17-05Z.json"
+    },
+    {
+      "step_number": 13,
+      "timestamp_utc": "2026-07-25T04:07:11Z",
+      "title": "Consolidate session polling into a shared engine with adaptive backoff",
+      "summary": "Unify the two independent polling loops in coordinator.py and session_runner.py into a single modular polling engine SessionPoller with adaptive backoff and random jitter.",
+      "status": "completed",
+      "journal_ref": ".jules/journals/2026-07-25T04-07-11Z.json"
     }
   ]
 }

@@ -186,11 +186,16 @@ class AgentCoordinator:
         return task
 
     async def _poll_session(self, client, task: AgentTask) -> AgentTask:
-        elapsed = 0
+        from core.session_poller import SessionPoller, store_activity
         last_state = None
-        while elapsed < SESSION_TIMEOUT:
-            session = await client.get_session(task.session_id)
 
+        async def on_transition(session, activities):
+            nonlocal last_state
+            # 1. Fetching and storing session activities into the database (Step 13 gap closure)
+            for activity in activities:
+                await store_activity(self._store._db, str(task.id), session.id, activity)
+
+            # 2. Check state transitions and notify
             if session.state != last_state:
                 if session.state == SessionState.COMPLETED:
                     pr_url = ""
@@ -220,42 +225,39 @@ class AgentCoordinator:
 
                 last_state = session.state
 
-            if session.state == SessionState.AWAITING_PLAN_APPROVAL:
-                # Do not transition to final status, just sleep and keep polling
-                await asyncio.sleep(POLL_INTERVAL)
-                elapsed += POLL_INTERVAL
-                continue
+        poller = SessionPoller(client, task.session_id, on_transition)
+        try:
+            terminal_session = await poller.poll()
+        except TimeoutError:
+            task.status = TaskStatus.FAILED
+            task.error = "Session timed out"
+            return task
 
-            if session.state == SessionState.COMPLETED:
-                task.status = TaskStatus.COMPLETED
-                for output in session.outputs:
-                    if output.pull_request:
-                        task.pr_url = output.pull_request.url
+        if terminal_session.state == SessionState.COMPLETED:
+            task.status = TaskStatus.COMPLETED
+            for output in terminal_session.outputs:
+                if output.pull_request:
+                    task.pr_url = output.pull_request.url
 
-                # If a PR was created, run the pre-merge QA reviewer
-                if task.pr_url:
-                    try:
-                        from core.qa_reviewer import run_qa_review_for_task
-                        await run_qa_review_for_task(self._pool, self._store, task, task.pr_url)
-                    except Exception as e:
-                        log.warning("qa_trigger_failed", task_id=str(task.id), error=str(e))
+            if task.pr_url:
+                try:
+                    from core.qa_reviewer import run_qa_review_for_task
+                    await run_qa_review_for_task(self._pool, self._store, task, task.pr_url)
+                except Exception as e:
+                    log.warning("qa_trigger_failed", task_id=str(task.id), error=str(e))
 
-                return task
+            return task
 
-            if session.state == SessionState.FAILED:
-                task.status = TaskStatus.FAILED
-                task.error = "Jules session failed"
-                return task
+        if terminal_session.state == SessionState.FAILED:
+            task.status = TaskStatus.FAILED
+            task.error = "Jules session failed"
+            return task
 
-            terminal = {SessionState.FAILED, SessionState.COMPLETED}
-            if session.state in terminal:
-                return task
+        if terminal_session.state == SessionState.PAUSED:
+            task.status = TaskStatus.FAILED
+            task.error = "Jules session paused"
+            return task
 
-            await asyncio.sleep(POLL_INTERVAL)
-            elapsed += POLL_INTERVAL
-
-        task.status = TaskStatus.FAILED
-        task.error = "Session timed out"
         return task
 
 
