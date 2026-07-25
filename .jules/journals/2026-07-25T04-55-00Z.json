@@ -1,0 +1,44 @@
+{
+  "step_number": 14,
+  "timestamp_utc": "2026-07-25T04:55:00Z",
+  "title": "Reduce auto_merge.py's check-polling overhead and add merge_pull_request retry protection",
+  "task_summary": "Reduce rate-limit pressure on GitHub API calls in auto_merge.py by implementing adaptive backoff with jitter for PR check polling, and ensure that the critical PR merge operation is protected against transient failures by decorating it with the existing @_retry decorator.",
+  "status": "completed",
+  "previous_step_review": {
+    "reviewed_step": 13,
+    "checked": "src/core/session_poller.py, src/core/session_runner.py, src/core/coordinator.py",
+    "issues_found": [],
+    "fixes_applied": []
+  },
+  "files_changed": [
+    {"path": "src/clients/github.py", "change": "Decorated merge_pull_request with @_retry to handle transient 5xx/429 errors."},
+    {"path": "src/core/auto_merge.py", "change": "Implemented adaptive backoff with jitter and precise timeout-capping in _wait_for_checks using CHECK_INITIAL_INTERVAL=15.0, CHECK_MULTIPLIER=1.5, CHECK_MAX_INTERVAL=90.0, and CHECK_TIMEOUT=600.0."},
+    {"path": "dryrun/test_gaps.py", "change": "Added unit tests test_auto_merge_polling_backoff and test_github_client_merge_retry to cover adaptive backoff schedule and tenacity retry logic under 5xx errors."},
+    {"path": "dryrun/test_e2e_simulation.py", "change": "Corrected pre-existing schema mismatches (depends_on, prompt, branch) in dryrun simulation assertions."}
+  ],
+  "assumptions_verified": [
+    {"assumption": "Adaptive backoff reduces polls by 50%", "verification": "Confirmed mathematically and through test_auto_merge_polling_backoff that a full-duration 600s wait executes exactly 10 polls (down from the flat 30s rate of 20 polls).", "result": "confirmed"},
+    {"assumption": "merge_pull_request retries on transient errors", "verification": "Validated via test_github_client_merge_retry that simulated 502 Bad Gateway responses are caught, retried exponentially, and eventually succeed on subsequent attempts.", "result": "confirmed"}
+  ],
+  "decisions": [
+    {"decision": "Use initial_interval=15.0, multiplier=1.5, max_interval=90.0 for check-polling", "reasoning": "Since CI checks take at least 20-30s to start up, starting the polling sequence at 15s prevents redundant early calls, while a 1.5x multiplier and 90s cap maintain optimal latency detection for longer runs."},
+    {"decision": "Correct pre-existing test schemas in test_e2e_simulation.py", "reasoning": "Previous refactoring steps (like Step 4) changed task field names to depends_on, prompt, and branch, but test_e2e_simulation.py still referenced dependencies, description, and branch_name. Correcting them aligns test schemas with production codebase standards."}
+  ],
+  "self_review": {
+    "passes_completed": 2,
+    "checked": "All modified files, backoff arithmetic correctness, tenacity decorator behaviour, and full test suite executions.",
+    "changes_made": [
+      "Asserted exact sleep time values in test_auto_merge_polling_backoff by mocking random.uniform to return 1.0, keeping the test deterministic.",
+      "Caught tenacity.RetryError inside test_github_client_merge_retry and unwrapped/asserted the nested GitHubApiError with 502 status code."
+    ],
+    "deferred_from_review": []
+  },
+  "blockers": [],
+  "deferred": [],
+  "tests": {
+    "suite_result": "pass",
+    "new_tests_added": ["test_auto_merge_polling_backoff", "test_github_client_merge_retry"],
+    "pre_existing_failures_noted": []
+  },
+  "notes_for_next_step": "Step 14 is fully complete. Polling overhead is significantly reduced and merge operations are fully decorated and resilient."
+}
