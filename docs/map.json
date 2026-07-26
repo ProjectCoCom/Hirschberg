@@ -90,16 +90,6 @@
     "description": "Frontend JavaScript/TypeScript module 'Typecoercion'."
   },
   {
-    "path": "dashboard/dist/assets/index-5yBLDPn3.css",
-    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/dist/assets/index-5yBLDPn3.css",
-    "description": ""
-  },
-  {
-    "path": "dashboard/dist/index.html",
-    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/dist/index.html",
-    "description": "Main HTML template for React dashboard."
-  },
-  {
     "path": "dashboard/index.html",
     "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/index.html",
     "description": "Main HTML template for React dashboard."
@@ -662,42 +652,7 @@
   {
     "path": "docs/changelog.json",
     "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/docs/changelog.json",
-    "description": "JSON configuration/data file 'Changelog'."
-  },
-  {
-    "path": "dryrun/mocks.py",
-    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dryrun/mocks.py",
-    "description": "Dry-run integration test suite 'Mocks'."
-  },
-  {
-    "path": "dryrun/run_all.py",
-    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dryrun/run_all.py",
-    "description": "Dry-run integration test suite 'Run All'."
-  },
-  {
-    "path": "dryrun/test_auto_mode.py",
-    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dryrun/test_auto_mode.py",
-    "description": "Dry-run integration test suite 'Test Auto Mode'."
-  },
-  {
-    "path": "dryrun/test_e2e_simulation.py",
-    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dryrun/test_e2e_simulation.py",
-    "description": "Dry-run integration test suite 'Test E2E Simulation'."
-  },
-  {
-    "path": "dryrun/test_full_workflow.py",
-    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dryrun/test_full_workflow.py",
-    "description": "Dry-run integration test suite 'Test Full Workflow'."
-  },
-  {
-    "path": "dryrun/test_gaps.py",
-    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dryrun/test_gaps.py",
-    "description": "Dry-run integration test suite 'Test Gaps'."
-  },
-  {
-    "path": "dryrun/test_jdocs.py",
-    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dryrun/test_jdocs.py",
-    "description": "Dry-run integration test suite 'Test Jdocs'."
+    "description": ""
   },
   {
     "path": "examples/seed_dashboard.py",
@@ -920,6 +875,11 @@
     "description": "JDOCS prompt template manager."
   },
   {
+    "path": "src/core/json_extract.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/core/json_extract.py",
+    "description": "JSON object extraction utility."
+  },
+  {
     "path": "src/core/logging.py",
     "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/core/logging.py",
     "description": "Structured logger setup."
@@ -1058,5 +1018,50 @@
     "path": "supabase/schema_local.sql",
     "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/supabase/schema_local.sql",
     "description": "Local SQLite schema definition."
+  },
+  {
+    "path": "tests/conftest.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/tests/conftest.py",
+    "description": "Pytest configuration and shared fixtures."
+  },
+  {
+    "path": "tests/mocks.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/tests/mocks.py",
+    "description": "Dry-run integration test suite 'Mocks'."
+  },
+  {
+    "path": "tests/test_auto_mode.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/tests/test_auto_mode.py",
+    "description": "Dry-run integration test suite 'Test Auto Mode'."
+  },
+  {
+    "path": "tests/test_e2e_happy_path.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/tests/test_e2e_happy_path.py",
+    "description": "End-to-end happy-path integration test."
+  },
+  {
+    "path": "tests/test_e2e_simulation.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/tests/test_e2e_simulation.py",
+    "description": "Dry-run integration test suite 'Test E2E Simulation'."
+  },
+  {
+    "path": "tests/test_full_workflow.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/tests/test_full_workflow.py",
+    "description": "Dry-run integration test suite 'Test Full Workflow'."
+  },
+  {
+    "path": "tests/test_gaps.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/tests/test_gaps.py",
+    "description": "Dry-run integration test suite 'Test Gaps'."
+  },
+  {
+    "path": "tests/test_imports.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/tests/test_imports.py",
+    "description": "Import-everything smoke test."
+  },
+  {
+    "path": "tests/test_jdocs.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/tests/test_jdocs.py",
+    "description": "Dry-run integration test suite 'Test Jdocs'."
   }
 ]

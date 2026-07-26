@@ -132,8 +132,14 @@ async def get_provider_models(provider_id: str):
     row = rows[0]
 
     try:
+        from clients.ai_providers import (
+            DEFAULT_BASE_URLS,
+            PROVIDER_LIMITS,
+            AIProviderPool,
+            ProviderAccount,
+            ProviderType,
+        )
         from core.ai_interface import KeyVault
-        from clients.ai_providers import AIProviderPool, ProviderAccount, ProviderType, PROVIDER_LIMITS, DEFAULT_BASE_URLS
 
         vault = KeyVault(settings.encryption_key)
         try:
@@ -180,8 +186,8 @@ async def test_provider_chat(provider_id: str, body: TestChatRequest):
         raise HTTPException(404, "Provider not found")
     row = rows[0]
 
+    from clients.ai_providers import DEFAULT_BASE_URLS, AIProviderPool, ProviderAccount, ProviderType
     from core.ai_interface import KeyVault
-    from clients.ai_providers import AIProviderPool, ProviderAccount, ProviderType, DEFAULT_BASE_URLS
 
     vault = KeyVault(settings.encryption_key)
     try:

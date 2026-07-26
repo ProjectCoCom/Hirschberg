@@ -11,7 +11,7 @@ Coupling:
 
 from __future__ import annotations
 
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter
 
@@ -60,7 +60,7 @@ async def get_usage_stats():
             pass
         rows = []
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     today_start = now.strftime("%Y-%m-%d 00:00:00")
 
     today_rows = [r for r in rows if r.get("created_at", "") >= today_start]

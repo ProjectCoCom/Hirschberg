@@ -11,8 +11,6 @@ Coupling:
 
 from __future__ import annotations
 
-from uuid import UUID
-
 import structlog
 from cryptography.fernet import Fernet
 
@@ -28,12 +26,11 @@ class KeyVault:
 
     def __init__(self, encryption_key: str) -> None:
         if not encryption_key:
-            self._fernet = None
-            return
+            raise ValueError("Encryption key cannot be empty. KeyVault requires a non-empty key.")
         try:
             self._fernet = Fernet(encryption_key.encode())
-        except (ValueError, Exception):
-            self._fernet = None
+        except (ValueError, Exception) as e:
+            raise ValueError(f"Invalid encryption key provided: {e}")
 
     def encrypt(self, plaintext: str) -> str:
         if not self._fernet:

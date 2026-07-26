@@ -18,8 +18,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from dryrun.mocks import MockJulesAPI, MockGitHubAPI, MOCK_SHA, MOCK_PR_URL
-
+from tests.mocks import MOCK_PR_URL, MOCK_SHA, MockGitHubAPI, MockJulesAPI
 
 mock_jules = MockJulesAPI()
 mock_github = MockGitHubAPI()
@@ -114,7 +113,7 @@ async def test_mode_system_prompts():
 
 
 async def test_repomix_trigger():
-    from api.chat import _is_repomix_trigger, ChatMessage
+    from api.chat import ChatMessage, _is_repomix_trigger
     msgs = [ChatMessage(role="user", content="rrpo")]
     assert _is_repomix_trigger(msgs) is True
     msgs2 = [ChatMessage(role="user", content="hello")]

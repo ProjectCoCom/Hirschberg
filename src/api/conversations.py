@@ -12,7 +12,7 @@ Coupling:
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter
 from pydantic import BaseModel
@@ -89,7 +89,7 @@ async def add_message(conv_id: str, body: MessageCreate):
         "metadata": json.dumps(body.metadata) if body.metadata else "{}",
     })
     try:
-        await db.update("conversations", {"updated_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")}, {"id": conv_id})
+        await db.update("conversations", {"updated_at": datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")}, {"id": conv_id})
     except Exception:
         pass
     return row

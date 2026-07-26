@@ -11,7 +11,7 @@ Coupling:
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import httpx
 from fastapi import APIRouter
@@ -23,7 +23,7 @@ settings = load_settings()
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 async def _fetch_all_repos(client: httpx.AsyncClient, headers: dict) -> list[dict]:
@@ -118,7 +118,7 @@ async def get_github_summary():
     if not token:
         return {"status": "error", "source": "none", "fetchedAt": _now(), "message": "No GitHub token", "commitsPerDay": [], "recentCommits": []}
     headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
-    since = (datetime.now(timezone.utc) - timedelta(days=30)).strftime("%Y-%m-%d")
+    since = (datetime.now(UTC) - timedelta(days=30)).strftime("%Y-%m-%d")
     async with httpx.AsyncClient(timeout=30.0) as client:
         owner = await _get_owner(client, headers)
         if owner == "unknown":
@@ -133,7 +133,7 @@ async def get_github_summary():
             date = (c.get("authoredAt") or "")[:10]
             if date:
                 commits_by_day[date] = commits_by_day.get(date, 0) + 1
-        today = datetime.now(timezone.utc).date()
+        today = datetime.now(UTC).date()
         commits_per_day = [
             {"date": (today - timedelta(days=29 - i)).strftime("%Y-%m-%d"), "count": commits_by_day.get((today - timedelta(days=29 - i)).strftime("%Y-%m-%d"), 0)}
             for i in range(30)

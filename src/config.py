@@ -42,7 +42,33 @@ class Settings(BaseSettings):
 
 
 def load_settings() -> Settings:
-    return Settings()
+    settings = Settings()
+    if not settings.encryption_key:
+        from pathlib import Path
+
+        from cryptography.fernet import Fernet
+        new_key = Fernet.generate_key().decode()
+
+        env_path = Path(".env")
+        lines = []
+        if env_path.exists():
+            content = env_path.read_text(encoding="utf-8")
+            lines = content.splitlines()
+
+        found = False
+        for i, line in enumerate(lines):
+            if line.strip().startswith("ENCRYPTION_KEY="):
+                lines[i] = f"ENCRYPTION_KEY={new_key}"
+                found = True
+                break
+        if not found:
+            lines.append(f"ENCRYPTION_KEY={new_key}")
+
+        env_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+        settings = Settings()
+        settings.encryption_key = new_key
+    return settings
 
 
 def configure_logging(level: str = "INFO") -> None:

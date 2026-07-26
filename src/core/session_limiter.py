@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import structlog
 
@@ -25,7 +25,7 @@ class SessionSlot:
     pipeline_id: str
     repo: str
     task_id: str
-    acquired_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    acquired_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
 class SessionLimiter:

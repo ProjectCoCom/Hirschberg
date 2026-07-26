@@ -9,11 +9,12 @@ Coupling:
 """
 
 
+import json
 import sqlite3
 import uuid
-import json
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 
 def _serialize_val(v: Any) -> Any:
@@ -59,7 +60,7 @@ class LocalDB:
 
     def _get_conn(self) -> sqlite3.Connection:
         if self._conn is None:
-            self._conn = sqlite3.connect(str(self._path))
+            self._conn = sqlite3.connect(str(self._path), check_same_thread=False)
             self._conn.row_factory = sqlite3.Row
             self._conn.execute("PRAGMA journal_mode=WAL")
             self._conn.execute("PRAGMA foreign_keys=ON")

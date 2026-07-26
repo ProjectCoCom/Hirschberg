@@ -12,7 +12,7 @@ Coupling:
 from __future__ import annotations
 
 import base64
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import httpx
 
@@ -113,7 +113,7 @@ async def update_context_after_agent(
     agent_id: str, task_description: str, status: str, pr_url: str | None, files_changed: list[str] | None
 ) -> bool:
     headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(UTC).isoformat()
 
     async with httpx.AsyncClient(timeout=15.0) as client:
         url = f"https://api.github.com/repos/{owner}/{repo}/contents/{JDOCS_PATH}/context.xml?ref={branch}"
@@ -161,7 +161,7 @@ async def append_session_history(
     agent_id: str, session_id: str, status: str, prompt_summary: str
 ) -> bool:
     headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(UTC).isoformat()
 
     async with httpx.AsyncClient(timeout=15.0) as client:
         url = f"https://api.github.com/repos/{owner}/{repo}/contents/{JDOCS_PATH}/session-history.xml?ref={branch}"

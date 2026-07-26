@@ -12,7 +12,8 @@ Coupling:
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 import structlog
 
 from clients.jules import JulesClient
@@ -117,7 +118,7 @@ async def relay_worker_feedback(
             return
 
         # 3. Poll the orchestrator session specifically for a new agentMessaged activity after start_time
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
         reply = None
         while not reply:
             await asyncio.sleep(15)

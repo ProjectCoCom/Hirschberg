@@ -18,8 +18,8 @@ from db import db
 
 
 async def run_providers(settings, args) -> None:
-    from core.ai_interface import AIInterface, KeyVault
     from clients.ai_providers import AIProviderPool
+    from core.ai_interface import AIInterface, KeyVault
 
     vault = KeyVault(settings.encryption_key)
     pool = AIProviderPool()
@@ -49,10 +49,10 @@ async def run_providers(settings, args) -> None:
 
 
 async def run_chat(settings, args) -> None:
+    from clients.ai_providers import AIProviderPool
     from core.ai_interface import AIInterface, KeyVault
     from core.conversation import ConversationManager
     from core.templates import get_template
-    from clients.ai_providers import AIProviderPool
 
     vault = KeyVault(settings.encryption_key)
     pool = AIProviderPool()
@@ -101,9 +101,9 @@ async def run_templates() -> None:
 
 
 async def run_decompose(settings, args) -> None:
+    from clients.ai_providers import AIProviderPool
     from core.ai_interface import AIInterface, KeyVault
     from core.decomposer import decompose_task
-    from clients.ai_providers import AIProviderPool
 
     vault = KeyVault(settings.encryption_key)
     pool = AIProviderPool()

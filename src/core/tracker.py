@@ -11,8 +11,8 @@ Coupling:
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import Callable
+from collections.abc import Callable
+from datetime import UTC, datetime
 from uuid import UUID
 
 import structlog
@@ -51,7 +51,7 @@ class Tracker:
     def is_stale(self) -> bool:
         if not self._last_fetch:
             return True
-        elapsed = (datetime.now(timezone.utc) - self._last_fetch).total_seconds()
+        elapsed = (datetime.now(UTC) - self._last_fetch).total_seconds()
         return elapsed > self._config.stale_threshold
 
     async def get_active_tasks(self) -> list[dict]:
@@ -63,7 +63,7 @@ class Tracker:
     async def get_stale_tasks(self) -> list[dict]:
         running = await self.get_active_tasks()
         stale = []
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         for task in running:
             updated = task.get("updated_at") or task.get("created_at")
             if not updated:
@@ -101,7 +101,7 @@ class Tracker:
             limit=limit,
         )
         self._activity_cache = rows
-        self._last_fetch = datetime.now(timezone.utc)
+        self._last_fetch = datetime.now(UTC)
         return rows
 
     async def subscribe_task_updates(

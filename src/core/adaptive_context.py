@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import asyncio
 import sqlite3
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from core.rag_store import query_context
@@ -42,7 +42,7 @@ def _get_conn() -> sqlite3.Connection:
 async def record_chunk_usage(collection: str, chunk_ids: list[str]) -> None:
     def _record():
         conn = _get_conn()
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         for cid in chunk_ids:
             existing = conn.execute(
                 "SELECT score, hit_count FROM chunk_scores WHERE chunk_id = ?", (cid,)

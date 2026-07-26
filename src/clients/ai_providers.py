@@ -12,7 +12,7 @@ Coupling:
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
 from uuid import UUID, uuid4
@@ -189,7 +189,7 @@ class ProviderAccount:
         self.base_url = base_url or self._default_base_url()
         self.daily_used = 0
         self.total_used = 0
-        self.last_reset = datetime.now(timezone.utc)
+        self.last_reset = datetime.now(UTC)
         self.last_error: str | None = None
         self.enabled = True
 
@@ -235,7 +235,7 @@ class ProviderAccount:
         }
 
     def _maybe_reset_daily(self) -> None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if (now - self.last_reset).total_seconds() > 86400:
             self.daily_used = 0
             self.last_reset = now
@@ -480,7 +480,7 @@ def _read_cache(key: str) -> list[dict] | None:
         if not entry:
             return None
         cached_at = datetime.fromisoformat(entry["cached_at"])
-        if (datetime.now(timezone.utc) - cached_at).total_seconds() > CACHE_TTL_SECONDS:
+        if (datetime.now(UTC) - cached_at).total_seconds() > CACHE_TTL_SECONDS:
             return None
         return entry["models"]
     except (json.JSONDecodeError, KeyError, ValueError):
@@ -497,6 +497,6 @@ def _write_cache(key: str, models: list[dict]) -> None:
             data = {}
     data[key] = {
         "models": models,
-        "cached_at": datetime.now(timezone.utc).isoformat(),
+        "cached_at": datetime.now(UTC).isoformat(),
     }
     MODELS_CACHE_PATH.write_text(json.dumps(data, indent=2), encoding="utf-8")

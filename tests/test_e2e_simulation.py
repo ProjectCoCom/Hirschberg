@@ -12,21 +12,22 @@ Coupling:
 from __future__ import annotations
 
 import asyncio
-import json
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
+from tests.mocks import MOCK_PR_URL, MOCK_SHA, MockGitHubAPI, MockJulesAPI
+
+from core.jdocs import CONTEXT_TEMPLATE, RULES_TEMPLATE
+from core.plan_executor import parse_plan
 from prompts.system_prompts import (
-    ASK_MODE_SYSTEM, PLAN_MODE_SYSTEM, BUILD_MODE_SYSTEM,
-    AUTO_MODE_SYSTEM, JULES_MASTER_PROMPT, JULES_QUESTION_HANDLER,
+    ASK_MODE_SYSTEM,
+    JULES_MASTER_PROMPT,
+    JULES_QUESTION_HANDLER,
+    PLAN_MODE_SYSTEM,
     REVIEW_SESSION_PROMPT,
 )
-from core.plan_executor import parse_plan
-from core.jdocs import CONTEXT_TEMPLATE, RULES_TEMPLATE, SESSION_HISTORY_TEMPLATE
-from dryrun.mocks import MockJulesAPI, MockGitHubAPI, MOCK_SHA, MOCK_PR_URL
-
 
 MOCK_REPOMIX_XML = """<?xml version="1.0" encoding="UTF-8"?>
 <repository name="AnyWebApi" owner="iceyxsm">
@@ -162,8 +163,8 @@ async def simulate_step_4_dispatch():
         session_id = await mock_jules.create_session(jules_prompt, "iceyxsm", "AnyWebApi", task.branch, "key")
         print(f"  [JULES] {task.id}: branch={task.branch}, session={session_id}")
 
-    print(f"  [SYSTEM] 2 sessions running in parallel (agent-1, agent-2)")
-    print(f"  [SYSTEM] agent-3 waiting for dependencies...")
+    print("  [SYSTEM] 2 sessions running in parallel (agent-1, agent-2)")
+    print("  [SYSTEM] agent-3 waiting for dependencies...")
     print()
     assert len(mock_jules.sessions_created) == 2
     assert len(mock_github.branches_created) == 2

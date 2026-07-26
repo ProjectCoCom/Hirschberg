@@ -16,8 +16,8 @@ from uuid import UUID
 
 import structlog
 
-from core.coordinator import AgentCoordinator
 from core.context_store import ContextStore
+from core.coordinator import AgentCoordinator
 from exceptions import WorkflowValidationError
 from models.workflow import AgentTask, TaskStatus, Workflow, WorkflowStatus
 
@@ -159,8 +159,8 @@ class WorkflowEngine:
         return workflow
 
     def _get_task_requirements(self, task: AgentTask) -> tuple[AccountRole, str]:
-        from core.account_pool import AccountRole
         from config import load_settings
+        from core.account_pool import AccountRole
         settings = load_settings()
         max_depth = getattr(settings, "max_delegation_depth", 0)
 
@@ -192,12 +192,13 @@ class WorkflowEngine:
         """
         from pathlib import Path
         from uuid import uuid4
+
+        from clients.github import GitHubClient
         from config import load_settings
         from core.account_pool import AccountRole
-        from core.qa_reviewer import extract_qa_verdict
-        from core.merge_review import create_final_pr, cleanup_branches
         from core.auto_merge import AutoMerge, MergeStrategy
-        from clients.github import GitHubClient
+        from core.merge_review import cleanup_branches, create_final_pr
+        from core.qa_reviewer import extract_qa_verdict
 
         owner = workflow.tasks[0].repo_owner
         repo = workflow.tasks[0].repo_name

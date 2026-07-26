@@ -11,6 +11,8 @@ Coupling:
 
 from __future__ import annotations
 
+from datetime import UTC
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
@@ -58,7 +60,8 @@ async def update_plan(plan_id: str, req: PlanUpdate):
     updates = {k: v for k, v in req.model_dump().items() if v is not None}
     if not updates:
         raise HTTPException(400, "No fields to update")
-    updates["updated_at"] = "datetime('now')"
+    from datetime import datetime
+    updates["updated_at"] = datetime.now(UTC).isoformat()
     rows = await db.update("plans", updates, filters={"id": plan_id})
     return rows[0] if rows else {"id": plan_id, **updates}
 

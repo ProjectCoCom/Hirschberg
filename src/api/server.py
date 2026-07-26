@@ -13,29 +13,30 @@ from __future__ import annotations
 
 import asyncio
 from contextlib import asynccontextmanager
+from datetime import UTC
 
 import httpx
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from api.providers import router as providers_router
+from api.chat import router as chat_router
+from api.conversations import router as conversations_router
+from api.execute import router as execute_router
 from api.github import router as github_router
 from api.jules_accounts import router as jules_router
-from api.chat import router as chat_router
+from api.plans import router as plans_router
+from api.providers import router as providers_router
 from api.repos import router as repos_router
-from api.execute import router as execute_router
-from api.conversations import router as conversations_router
 from api.settings import router as settings_router
 from api.usage import router as usage_router
-from api.plans import router as plans_router
 from config import load_settings
 from db import db
 
 
 def _now() -> str:
-    from datetime import datetime, timezone
-    return datetime.now(timezone.utc).isoformat()
+    from datetime import datetime
+    return datetime.now(UTC).isoformat()
 
 
 settings = load_settings()
@@ -82,21 +83,21 @@ def _times_within_minutes(local_time: str, jules_time: str, minutes: int) -> boo
     local_time: '2026-05-10 06:38:49', jules_time: '2026-05-10T06:38:00Z'"""
     if not local_time or not jules_time:
         return True  # Can't compare — assume match
-    from datetime import datetime, timezone
+    from datetime import datetime
     try:
         lt = local_time.replace("T", " ").replace("Z", "")[:19]
         jt = jules_time.replace("T", " ").replace("Z", "")[:19]
-        local_dt = datetime.strptime(lt, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
-        jules_dt = datetime.strptime(jt, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+        local_dt = datetime.strptime(lt, "%Y-%m-%d %H:%M:%S").replace(tzinfo=UTC)
+        jules_dt = datetime.strptime(jt, "%Y-%m-%d %H:%M:%S").replace(tzinfo=UTC)
         return abs((local_dt - jules_dt).total_seconds()) < minutes * 60
     except Exception:
         return True  # Parse failure — don't block on this
 
 
 async def _get_jules_key() -> str | None:
-    from db import db
-    from core.ai_interface import KeyVault
     from config import load_settings
+    from core.ai_interface import KeyVault
+    from db import db
     try:
         rows = await db.select("accounts")
     except Exception:
@@ -220,9 +221,12 @@ async def _resume_pending_tasks(jules_key: str):
         return
 
     from api.execute import (
-        _load_execution_context, _clear_execution_context,
-        _resolve_ai_ctx, _run_task_once, _track_task,
-        AgentTask, ExecutionPlan,
+        AgentTask,
+        ExecutionPlan,
+        _clear_execution_context,
+        _load_execution_context,
+        _resolve_ai_ctx,
+        _run_task_once,
     )
     from clients.github import GitHubClient
 
@@ -285,10 +289,10 @@ async def lifespan(app: FastAPI):
 
 async def _daily_reset_loop():
     """Reset sessions_today at midnight UTC each day."""
-    from datetime import datetime, timezone, timedelta
+    from datetime import datetime, timedelta
 
     while True:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         tomorrow = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
         seconds_until_midnight = (tomorrow - now).total_seconds()
         await asyncio.sleep(seconds_until_midnight)
@@ -340,8 +344,12 @@ async def list_prompts():
 @app.get("/api/prompts/system")
 async def list_system_prompts():
     from prompts.system_prompts import (
-        ASK_MODE_SYSTEM, PLAN_MODE_SYSTEM, BUILD_MODE_SYSTEM,
-        AUTO_MODE_SYSTEM, JULES_MASTER_PROMPT, JULES_QUESTION_HANDLER,
+        ASK_MODE_SYSTEM,
+        AUTO_MODE_SYSTEM,
+        BUILD_MODE_SYSTEM,
+        JULES_MASTER_PROMPT,
+        JULES_QUESTION_HANDLER,
+        PLAN_MODE_SYSTEM,
         REVIEW_SESSION_PROMPT,
     )
     return {"prompts": [
@@ -370,8 +378,12 @@ async def update_system_prompt(name: str, body: PromptUpdate):
 @app.post("/api/prompts/system/{name}/reset")
 async def reset_system_prompt(name: str):
     from prompts.system_prompts import (
-        ASK_MODE_SYSTEM, PLAN_MODE_SYSTEM, BUILD_MODE_SYSTEM,
-        AUTO_MODE_SYSTEM, JULES_MASTER_PROMPT, JULES_QUESTION_HANDLER,
+        ASK_MODE_SYSTEM,
+        AUTO_MODE_SYSTEM,
+        BUILD_MODE_SYSTEM,
+        JULES_MASTER_PROMPT,
+        JULES_QUESTION_HANDLER,
+        PLAN_MODE_SYSTEM,
         REVIEW_SESSION_PROMPT,
     )
     defaults = {
@@ -602,11 +614,12 @@ async def get_usage():
 
 async def _count_today_sessions(accounts: list[dict]) -> int:
     """Query Jules API with each account key and count sessions created today."""
-    from datetime import datetime, timezone
+    from datetime import datetime
+
     from core.ai_interface import KeyVault
     vault = KeyVault(settings.encryption_key)
 
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    today = datetime.now(UTC).strftime("%Y-%m-%d")
     total = 0
 
     for acc in accounts:
@@ -799,8 +812,8 @@ async def _fetch_jules_sessions_all_accounts() -> tuple[dict[str, list[dict]], s
 
 @app.get("/api/analytics/usage-heatmap")
 async def get_usage_heatmap():
-    from datetime import datetime, timezone, timedelta
-    now = datetime.now(timezone.utc)
+    from datetime import datetime, timedelta
+    now = datetime.now(UTC)
 
     sessions_by_date, projects = await _fetch_jules_sessions_all_accounts()
 

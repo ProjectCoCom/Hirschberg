@@ -13,10 +13,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from api.chat import _call_provider, _get_enabled_keys, _decrypt_key, MODE_SYSTEM_PROMPTS
+from api.chat import MODE_SYSTEM_PROMPTS, _call_provider, _decrypt_key, _get_enabled_keys
+from config import load_settings
 from core.plan_executor import parse_plan
 from core.repomix import analyze_repo, get_cached_xml
-from config import load_settings
 
 settings = load_settings()
 
@@ -66,11 +66,13 @@ async def _ai_plan(config: AutoModeConfig, repo_xml: str) -> str:
 
 
 async def _extract_plan_json(raw_response: str) -> str:
-    start = raw_response.find("{")
-    end = raw_response.rfind("}") + 1
-    if start == -1 or end == 0:
-        raise ValueError("No JSON found in AI response")
-    return raw_response[start:end]
+    import json
+
+    from core.json_extract import extract_json_object
+    data = extract_json_object(raw_response)
+    if not isinstance(data, dict):
+        raise ValueError("No valid JSON object found in AI response")
+    return json.dumps(data)
 
 
 async def _analyze_phase(config: AutoModeConfig, state: AutoModeState, token: str) -> str | None:
@@ -98,9 +100,9 @@ async def _planning_phase(config: AutoModeConfig, state: AutoModeState, repo_xml
 
 
 async def get_jules_key() -> str | None:
-    from db import db
-    from core.ai_interface import KeyVault
     from config import load_settings
+    from core.ai_interface import KeyVault
+    from db import db
     try:
         rows = await db.select("accounts")
     except Exception:
@@ -140,45 +142,85 @@ async def run_auto_mode(config: AutoModeConfig, state: AutoModeState) -> AutoMod
         return state
 
     state.status = "executing"
-    jules_key = await get_jules_key()
-    if not jules_key:
+    from core.config_loader import build_jules_pool, load_config
+    config_data = load_config()
+    pool = build_jules_pool(config_data)
+    if not pool._accounts:
+        await pool.close_all()
         state.status = "failed"
-        state.errors.append("No Jules API key")
+        state.errors.append("No enabled Jules API accounts configured")
         return state
 
     if state.interrupted:
+        await pool.close_all()
         state.status = "interrupted"
         return state
 
-    from api.execute import _execute_sequential, _execute_parallel, _execute_hybrid
     plan = parse_plan(plan_json, config.repo_owner, config.repo_name)
     plan.execution_mode = config.execution_mode
-    plan.max_sessions = config.max_sessions
-    plan.timeout_minutes = config.timeout_minutes
 
-    if config.execution_mode == "parallel":
-        results = await _execute_parallel(plan, jules_key, token)
-    elif config.execution_mode == "hybrid":
-        results = await _execute_hybrid(plan, jules_key, token)
-    else:
-        results = await _execute_sequential(plan, jules_key, token)
+    from core.context_store import ContextStore
+    from core.coordinator import AgentCoordinator
+    from core.workflow_engine import WorkflowEngine
+    from db import db
+    from models.workflow import TaskStatus, WorkflowStatus
 
-    state.sessions_used = len(results)
-    failed = [r for r in results if r.status != "completed"]
+    try:
+        await db.insert("workflows", {
+            "id": str(plan.id),
+            "name": plan.name,
+            "description": plan.description,
+            "status": str(plan.status),
+            "execution_mode": plan.execution_mode,
+        })
+        for task in plan.tasks:
+            task.workflow_id = plan.id
+            await db.insert("agent_tasks", task.model_dump(mode="json"))
+    except Exception as e:
+        await pool.close_all()
+        state.status = "failed"
+        state.errors.append(f"Database persistence failed: {e}")
+        return state
+
+    store = ContextStore(db)
+    coordinator = AgentCoordinator(pool, store)
+    engine = WorkflowEngine(coordinator, store)
+
+    try:
+        plan = await engine.run(plan)
+    except Exception as e:
+        plan.status = WorkflowStatus.FAILED
+        state.errors.append(f"Engine execution failed: {e}")
+    finally:
+        await db.update("workflows", {"status": str(plan.status)}, {"id": str(plan.id)})
+        await pool.close_all()
+
+    state.sessions_used = len([t for t in plan.tasks if t.session_id])
+
+    for task in plan.tasks:
+        try:
+            db_task = await store.get_task_state(task.id)
+            task.status = db_task.get("status", task.status)
+            task.error = db_task.get("error", task.error)
+        except Exception:
+            pass
+
+    failed = [t for t in plan.tasks if t.status != TaskStatus.COMPLETED]
 
     consecutive_failures = 0
-    for r in results:
-        if r.status != "completed":
+    for t in plan.tasks:
+        if t.status != TaskStatus.COMPLETED:
             consecutive_failures += 1
         else:
             consecutive_failures = 0
+
     if consecutive_failures >= 2:
         state.status = "paused"
         state.errors.append(f"Auto-paused: {consecutive_failures} consecutive failures")
         return state
 
     if failed:
-        state.errors.extend(f"{r.task_id}: {r.error}" for r in failed)
+        state.errors.extend(f"{t.id}: {t.error}" for t in failed)
         state.status = "partial"
     else:
         state.status = "completed"

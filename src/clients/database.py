@@ -9,9 +9,10 @@ Coupling:
 """
 
 
-import asyncio
+from collections.abc import Callable
+from typing import Any
+
 import structlog
-from typing import Any, Callable
 
 from clients.local_db import LocalDB
 

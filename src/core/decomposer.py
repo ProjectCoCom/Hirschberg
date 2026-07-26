@@ -11,7 +11,6 @@ Coupling:
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass, field
 
 import structlog
@@ -78,13 +77,11 @@ async def decompose_task(
 
 
 def _parse_and_validate(raw: str) -> DecompositionResult:
-    try:
-        start = raw.index("{")
-        end = raw.rindex("}") + 1
-        data = json.loads(raw[start:end])
-    except (ValueError, json.JSONDecodeError) as exc:
+    from core.json_extract import extract_json_object
+    data = extract_json_object(raw)
+    if not isinstance(data, dict):
         return DecompositionResult(
-            specs=[], warnings=[f"Failed to parse AI output: {exc}"], valid=False
+            specs=[], warnings=["Failed to extract a valid JSON object from AI output"], valid=False
         )
 
     agents_raw = data.get("agents", [])

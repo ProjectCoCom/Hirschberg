@@ -17,12 +17,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from dryrun.mocks import MockJulesAPI
+from tests.mocks import MockJulesAPI
 
 
 async def test_retry_on_failure():
-    from models.workflow import AgentTask
     from uuid import uuid4
+
+    from models.workflow import AgentTask
 
     task = AgentTask(
         id=uuid4(),
@@ -73,7 +74,7 @@ async def test_agent_tasks_tracking():
 
 
 async def test_conversation_persistence_endpoints():
-    from api.conversations import list_conversations, create_conversation, get_messages, add_message
+    from api.conversations import add_message, create_conversation, get_messages, list_conversations
     assert asyncio.iscoroutinefunction(list_conversations)
     assert asyncio.iscoroutinefunction(create_conversation)
     assert asyncio.iscoroutinefunction(get_messages)
@@ -83,8 +84,12 @@ async def test_conversation_persistence_endpoints():
 
 async def test_system_prompts_complete():
     from prompts.system_prompts import (
-        ASK_MODE_SYSTEM, PLAN_MODE_SYSTEM, BUILD_MODE_SYSTEM,
-        AUTO_MODE_SYSTEM, JULES_MASTER_PROMPT, JULES_QUESTION_HANDLER,
+        ASK_MODE_SYSTEM,
+        AUTO_MODE_SYSTEM,
+        BUILD_MODE_SYSTEM,
+        JULES_MASTER_PROMPT,
+        JULES_QUESTION_HANDLER,
+        PLAN_MODE_SYSTEM,
         REVIEW_SESSION_PROMPT,
     )
     assert "<identity>" in ASK_MODE_SYSTEM
@@ -117,7 +122,7 @@ class MockGitHubClient:
         )
 
     async def list_check_runs(self, owner, repo, ref):
-        from models.github import CheckRun, CheckStatus, CheckConclusion
+        from models.github import CheckConclusion, CheckRun, CheckStatus
         if self.checks_pass:
             conclusion = CheckConclusion.SUCCESS
         else:
@@ -136,8 +141,9 @@ class MockGitHubClient:
 
 
 async def test_qa_reviewer_verdicts_and_ci():
+    from unittest.mock import AsyncMock, patch
+
     from core.auto_merge import AutoMerge, MergeStrategy
-    from unittest.mock import patch, AsyncMock
 
     # 1. Test failed CI checks
     gh_fail = MockGitHubClient(checks_pass=False)
@@ -222,10 +228,11 @@ async def test_qa_reviewer_verdicts_and_ci():
 
 
 async def test_integrator_workflow_review():
-    from core.workflow_engine import WorkflowEngine
-    from models.workflow import Workflow, AgentTask, WorkflowStatus
-    from unittest.mock import MagicMock, AsyncMock, patch
+    from unittest.mock import AsyncMock, MagicMock, patch
     from uuid import uuid4
+
+    from core.workflow_engine import WorkflowEngine
+    from models.workflow import AgentTask, Workflow
 
     # Build a multi-task workflow
     workflow_id = uuid4()
@@ -311,10 +318,12 @@ async def test_integrator_workflow_review():
 
 
 async def test_orchestrator_plan_approval_and_decisions():
-    from unittest.mock import patch, AsyncMock, MagicMock
-    from fastapi.testclient import TestClient
-    from api.server import app
+    from unittest.mock import AsyncMock, MagicMock, patch
     from uuid import uuid4
+
+    from fastapi.testclient import TestClient
+
+    from api.server import app
 
     # Test the API endpoints added in Step 7
     client = TestClient(app)
@@ -389,12 +398,13 @@ async def test_orchestrator_plan_approval_and_decisions():
 
 
 async def test_orchestrator_delegation_and_recursion_limit():
-    from core.coordinator import AgentCoordinator
-    from models.workflow import AgentTask, TaskStatus
-    from core.account_pool import AccountPool, Account, AccountRole
-    from config import Settings
-    from unittest.mock import MagicMock, AsyncMock, patch
+    from unittest.mock import AsyncMock, MagicMock, patch
     from uuid import uuid4
+
+    from config import Settings
+    from core.account_pool import Account, AccountPool, AccountRole
+    from core.coordinator import AgentCoordinator
+    from models.workflow import AgentTask
 
     # Build account pool with orchestrator and worker roles
     pool = AccountPool()
@@ -454,11 +464,12 @@ async def test_orchestrator_delegation_and_recursion_limit():
 
 
 async def test_account_pool_exhaustion_graceful_backoff():
-    from core.workflow_engine import WorkflowEngine
-    from models.workflow import Workflow, AgentTask, WorkflowStatus
-    from core.account_pool import AccountPool, Account, AccountRole
-    from unittest.mock import MagicMock, AsyncMock, patch
+    from unittest.mock import AsyncMock, MagicMock
     from uuid import uuid4
+
+    from core.account_pool import Account, AccountPool, AccountRole
+    from core.workflow_engine import WorkflowEngine
+    from models.workflow import AgentTask, Workflow, WorkflowStatus
 
     # Build a pool with exactly ONE concurrent slot
     pool = AccountPool()
@@ -517,9 +528,10 @@ async def test_account_pool_exhaustion_graceful_backoff():
 
 
 async def test_concurrent_database_writes():
-    from db import db
     import asyncio
     from uuid import uuid4
+
+    from db import db
 
     # Pre-register a dummy task so that session_activities foreign key is satisfied
     task_id = str(uuid4())
@@ -556,7 +568,7 @@ async def test_concurrent_database_writes():
 
 
 async def test_capacity_aware_account_routing():
-    from core.account_pool import AccountPool, Account, AccountRole, PlanTier
+    from core.account_pool import Account, AccountPool, AccountRole, PlanTier
 
     # 1. Budget Preference Test (Same Tier)
     pool = AccountPool()
@@ -634,8 +646,9 @@ async def test_capacity_aware_account_routing():
 
 
 async def test_query_efficiency_fixes():
-    from unittest.mock import AsyncMock, MagicMock
+    from unittest.mock import AsyncMock
     from uuid import uuid4
+
     from core.context_store import ContextStore
     from core.tracker import Tracker
     from db import db
@@ -742,12 +755,13 @@ async def test_query_efficiency_fixes():
 
 
 async def test_session_poller_and_backoff():
-    from core.session_poller import SessionPoller
-    from models.jules import Session, SessionState
-    from unittest.mock import AsyncMock, patch, MagicMock
     import inspect
+    from unittest.mock import AsyncMock, MagicMock, patch
     from uuid import uuid4
+
+    from core.session_poller import SessionPoller
     from db import db
+    from models.jules import SessionState
 
     # 1. Structural signature check (SessionPoller constructor takes NO pool or store argument)
     sig = inspect.signature(SessionPoller.__init__)
@@ -787,9 +801,9 @@ async def test_session_poller_and_backoff():
         assert 1.8 <= calls[1] <= 2.2
 
     # 3. Verify coordinator DAG-task path now correctly populates session_activities
-    from core.coordinator import AgentCoordinator
-    from core.account_pool import AccountPool, Account, AccountRole
+    from core.account_pool import Account, AccountPool, AccountRole
     from core.context_store import ContextStore
+    from core.coordinator import AgentCoordinator
     from models.workflow import AgentTask
 
     # Setup real AccountPool and ContextStore
@@ -852,8 +866,9 @@ async def test_session_poller_and_backoff():
 
 
 async def test_auto_merge_polling_backoff():
-    from core.auto_merge import AutoMerge, MergeStrategy
     from unittest.mock import AsyncMock, patch
+
+    from core.auto_merge import AutoMerge, MergeStrategy
     from models.github import CheckRun, CheckStatus
 
     gh_mock = AsyncMock()
@@ -886,11 +901,13 @@ async def test_auto_merge_polling_backoff():
 
 
 async def test_github_client_merge_retry():
-    from clients.github import GitHubClient
-    from exceptions import GitHubApiError
-    from unittest.mock import AsyncMock, patch, MagicMock
+    from unittest.mock import AsyncMock, MagicMock, patch
+
     import httpx
     import tenacity
+
+    from clients.github import GitHubClient
+    from exceptions import GitHubApiError
 
     client = GitHubClient(token="dummy-token")
 
@@ -947,14 +964,15 @@ async def test_mcp_server_non_blocking_concurrency():
     sys.path = [p for p in sys.path if not (p.endswith("/src") or p.endswith("/src/"))]
 
     try:
-        import mcp
-        import mcp.server.fastmcp
+        import mcp  # noqa: F401
+        import mcp.server.fastmcp  # noqa: F401
     finally:
         sys.path = orig_path
 
-    from src.mcp.server import jat_list_sessions, jat_run_session
     import inspect
     import json
+
+    from src.mcp.server import jat_list_sessions, jat_run_session
 
     assert inspect.iscoroutinefunction(jat_list_sessions)
     assert inspect.iscoroutinefunction(jat_run_session)
@@ -992,11 +1010,12 @@ async def test_mcp_server_non_blocking_concurrency():
 
 
 async def test_prompt_builder_and_config_loader_caching():
-    from core.prompt_builder import build_session_prompt, clear_template_cache
-    from core.config_loader import load_config, clear_config_cache
-    from unittest.mock import patch
-    from pathlib import Path
     import os
+    from pathlib import Path
+    from unittest.mock import patch
+
+    from core.config_loader import clear_config_cache
+    from core.prompt_builder import build_session_prompt, clear_template_cache
 
     # Write a dummy config.json so load_config actually opens a file on disk
     dummy_config_path = Path(__file__).parent.parent / "config.json"
@@ -1080,6 +1099,280 @@ async def test_prompt_builder_and_config_loader_caching():
             os.remove(dummy_config_path)
 
     print("[PASS] test_prompt_builder_and_config_loader_caching: byte-for-byte output identical and disk reads successfully cached")
+
+
+async def test_poll_orchestrator_behavior():
+    import asyncio
+    from unittest.mock import AsyncMock, MagicMock, patch
+    from uuid import uuid4
+
+    from api.execute import _poll_orchestrator
+    from models.jules import SessionState
+
+    mock_client = AsyncMock()
+    mock_session = MagicMock()
+    mock_session.state = SessionState.COMPLETED
+    mock_session.outputs = []
+    mock_client.get_session.return_value = mock_session
+    mock_client.list_activities.return_value = []
+
+    mock_pool = MagicMock()
+    mock_pool.get_client.return_value = mock_client
+    mock_pool._accounts = [MagicMock(id=uuid4())]
+    mock_pool.close_all = AsyncMock()
+
+    from db import db
+    task_id = str(uuid4())
+    session_id = "test-session-id"
+    account_uuid = str(uuid4())
+
+    await db.insert("orchestrator_sessions", {
+        "id": task_id,
+        "session_id": session_id,
+        "repo_owner": "owner",
+        "repo_name": "repo",
+        "status": "running",
+    })
+    await db.insert("agent_tasks", {
+        "id": task_id,
+        "prompt": "Test Prompt",
+        "repo_owner": "owner",
+        "repo_name": "repo",
+        "branch": "main",
+        "status": "pending",
+        "session_id": session_id,
+    })
+
+    with patch("core.config_loader.build_jules_pool", return_value=mock_pool):
+        await asyncio.wait_for(
+            _poll_orchestrator(session_id, account_uuid, "owner", "repo", task_id),
+            timeout=2.0
+        )
+
+    os_rows = await db.select("orchestrator_sessions", {"session_id": session_id})
+    assert os_rows[0]["status"] == "completed"
+
+
+def test_key_vault_safeguards():
+    import pytest
+
+    from config import load_settings
+    from core.ai_interface import KeyVault
+
+    # Test load_settings results in a valid non-empty key
+    settings = load_settings()
+    assert settings.encryption_key != ""
+
+    vault = KeyVault(settings.encryption_key)
+    assert vault._fernet is not None
+
+    # Test empty or invalid key raises ValueError
+    with pytest.raises(ValueError):
+        KeyVault("")
+
+    with pytest.raises(ValueError):
+        KeyVault("invalid-key-123")
+
+
+async def test_encryption_key_rotation():
+    from unittest.mock import MagicMock, patch
+
+    from cryptography.fernet import Fernet
+    from fastapi.testclient import TestClient
+
+    from api.server import app
+    from core.ai_interface import KeyVault
+    from db import db
+
+    client = TestClient(app)
+
+    # 1. Generate keys A and B
+    key_a = Fernet.generate_key().decode()
+    key_b = Fernet.generate_key().decode()
+
+    vault_a = KeyVault(key_a)
+    vault_b = KeyVault(key_b)
+
+    # Seed an account with key encrypted under key A
+    plain_api_key = "my-secret-api-key-123"
+    encrypted_key_a = vault_a.encrypt(plain_api_key)
+
+    account_id = "rotate-test-account-id"
+    # Clean up first
+    await db.delete("accounts", {"id": account_id})
+    await db.insert("accounts", {
+        "id": account_id,
+        "name": "rotate-test-account",
+        "api_key_encrypted": encrypted_key_a,
+        "plan": "free",
+        "role": "worker",
+        "enabled": 1,
+    })
+
+    # We mock Fernet.generate_key to return key_b during rotation
+    # and mock load_settings to return key_a as current encryption key
+    mock_settings_a = MagicMock()
+    mock_settings_a.encryption_key = key_a
+
+    with patch("api.settings.load_settings", return_value=mock_settings_a), \
+         patch("cryptography.fernet.Fernet.generate_key", return_value=key_b.encode()), \
+         patch("api.settings._write_env") as mock_write_env:
+
+        response = client.post("/api/settings/regenerate-key")
+
+    assert response.status_code == 200
+    res_data = response.json()
+    assert res_data["ok"] is True
+    assert res_data["migrated"] == 1
+    assert res_data["failed"] == 0
+
+    # Retrieve and check that the row has been updated and decrypts perfectly under key_b!
+    rows = await db.select("accounts", {"id": account_id})
+    assert len(rows) == 1
+    encrypted_key_b = rows[0]["api_key_encrypted"]
+
+    # Decrypt with key B and verify it matches the original plaintext key!
+    plain_decrypted = vault_b.decrypt(encrypted_key_b)
+    assert plain_decrypted == plain_api_key
+
+
+async def test_reset_conversations_behavior():
+    from uuid import uuid4
+
+    from fastapi.testclient import TestClient
+
+    from api.server import app
+    from db import db
+
+    client = TestClient(app)
+
+    conversation_id = str(uuid4())
+    await db.insert("conversations", {
+        "id": conversation_id,
+        "title": "Reset Test Conversation",
+        "model": "gpt-4",
+        "mode": "ask",
+        "status": "active",
+    })
+
+    message_id = str(uuid4())
+    await db.insert("conversation_messages", {
+        "id": message_id,
+        "conversation_id": conversation_id,
+        "role": "user",
+        "content": "Hello world",
+    })
+
+    convs_before = await db.select("conversations", {"id": conversation_id})
+    msgs_before = await db.select("conversation_messages", {"id": message_id})
+    assert len(convs_before) == 1
+    assert len(msgs_before) == 1
+
+    response = client.post("/api/settings/reset", json={
+        "targets": ["conversations"]
+    })
+
+    assert response.status_code == 200
+    res_data = response.json()
+    assert "conversations" in res_data.get("cleared", [])
+    assert len(res_data.get("errors", [])) == 0
+
+    convs_after = await db.select("conversations", {"id": conversation_id})
+    msgs_after = await db.select("conversation_messages", {"id": message_id})
+    assert len(convs_after) == 0
+    assert len(msgs_after) == 0
+
+
+async def test_update_plan_timestamp_ordering():
+    import asyncio
+    from datetime import datetime
+    from uuid import uuid4
+
+    from fastapi.testclient import TestClient
+
+    from api.server import app
+    from db import db
+
+    client = TestClient(app)
+
+    # 1. Create two plans
+    conversation_id = str(uuid4())
+
+    plan1_id = str(uuid4())
+    await db.insert("plans", {
+        "id": plan1_id,
+        "conversation_id": conversation_id,
+        "title": "Plan 1",
+        "plan_json": "{}",
+        "status": "draft",
+    })
+
+    plan2_id = str(uuid4())
+    await db.insert("plans", {
+        "id": plan2_id,
+        "conversation_id": conversation_id,
+        "title": "Plan 2",
+        "plan_json": "{}",
+        "status": "draft",
+    })
+
+    # Sleep a tiny bit to ensure different update timestamps
+    await asyncio.sleep(0.01)
+
+    # 2. Update Plan 1 first, then Plan 2
+    response1 = client.patch(f"/api/plans/{plan1_id}", json={"title": "Updated Plan 1"})
+    assert response1.status_code == 200
+    p1_updated = response1.json()
+    assert p1_updated["updated_at"] != "datetime('now')"
+    # Parse to ensure it is a valid datetime
+    dt1 = datetime.fromisoformat(p1_updated["updated_at"])
+
+    await asyncio.sleep(0.01)
+
+    response2 = client.patch(f"/api/plans/{plan2_id}", json={"title": "Updated Plan 2"})
+    assert response2.status_code == 200
+    p2_updated = response2.json()
+    assert p2_updated["updated_at"] != "datetime('now')"
+    dt2 = datetime.fromisoformat(p2_updated["updated_at"])
+
+    # dt2 should be strictly greater than dt1
+    assert dt2 > dt1
+
+    # 3. Call list_plans and check they are ordered by updated_at DESC (p2 first, then p1)
+    response_list = client.get(f"/api/plans?conversation_id={conversation_id}")
+    assert response_list.status_code == 200
+    plans = response_list.json()
+    assert len(plans) == 2
+    assert plans[0]["id"] == plan2_id
+    assert plans[1]["id"] == plan1_id
+
+
+def test_extract_qa_verdict_nested():
+    from core.qa_reviewer import extract_qa_verdict
+
+    # Text containing a nested object verdict with additional noise around it
+    text_with_noise = (
+        "Here is my verdict:\n\n"
+        '{\n'
+        '  "verdict": "reject",\n'
+        '  "summary": "Found critical issues",\n'
+        '  "blocking_issues": [\n'
+        '    {\n'
+        '      "file": "src/auth.py",\n'
+        '      "issue": "Syntax error on line 5"\n'
+        '    }\n'
+        '  ]\n'
+        '}\n\n'
+        "Hope this helps!"
+    )
+
+    verdict = extract_qa_verdict(text_with_noise)
+    assert verdict is not None
+    assert verdict["verdict"] == "reject"
+    assert verdict["summary"] == "Found critical issues"
+    assert len(verdict["blocking_issues"]) == 1
+    assert verdict["blocking_issues"][0]["file"] == "src/auth.py"
+    assert verdict["blocking_issues"][0]["issue"] == "Syntax error on line 5"
 
 
 async def main():
