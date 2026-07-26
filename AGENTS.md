@@ -8,7 +8,7 @@ If you are an autonomous agent executing this file and a live instruction from y
 
 ## 1. How this relates to this repo's root `AGENTS.md`
 
-This repository already has a root `AGENTS.md`, loaded automatically before every task here, governing an active refactor tracked as a long numbered sequence of steps in `.jules/refactor/v1/` (`1.md`, `2.md`, …), with progress recorded in `docs/changelog.json` and one journal file per step under `.jules/journals/`. Its mindset, standing engineering rules, verification standard, and self-review discipline apply to all work in this repository, including this backlog — §3 through §6 below adapt them for this backlog specifically rather than repeat them unchanged.
+This repository already had a previous `docs/depreciated/AGENTS.md`, loaded automatically before every task here, governing an active refactor tracked as a long numbered sequence of steps in `.jules/refactor/v1/` (`1.md`, `2.md`, …), with progress recorded in `docs/changelog.json` and one journal file per step under `.jules/journals/`. Its mindset, standing engineering rules, verification standard, and self-review discipline apply to all work in this repository, including this backlog — §3 through §6 below adapt them for this backlog specifically rather than repeat them unchanged.
 
 What this document deliberately does **not** inherit is that document's step-sequencing machinery. This backlog is a separate track of work — bugs and architecture findings from a full audit — not another entry in the `.jules/refactor/v1/` sequence. Concretely:
 
