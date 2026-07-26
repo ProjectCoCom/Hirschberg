@@ -17,7 +17,7 @@ from pathlib import Path
 import structlog
 
 from clients.ai_providers import AIProviderPool, ProviderAccount, ProviderType
-from core.account_pool import AccountPool, Account, PlanTier
+from core.account_pool import Account, AccountPool, PlanTier
 from core.tracker import MonitorConfig
 
 log = structlog.get_logger()
@@ -47,11 +47,12 @@ def load_config(path: Path = CONFIG_PATH) -> dict:
 
 
 def build_jules_pool(config: dict) -> AccountPool:
-    from db import db
-    from core.account_pool import AccountPool, Account, PlanTier, AccountRole
-    from core.ai_interface import KeyVault
-    from config import load_settings
     from uuid import UUID
+
+    from config import load_settings
+    from core.account_pool import AccountPool, AccountRole
+    from core.ai_interface import KeyVault
+    from db import db
 
     pool = AccountPool()
     vault = KeyVault(load_settings().encryption_key)

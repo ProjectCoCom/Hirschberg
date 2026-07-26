@@ -11,14 +11,11 @@ Coupling:
 
 from __future__ import annotations
 
-import asyncio
-from datetime import datetime, timezone
-
 import structlog
 
-from clients.jules import JulesClient
-from clients.github import GitHubClient
 from clients.database import Database
+from clients.github import GitHubClient
+from clients.jules import JulesClient
 from core.auto_merge import AutoMerge, MergeStrategy
 from core.context_store import ContextStore
 from core.prompt_builder import build_session_prompt
@@ -107,6 +104,7 @@ async def _try_auto_merge(
 
 from core.session_poller import SessionPoller, store_activity
 
+
 async def _poll_until_done(
     jules: JulesClient,
     db: Database,
@@ -126,8 +124,8 @@ async def _poll_until_done(
         # 2. Check state transitions and notify
         if task_id and session.state != last_state:
             try:
+                from core.config_loader import build_jules_pool, load_config
                 from models.workflow import AgentTask
-                from core.config_loader import load_config, build_jules_pool
 
                 rows = await db.select("agent_tasks", {"id": task_id})
                 if rows:
@@ -176,10 +174,10 @@ async def _poll_until_done(
         res = _build_result(terminal_session, "completed")
         if task_id and res.get("pr_url"):
             try:
+                from core.config_loader import build_jules_pool, load_config
+                from core.context_store import ContextStore
                 from core.qa_reviewer import run_qa_review_for_task
                 from models.workflow import AgentTask
-                from core.config_loader import load_config, build_jules_pool
-                from core.context_store import ContextStore
 
                 rows = await db.select("agent_tasks", {"id": task_id})
                 if rows:

@@ -18,8 +18,8 @@ import structlog
 
 from core.account_pool import AccountPool
 from core.context_store import ContextStore
-from models.workflow import AgentTask, TaskStatus
 from models.jules import SessionState
+from models.workflow import AgentTask, TaskStatus
 
 log = structlog.get_logger()
 
@@ -56,8 +56,8 @@ class AgentCoordinator:
 
     async def run_task(self, task: AgentTask) -> AgentTask:
         source = f"sources/github/{task.repo_owner}/{task.repo_name}"
-        from core.account_pool import AccountRole
         from config import load_settings
+        from core.account_pool import AccountRole
         settings = load_settings()
         max_depth = getattr(settings, "max_delegation_depth", 0)
 

@@ -11,12 +11,12 @@ Coupling:
 
 from __future__ import annotations
 
-import asyncio
 import json
 import os
 import sys
 
 from dotenv import load_dotenv
+
 from mcp.server.fastmcp import FastMCP
 
 # MCP server runs as a standalone process, needs src/ on the path
@@ -29,9 +29,9 @@ mcp = FastMCP("JAT MCP Server")
 
 async def _get_jules():
     from clients.jules import JulesClient
-    from db import db
-    from core.ai_interface import KeyVault
     from config import load_settings
+    from core.ai_interface import KeyVault
+    from db import db
 
     accounts = await db.select("accounts", {"enabled": True})
     if not accounts:

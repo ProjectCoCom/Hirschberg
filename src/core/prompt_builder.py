@@ -30,7 +30,7 @@ def build_session_prompt(
     concurrent_limit: int = 60,
     account_name: str = "default",
 ) -> str:
-    from core.config_loader import load_config, get_prompt_settings
+    from core.config_loader import get_prompt_settings, load_config
     flags = get_prompt_settings(load_config())
 
     sections = []

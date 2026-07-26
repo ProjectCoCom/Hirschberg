@@ -12,18 +12,21 @@ Coupling:
 from __future__ import annotations
 
 import asyncio
+from datetime import UTC
+from uuid import UUID
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from clients.github import GitHubClient
 from config import load_settings
-from db import db
-from core.plan_executor import parse_plan
-from core.config_loader import load_config, build_jules_pool
+from core.config_loader import build_jules_pool, load_config
 from core.context_store import ContextStore
 from core.coordinator import AgentCoordinator
+from core.plan_executor import parse_plan
 from core.workflow_engine import WorkflowEngine
-from models.workflow import WorkflowStatus, TaskStatus, AgentTask
-from clients.github import GitHubClient
+from db import db
+from models.workflow import WorkflowStatus
 
 router = APIRouter()
 settings = load_settings()
@@ -125,7 +128,7 @@ async def execute_plan(request: ExecuteRequest):
     # 7. Merge branches and create final PR if workflow is successful
     all_done = workflow.status == WorkflowStatus.COMPLETED
     if all_done:
-        from core.merge_review import merge_branches, create_integration_branch, create_final_pr
+        from core.merge_review import create_final_pr, create_integration_branch, merge_branches
         gh_client = GitHubClient(token)
         try:
             base_sha = await gh_client.get_default_branch_sha(request.repo_owner, request.repo_name)
@@ -147,8 +150,8 @@ async def execute_plan(request: ExecuteRequest):
 
 
 def _now() -> str:
-    from datetime import datetime, timezone
-    return datetime.now(timezone.utc).isoformat()
+    from datetime import datetime
+    return datetime.now(UTC).isoformat()
 
 
 class StartOrchestratorRequest(BaseModel):
@@ -159,9 +162,10 @@ class StartOrchestratorRequest(BaseModel):
 
 @router.post("/api/orchestrators/start")
 async def start_orchestrator(request: StartOrchestratorRequest):
-    from core.config_loader import load_config, build_jules_pool
-    from core.account_pool import AccountRole
     from uuid import uuid4
+
+    from core.account_pool import AccountRole
+    from core.config_loader import build_jules_pool, load_config
 
     config = load_config()
     pool = build_jules_pool(config)
@@ -226,9 +230,10 @@ async def start_orchestrator(request: StartOrchestratorRequest):
 
 
 async def _poll_orchestrator(session_id: str, account_id: str, owner: str, repo: str, task_id: str):
-    from core.config_loader import load_config, build_jules_pool
-    from models.jules import SessionState
     import asyncio
+
+    from core.config_loader import build_jules_pool, load_config
+    from models.jules import SessionState
 
     config = load_config()
     pool = build_jules_pool(config)
@@ -283,7 +288,7 @@ async def _poll_orchestrator(session_id: str, account_id: str, owner: str, repo:
 
 @router.post("/api/orchestrators/{session_id}/approve")
 async def approve_orchestrator_plan(session_id: str):
-    from core.config_loader import load_config, build_jules_pool
+    from core.config_loader import build_jules_pool, load_config
     # Find account associated with the session
     try:
         tasks = await db.select("agent_tasks", {"session_id": session_id})
@@ -364,11 +369,14 @@ class MergeReviewRequest(BaseModel):
 
 @router.post("/api/execute/merge-review")
 async def merge_and_review(request: MergeReviewRequest):
-    from core.merge_review import (
-        merge_branches, create_integration_branch,
-        run_review_session, cleanup_branches, create_final_pr,
-    )
     from core.auto_mode import get_jules_key
+    from core.merge_review import (
+        cleanup_branches,
+        create_final_pr,
+        create_integration_branch,
+        merge_branches,
+        run_review_session,
+    )
 
     token = settings.github_token
     jules_key = await get_jules_key()

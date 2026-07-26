@@ -22,11 +22,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import structlog
 
-from config import load_settings, configure_logging
-from clients.jules import JulesClient
 from clients.github import GitHubClient
-from db import db
+from clients.jules import JulesClient
+from config import configure_logging, load_settings
 from core.session_runner import run_session
+from db import db
 
 log = structlog.get_logger()
 
@@ -174,7 +174,8 @@ async def run_activities(api_key: str, session_id: str) -> None:
 
 async def run_workflow(settings, api_key: str, args) -> None:
     import json as json_mod
-    from core.account_pool import AccountPool, Account, PlanTier
+
+    from core.account_pool import Account, AccountPool, PlanTier
     from core.context_store import ContextStore
     from core.coordinator import AgentCoordinator
     from core.workflow_engine import WorkflowEngine
@@ -199,8 +200,9 @@ async def run_workflow(settings, api_key: str, args) -> None:
     await pool.close_all()
 
 
-def _build_workflow(data: dict, settings) -> "Workflow":
+def _build_workflow(data: dict, settings) -> Workflow:
     from uuid import UUID
+
     from models.workflow import AgentTask, Workflow
 
     tasks = []

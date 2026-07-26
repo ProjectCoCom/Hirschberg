@@ -12,8 +12,8 @@ Coupling:
 from __future__ import annotations
 
 import asyncio
-from enum import StrEnum
 import random
+from enum import StrEnum
 
 import structlog
 
@@ -91,9 +91,9 @@ class AutoMerge:
             if verdict == "reject":
                 # Notify responsible orchestrator
                 try:
-                    from models.workflow import AgentTask
-                    from core.config_loader import load_config, build_jules_pool
+                    from core.config_loader import build_jules_pool, load_config
                     from core.context_store import ContextStore
+                    from models.workflow import AgentTask
 
                     task_obj = AgentTask.model_validate(integrator_task_row)
                     config = load_config()
@@ -117,8 +117,8 @@ class AutoMerge:
                 return MergeResult(merged=False, message=f"Integrator review has unhandled verdict: {verdict}")
         else:
             # Query database for the QA task matching this branch
+            from core.config_loader import build_jules_pool, load_config
             from core.context_store import ContextStore
-            from core.config_loader import load_config, build_jules_pool
             from models.workflow import AgentTask
 
             rows = await db.select("agent_tasks", {

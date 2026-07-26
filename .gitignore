@@ -1,5 +1,4 @@
 .kiro
-tests/
 .env
 dashboard/.env
 dashboard/node_modules/

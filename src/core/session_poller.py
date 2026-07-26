@@ -13,14 +13,15 @@ from __future__ import annotations
 
 import asyncio
 import random
-from datetime import datetime, timezone
-from typing import Callable, Any
+from collections.abc import Callable
+from datetime import UTC, datetime
+from typing import Any
 
 import structlog
 
 from clients.database import Database
 from clients.jules import JulesClient
-from models.jules import Session, SessionState, Activity
+from models.jules import Activity, Session, SessionState
 
 log = structlog.get_logger()
 
@@ -51,7 +52,7 @@ async def store_activity(db: Database, task_id: str, session_id: str, activity: 
             "description": activity.description,
             "activity_type": activity_type,
             "raw_data": activity.model_dump(mode="json"),
-            "created_at": activity.create_time.isoformat() if activity.create_time else datetime.now(timezone.utc).isoformat(),
+            "created_at": activity.create_time.isoformat() if activity.create_time else datetime.now(UTC).isoformat(),
         })
     except Exception as exc:
         log.warning("store_activity_failed", error=str(exc))

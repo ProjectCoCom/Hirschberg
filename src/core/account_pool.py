@@ -12,7 +12,7 @@ Coupling:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import StrEnum
 from uuid import UUID, uuid4
 
@@ -54,7 +54,7 @@ class Account:
     label: str = ""
     active_sessions: int = 0
     daily_tasks_used: int = 0
-    daily_reset_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    daily_reset_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     sources: list[str] = field(default_factory=list)
     enabled: bool = True
 
@@ -73,7 +73,7 @@ class Account:
         )
 
     def _maybe_reset_daily(self) -> None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         elapsed = (now - self.daily_reset_at).total_seconds()
         if elapsed >= 86400:
             self.daily_tasks_used = 0

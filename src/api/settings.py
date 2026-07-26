@@ -192,7 +192,7 @@ async def update_app_settings(body: AppSettingsPayload):
     return {"ok": True, "restart_required": bool(updates)}
 
 
-def _migrate_encrypted_rows(old_key: str, new_key: str) -> tuple[int, int]:
+async def _migrate_encrypted_rows(old_key: str, new_key: str) -> tuple[int, int]:
     """Re-encrypt all stored API keys with a new Fernet key. Returns (migrated, failed)."""
     from core.ai_interface import KeyVault
 
@@ -202,28 +202,23 @@ def _migrate_encrypted_rows(old_key: str, new_key: str) -> tuple[int, int]:
     migrated = 0
     failed = 0
 
-    conn = db._get_conn() if hasattr(db, "_get_conn") else None
-    if conn is None:
-        return 0, 0
-
     for table, id_col in (("ai_providers", "id"), ("accounts", "id")):
         try:
-            rows = conn.execute(f"SELECT {id_col}, api_key_encrypted FROM {table}").fetchall()
+            rows = await db.select(table, columns=f"{id_col}, api_key_encrypted")
         except Exception:
             continue
         for row in rows:
-            encrypted = row["api_key_encrypted"] if isinstance(row, dict) or hasattr(row, "keys") else row[1]
-            row_id = row[id_col] if isinstance(row, dict) else row[0]
+            encrypted = row.get("api_key_encrypted")
+            row_id = row.get(id_col)
             if not encrypted:
                 continue
             try:
                 plain = old_vault.decrypt(encrypted)
                 new_encrypted = new_vault.encrypt(plain)
-                conn.execute(f"UPDATE {table} SET api_key_encrypted = ? WHERE {id_col} = ?", (new_encrypted, row_id))
+                await db.update(table, {"api_key_encrypted": new_encrypted}, filters={id_col: row_id})
                 migrated += 1
             except Exception:
                 failed += 1
-    conn.commit()
     return migrated, failed
 
 
@@ -238,7 +233,7 @@ async def regenerate_encryption_key():
         return {"ok": True, "migrated": 0, "failed": 0, "restart_required": True}
 
     new_key = Fernet.generate_key().decode()
-    migrated, failed = _migrate_encrypted_rows(current, new_key)
+    migrated, failed = await _migrate_encrypted_rows(current, new_key)
     if failed > 0 and migrated == 0:
         raise HTTPException(500, f"Migration failed: {failed} rows could not be re-encrypted with the new key")
     _write_env({"ENCRYPTION_KEY": new_key})
@@ -248,7 +243,7 @@ async def regenerate_encryption_key():
 _RESET_ACTIONS: dict[str, dict] = {
     "ai_providers": {"type": "table", "table": "ai_providers"},
     "jules_accounts": {"type": "table", "table": "accounts"},
-    "conversations": {"type": "tables", "tables": ["messages", "conversations"]},
+    "conversations": {"type": "tables", "tables": ["conversation_messages", "conversations"]},
     "custom_prompts": {"type": "filtered", "table": "prompts", "filters": {"source": "user"}},
     "system_prompt_overrides": {"type": "filtered", "table": "prompts", "filters": {"source": "system"}},
     "agent_tasks": {"type": "tables", "tables": ["session_activities", "agent_tasks"]},

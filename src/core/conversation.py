@@ -11,8 +11,6 @@ Coupling:
 
 from __future__ import annotations
 
-from uuid import UUID
-
 import structlog
 
 from clients.ai_providers import AIProviderPool, ProviderAccount, ProviderType

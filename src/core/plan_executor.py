@@ -13,7 +13,8 @@ from __future__ import annotations
 
 import json
 from uuid import UUID, uuid4
-from models.workflow import AgentTask, Workflow, TaskStatus, WorkflowStatus
+
+from models.workflow import AgentTask, TaskStatus, Workflow, WorkflowStatus
 
 
 def parse_plan(plan_json: str, repo_owner: str, repo_name: str) -> Workflow:

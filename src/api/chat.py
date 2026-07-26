@@ -19,8 +19,13 @@ from pydantic import BaseModel
 from config import load_settings
 from core.adaptive_context import detect_referenced_chunks, get_boosted_results, record_chunk_usage
 from core.context_compressor import compress_context
-from core.conversation_summarizer import build_summarized_history, build_ai_summarized_history, should_summarize, get_summarizer_config
-from core.rag_store import store_context, store_conversation_exchange, query_conversation_context
+from core.conversation_summarizer import (
+    build_ai_summarized_history,
+    build_summarized_history,
+    get_summarizer_config,
+    should_summarize,
+)
+from core.rag_store import query_conversation_context, store_context, store_conversation_exchange
 from db import db
 
 router = APIRouter()
@@ -43,7 +48,7 @@ class ChatRequest(BaseModel):
     conversation_id: str | None = None
 
 
-from prompts.system_prompts import ASK_MODE_SYSTEM, PLAN_MODE_SYSTEM, BUILD_MODE_SYSTEM, AUTO_MODE_SYSTEM
+from prompts.system_prompts import ASK_MODE_SYSTEM, AUTO_MODE_SYSTEM, BUILD_MODE_SYSTEM, PLAN_MODE_SYSTEM
 
 MODE_SYSTEM_PROMPTS = {
     "ask": ASK_MODE_SYSTEM,
@@ -131,6 +136,7 @@ async def _call_google(api_key: str, model: str, messages: list[dict], system: s
 
 async def _call_openai_compat(api_key: str, provider_type: str, model: str, messages: list[dict], system: str, custom_base_url: str = "") -> str:
     import httpx
+
     from clients.ai_providers import DEFAULT_BASE_URLS, ProviderType
 
     pt = ProviderType(provider_type)

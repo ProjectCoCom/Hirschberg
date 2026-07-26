@@ -12,20 +12,16 @@ Coupling:
 from __future__ import annotations
 
 import asyncio
-import json
-import re
-from datetime import datetime, timezone
 from pathlib import Path
-from uuid import uuid4, UUID
+from uuid import uuid4
 
 import structlog
 
-from clients.jules import JulesClient
 from core.account_pool import AccountPool, AccountRole
 from core.context_store import ContextStore
-from models.workflow import AgentTask, TaskStatus
-from models.jules import SessionState
 from db import db
+from models.jules import SessionState
+from models.workflow import AgentTask
 
 log = structlog.get_logger()
 
@@ -42,14 +38,10 @@ def load_qa_prompt(exit_criteria: str, task_description: str) -> str:
 def extract_qa_verdict(text: str) -> dict | None:
     if '"verdict"' not in text:
         return None
-    match = re.search(r"({[\s\S]*?})", text)
-    if match:
-        try:
-            data = json.loads(match.group(1).strip())
-            if "verdict" in data:
-                return data
-        except Exception:
-            pass
+    from core.json_extract import extract_json_object
+    data = extract_json_object(text)
+    if isinstance(data, dict) and "verdict" in data:
+        return data
     return None
 
 
