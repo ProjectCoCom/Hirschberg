@@ -19,7 +19,6 @@ import structlog
 
 from core.account_pool import AccountPool, AccountRole
 from core.context_store import ContextStore
-from db import db
 from models.jules import SessionState
 from models.workflow import AgentTask
 
@@ -71,7 +70,7 @@ async def run_qa_review_for_task(
 
     # 2. Create a child QA task in the database so it's visible on the canvas/dashboard
     qa_task_id = uuid4()
-    await db.insert("agent_tasks", {
+    await store.insert_task({
         "id": str(qa_task_id),
         "workflow_id": str(worker_task.workflow_id) if worker_task.workflow_id else None,
         "parent_task_id": str(worker_task.id),
@@ -99,7 +98,7 @@ async def run_qa_review_for_task(
             automation_mode="",  # Unset automationMode
         )
         session_id = session.id
-        await db.update("agent_tasks", {"session_id": session_id}, {"id": str(qa_task_id)})
+        await store.update_task(qa_task_id, {"session_id": session_id})
 
         # 4. Poll the QA session to capture the final verdict JSON block
         deadline = asyncio.get_event_loop().time() + 1800
@@ -136,10 +135,10 @@ async def run_qa_review_for_task(
             }
 
         # 6. Save the verdict in context and mark the QA task as COMPLETED regardless of verdict
-        await db.update("agent_tasks", {
+        await store.update_task(qa_task_id, {
             "status": "completed",
             "context": {"is_qa_task": True, "qa_verdict": parsed_verdict},
-        }, {"id": str(qa_task_id)})
+        })
 
         log.info("qa_review_completed", task_id=str(worker_task.id), verdict=parsed_verdict.get("verdict"))
         return parsed_verdict
@@ -147,7 +146,7 @@ async def run_qa_review_for_task(
     except Exception as e:
         log.warning("qa_review_execution_failed", error=str(e))
         # Save error to task context
-        await db.update("agent_tasks", {
+        await store.update_task(qa_task_id, {
             "status": "completed",
             "context": {
                 "is_qa_task": True,
@@ -157,7 +156,7 @@ async def run_qa_review_for_task(
                     "summary": "QA execution raised an exception."
                 }
             },
-        }, {"id": str(qa_task_id)})
+        })
         return None
     finally:
         pool.release(qa_account.id)

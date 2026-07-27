@@ -21,7 +21,7 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: pip install -e .
+        run: pip install -e ".[dev]"
 
       - name: Verify imports
         run: python -c "from api.server import app; print('Backend imports OK')"
@@ -34,6 +34,19 @@ jobs:
           python scripts/generate_map.py
           git diff --exit-code docs/map.json
         working-directory: .
+
+      - name: Lint with Ruff
+        run: ruff check src/
+        continue-on-error: true
+
+      - name: Type check with Mypy
+        run: mypy --explicit-package-bases src
+        continue-on-error: true
+
+      - name: Run pytest tests
+        run: pytest
+        env:
+          ENCRYPTION_KEY: "dGVzdGtleXRlc3RrZXl0ZXN0a2V5dGVzdGs="
 
       - name: Run dry run tests
         run: python -m dryrun.run_all

@@ -91,6 +91,19 @@ class JulesClient:
         data = response.json()
         return [Session.model_validate(s) for s in data.get("sessions", [])]
 
+    @_retry
+    async def list_sessions_paginated(
+        self, page_size: int = 30, page_token: str | None = None
+    ) -> tuple[list[Session], str | None]:
+        params: dict = {"pageSize": page_size}
+        if page_token:
+            params["pageToken"] = page_token
+        response = await self._client.get("/sessions", params=params)
+        self._raise_on_error(response)
+        data = response.json()
+        sessions = [Session.model_validate(s) for s in data.get("sessions", [])]
+        return sessions, data.get("nextPageToken")
+
     async def delete_session(self, session_id: str) -> None:
         response = await self._client.delete(f"/sessions/{session_id}")
         self._raise_on_error(response)

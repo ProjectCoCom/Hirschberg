@@ -15,7 +15,6 @@ import asyncio
 from contextlib import asynccontextmanager
 from datetime import UTC
 
-import httpx
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -49,17 +48,18 @@ async def _find_session_by_prompt(task_row: dict, jules_key: str) -> str | None:
     repo = f"{task_row.get('repo_owner', '')}/{task_row.get('repo_name', '')}"
     task_created = task_row.get("created_at", "")
     try:
-        async with httpx.AsyncClient(timeout=15.0) as client:
-            res = await client.get(
-                "https://jules.googleapis.com/v1alpha/sessions?pageSize=20",
-                headers={"X-Goog-Api-Key": jules_key},
-            )
-        if res.status_code != 200:
-            return None
-        for s in res.json().get("sessions", []):
-            title = s.get("title", "").lower()
-            source = s.get("sourceContext", {}).get("source", "").lower()
-            create_time = s.get("createTime", "")
+        from clients.jules import JulesClient
+        client = JulesClient(jules_key)
+        try:
+            sessions = await client.list_sessions(page_size=20)
+        finally:
+            await client.close()
+
+        for s in sessions:
+            s_dict = s.model_dump(by_alias=True, mode="json")
+            title = s_dict.get("title", "").lower()
+            source = s_dict.get("sourceContext", {}).get("source", "").lower() if s_dict.get("sourceContext") else ""
+            create_time = s_dict.get("createTime", "")
 
             # Match by title containing the prompt prefix
             title_match = prompt_prefix and prompt_prefix[:20] in title
@@ -69,10 +69,10 @@ async def _find_session_by_prompt(task_row: dict, jules_key: str) -> str | None:
             time_match = _times_within_minutes(task_created, create_time, 5)
 
             if (title_match or repo_match) and time_match:
-                return s.get("name", "").split("/")[-1]
+                return s_dict.get("name", "").split("/")[-1]
             # Fallback: title match alone if no timestamp available
             if title_match and not task_created:
-                return s.get("name", "").split("/")[-1]
+                return s_dict.get("name", "").split("/")[-1]
     except Exception:
         pass
     return None
@@ -169,16 +169,14 @@ async def _recover_orphaned_tasks():
                 continue
 
         try:
-            async with httpx.AsyncClient(timeout=15.0) as client:
-                res = await client.get(
-                    f"https://jules.googleapis.com/v1alpha/sessions/{session_id}",
-                    headers={"X-Goog-Api-Key": jules_key},
-                )
-            if res.status_code != 200:
-                await db.update("agent_tasks", {"status": "failed"}, {"id": row["id"]})
-                continue
+            from clients.jules import JulesClient
+            client = JulesClient(jules_key)
+            try:
+                session = await client.get_session(session_id)
+                state = session.state
+            finally:
+                await client.close()
 
-            state = res.json().get("state", "")
             if state == "COMPLETED":
                 await db.update("agent_tasks", {"status": "completed"}, {"id": row["id"]})
                 print(f"[RECOVERY] {session_id}: completed")
@@ -636,17 +634,17 @@ async def _count_today_sessions(accounts: list[dict]) -> int:
             continue
 
         try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                res = await client.get(
-                    "https://jules.googleapis.com/v1alpha/sessions?pageSize=100",
-                    headers={"X-Goog-Api-Key": key},
-                )
-            if res.status_code != 200:
-                continue
-            for s in res.json().get("sessions", []):
-                create_time = s.get("createTime", "")
-                if create_time.startswith(today):
-                    total += 1
+            from clients.jules import JulesClient
+            client = JulesClient(key)
+            try:
+                sessions = await client.list_sessions(page_size=100)
+                for s in sessions:
+                    s_dict = s.model_dump(by_alias=True, mode="json")
+                    create_time = s_dict.get("createTime", "")
+                    if create_time.startswith(today):
+                        total += 1
+            finally:
+                await client.close()
         except Exception:
             continue
 
@@ -709,39 +707,37 @@ async def _fetch_jules_repos_as_tentacles() -> dict[str, dict]:
     if not jules_key:
         return {}
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            res = await client.get(
-                "https://jules.googleapis.com/v1alpha/sources",
-                headers={"X-Goog-Api-Key": jules_key},
-            )
-        if res.status_code != 200:
-            return {}
-        sources = res.json().get("sources", [])
+        from clients.jules import JulesClient
+        client = JulesClient(jules_key)
+        try:
+            sources = await client.list_sources()
+        finally:
+            await client.close()
         repos: dict[str, dict] = {}
         for s in sources:
-            gh = s.get("gitHubRepo", {})
-            name = gh.get("repoName", "")
-            owner = gh.get("repoOwner", "")
-            if not name or not owner:
-                continue
-            key = f"{owner}/{name}"
-            repos[key] = {
-                "tentacleId": key,
-                "displayName": key,
-                "name": name,
-                "description": key,
-                "status": "idle",
-                "color": "#7c3aed",
-                "octopus": {"animation": "sway", "expression": "normal", "accessory": "none", "hairColor": None},
-                "scope": {"paths": [key], "tags": []},
-                "vaultFiles": [],
-                "todoTotal": 0,
-                "todoDone": 0,
-                "todos": [],
-                "suggestedSkills": [],
-            }
+            if s.github_repo:
+                owner = s.github_repo.owner
+                name = s.github_repo.repo
+                if not name or not owner:
+                    continue
+                key = f"{owner}/{name}"
+                repos[key] = {
+                    "tentacleId": key,
+                    "displayName": key,
+                    "name": name,
+                    "description": key,
+                    "status": "idle",
+                    "color": "#7c3aed",
+                    "octopus": {"animation": "sway", "expression": "normal", "accessory": "none", "hairColor": None},
+                    "scope": {"paths": [key], "tags": []},
+                    "vaultFiles": [],
+                    "todoTotal": 0,
+                    "todoDone": 0,
+                    "todos": [],
+                    "suggestedSkills": [],
+                }
         return repos
-    except (httpx.ReadTimeout, httpx.ConnectTimeout):
+    except Exception:
         return {}
 
 
@@ -758,6 +754,7 @@ async def _fetch_jules_sessions_all_accounts() -> tuple[dict[str, list[dict]], s
     except Exception:
         accounts = []
 
+    from clients.jules import JulesClient
     for acc in accounts:
         if not acc.get("enabled"):
             continue
@@ -774,23 +771,19 @@ async def _fetch_jules_sessions_all_accounts() -> tuple[dict[str, list[dict]], s
         page_token = None
         while True:
             try:
-                params: dict[str, str] = {"pageSize": "100"}
-                if page_token:
-                    params["pageToken"] = page_token
-                async with httpx.AsyncClient(timeout=15.0) as client:
-                    res = await client.get(
-                        "https://jules.googleapis.com/v1alpha/sessions",
-                        headers={"X-Goog-Api-Key": key},
-                        params=params,
+                client = JulesClient(key)
+                try:
+                    sessions, next_page_token = await client.list_sessions_paginated(
+                        page_size=100, page_token=page_token
                     )
-                if res.status_code != 200:
-                    break
-                data = res.json()
-                for s in data.get("sessions", []):
-                    date = s.get("createTime", "")[:10]
+                finally:
+                    await client.close()
+                for s in sessions:
+                    s_dict = s.model_dump(by_alias=True, mode="json")
+                    date = s_dict.get("createTime", "")[:10]
                     if not date:
                         continue
-                    source = s.get("sourceContext", {}).get("source", "")
+                    source = s_dict.get("sourceContext", {}).get("source", "") if s_dict.get("sourceContext") else ""
                     repo = source.replace("sources/github/", "") if source else "unknown"
                     projects.add(repo)
                     if date not in sessions_by_date:
@@ -798,13 +791,13 @@ async def _fetch_jules_sessions_all_accounts() -> tuple[dict[str, list[dict]], s
                     sessions_by_date[date].append({
                         "repo": repo,
                         "account": acc.get("name", ""),
-                        "state": s.get("state", ""),
-                        "title": s.get("title", ""),
+                        "state": s_dict.get("state", ""),
+                        "title": s_dict.get("title", ""),
                     })
-                page_token = data.get("nextPageToken")
+                page_token = next_page_token
                 if not page_token:
                     break
-            except (httpx.ReadTimeout, httpx.ConnectTimeout):
+            except Exception:
                 break
 
     return sessions_by_date, projects

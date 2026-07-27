@@ -79,7 +79,7 @@ class WorkflowEngine:
                         workflow.integration_branch = f"jat/integration-{workflow.id}"
                         await gh_client.create_branch_from_ref(owner, repo, workflow.integration_branch, base_sha)
                         # Persist integration branch on workflow in DB
-                        await self._store._db.update("workflows", {"integration_branch": workflow.integration_branch}, {"id": str(workflow.id)})
+                        await self._store.save_workflow_integration_branch(workflow.id, workflow.integration_branch)
                         log.info("integration_branch_created", workflow_id=str(workflow.id), branch=workflow.integration_branch)
                 except Exception as e:
                     log.warning("failed_to_create_integration_branch", error=str(e))
@@ -231,7 +231,7 @@ class WorkflowEngine:
 
         # 4. Insert integrator task in DB
         integrator_task_id = uuid4()
-        await self._store._db.insert("agent_tasks", {
+        await self._store.insert_task({
             "id": str(integrator_task_id),
             "workflow_id": str(workflow.id),
             "prompt": f"Integrator Review: {workflow.name}",
@@ -255,7 +255,7 @@ class WorkflowEngine:
                 automation_mode="",
             )
             session_id = session.id
-            await self._store._db.update("agent_tasks", {"session_id": session_id}, {"id": str(integrator_task_id)})
+            await self._store.update_task(integrator_task_id, {"session_id": session_id})
 
             deadline = asyncio.get_event_loop().time() + 1800
             from models.jules import SessionState
@@ -295,10 +295,10 @@ class WorkflowEngine:
             }
 
         # 7. Update DB state
-        await self._store._db.update("agent_tasks", {
+        await self._store.update_task(integrator_task_id, {
             "status": "completed",
             "context": {"is_integrator_task": True, "integrator_verdict": parsed_verdict},
-        }, {"id": str(integrator_task_id)})
+        })
 
         verdict_str = parsed_verdict.get("verdict", "").lower()
         log.info("integrator_review_completed", workflow_id=str(workflow.id), verdict=verdict_str)
@@ -335,9 +335,9 @@ class WorkflowEngine:
             # Reject: notify responsible orchestrator
             try:
                 from models.workflow import AgentTask as WorkflowAgentTask
-                task_rows = await self._store._db.select("agent_tasks", {"id": str(integrator_task_id)})
-                if task_rows:
-                    task_obj = WorkflowAgentTask.model_validate(task_rows[0])
+                task_row = await self._store.get_task_state(integrator_task_id)
+                if task_row:
+                    task_obj = WorkflowAgentTask.model_validate(task_row)
                     pool = self._coordinator._pool
                     store = self._store
 

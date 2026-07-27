@@ -250,6 +250,9 @@ async def test_integrator_workflow_review():
     store = MagicMock()
     store.save_result = AsyncMock()
     store.save_task_state = AsyncMock()
+    store.insert_task = AsyncMock()
+    store.update_task = AsyncMock()
+    store.get_task_state = AsyncMock()
     db_mock = AsyncMock()
     store._db = db_mock
 
@@ -265,6 +268,15 @@ async def test_integrator_workflow_review():
             "context": {"is_integrator_task": True}
         }
     ]
+    store.get_task_state.return_value = {
+        "id": str(uuid4()),
+        "repo_owner": "owner",
+        "repo_name": "repo",
+        "branch": workflow.integration_branch,
+        "status": "completed",
+        "orchestrator_session_id": "orch-1",
+        "context": {"is_integrator_task": True, "integrator_verdict": {"verdict": "approve", "blocking_issues": [], "summary": "Integration looks solid."}}
+    }
 
     # Mock pool account acquisition
     mock_acc = MagicMock()
@@ -418,12 +430,15 @@ async def test_orchestrator_delegation_and_recursion_limit():
     store = MagicMock()
     store.save_result = AsyncMock()
     store.save_task_state = AsyncMock()
+    store.get_task_by_session = AsyncMock()
+    store.get_task_state = AsyncMock()
     db_mock = AsyncMock()
     store._db = db_mock
 
     # Mock DB query for delegating session lookup
     parent_uuid = str(uuid4())
-    db_mock.select.return_value = [{"id": parent_uuid}]
+    store.get_task_by_session.return_value = {"id": parent_uuid}
+    store.get_task_state.return_value = {"id": parent_uuid, "parent_task_id": None}
 
     coordinator = AgentCoordinator(pool, store)
 
@@ -1386,6 +1401,36 @@ async def test_relay_worker_feedback_timeout():
     # Verify that the lock has been released and is not locked!
     lock = get_orchestrator_lock(orchestrator_session_id)
     assert not lock.locked()
+
+
+@pytest.mark.asyncio
+async def test_fake_async_db_layer_non_blocking():
+    from db import db
+    from unittest.mock import patch
+    import asyncio
+    import time
+
+    def slow_select(*args, **kwargs):
+        time.sleep(0.3)
+        return [{"id": "slow-workflow"}]
+
+    async def unrelated_task():
+        await asyncio.sleep(0.1)
+        return "unrelated-done"
+
+    start_time = asyncio.get_event_loop().time()
+
+    with patch.object(db._local, "select_sync", slow_select):
+        results = await asyncio.gather(
+            db.select("workflows"),
+            unrelated_task()
+        )
+
+    elapsed = asyncio.get_event_loop().time() - start_time
+    assert results == [[{"id": "slow-workflow"}], "unrelated-done"]
+    # If it was blocking, total time would be ~0.4s.
+    # Because it is non-blocking, it runs in a thread concurrently and takes ~0.3s.
+    assert elapsed < 0.38
 
 
 async def test_reset_conversations_behavior():

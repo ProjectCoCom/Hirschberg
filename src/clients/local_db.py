@@ -12,6 +12,7 @@ Coupling:
 import json
 import sqlite3
 import uuid
+import threading
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -57,16 +58,18 @@ class LocalDB:
         self._path.parent.mkdir(parents=True, exist_ok=True)
         self._conn: sqlite3.Connection | None = None
         self._listeners: list[dict[str, Any]] = []
+        self._lock = threading.RLock()
 
     def _get_conn(self) -> sqlite3.Connection:
-        if self._conn is None:
-            self._conn = sqlite3.connect(str(self._path), check_same_thread=False)
-            self._conn.row_factory = sqlite3.Row
-            self._conn.execute("PRAGMA journal_mode=WAL")
-            self._conn.execute("PRAGMA foreign_keys=ON")
-            self._conn.execute("PRAGMA busy_timeout=5000")
-            self._init_tables()
-        return self._conn
+        with self._lock:
+            if self._conn is None:
+                self._conn = sqlite3.connect(str(self._path), check_same_thread=False)
+                self._conn.row_factory = sqlite3.Row
+                self._conn.execute("PRAGMA journal_mode=WAL")
+                self._conn.execute("PRAGMA foreign_keys=ON")
+                self._conn.execute("PRAGMA busy_timeout=5000")
+                self._init_tables()
+            return self._conn
 
     def _schema(self) -> str:
         return """
@@ -349,30 +352,31 @@ class LocalDB:
         order_by: str | None = None,
         limit: int | None = None,
     ) -> list[dict]:
-        conn = self._get_conn()
-        cols = columns if columns else "*"
-        where = ""
-        params: list[Any] = []
-        if filters:
-            clauses = []
-            for k, v in filters.items():
-                if isinstance(v, (list, tuple, set)):
-                    if not v:
-                        clauses.append("1 = 0")
+        with self._lock:
+            conn = self._get_conn()
+            cols = columns if columns else "*"
+            where = ""
+            params: list[Any] = []
+            if filters:
+                clauses = []
+                for k, v in filters.items():
+                    if isinstance(v, (list, tuple, set)):
+                        if not v:
+                            clauses.append("1 = 0")
+                        else:
+                            serialized_vals = [_serialize_val(item) for item in v]
+                            placeholders = ", ".join(["?"] * len(serialized_vals))
+                            clauses.append(f"{k} IN ({placeholders})")
+                            params.extend(serialized_vals)
                     else:
-                        serialized_vals = [_serialize_val(item) for item in v]
-                        placeholders = ", ".join(["?"] * len(serialized_vals))
-                        clauses.append(f"{k} IN ({placeholders})")
-                        params.extend(serialized_vals)
-                else:
-                    clauses.append(f"{k} = ?")
-                    params.append(_serialize_val(v))
-            where = " WHERE " + " AND ".join(clauses)
-        order = f" ORDER BY {order_by}" if order_by else ""
-        lim = f" LIMIT {limit}" if limit is not None else ""
-        cursor = conn.execute(f"SELECT {cols} FROM {table}{where}{order}{lim}", params)
-        rows = cursor.fetchall()
-        return [_deserialize_row(row) for row in rows]
+                        clauses.append(f"{k} = ?")
+                        params.append(_serialize_val(v))
+                where = " WHERE " + " AND ".join(clauses)
+            order = f" ORDER BY {order_by}" if order_by else ""
+            lim = f" LIMIT {limit}" if limit is not None else ""
+            cursor = conn.execute(f"SELECT {cols} FROM {table}{where}{order}{lim}", params)
+            rows = cursor.fetchall()
+            return [_deserialize_row(row) for row in rows]
 
     async def select(
         self,
@@ -382,30 +386,30 @@ class LocalDB:
         order_by: str | None = None,
         limit: int | None = None,
     ) -> list[dict]:
-        return self.select_sync(table, filters, columns, order_by, limit)
+        import asyncio
+        return await asyncio.to_thread(self.select_sync, table, filters, columns, order_by, limit)
 
     def insert_sync(self, table: str, data: dict[str, Any]) -> dict:
-        conn = self._get_conn()
-        if "id" not in data and table != "app_settings":
-            data["id"] = str(uuid.uuid4())
+        with self._lock:
+            conn = self._get_conn()
+            if "id" not in data and table != "app_settings":
+                data["id"] = str(uuid.uuid4())
 
-        serialized_data = {k: _serialize_val(v) for k, v in data.items()}
-        keys = list(serialized_data.keys())
-        placeholders = ", ".join(["?"] * len(keys))
-        cols = ", ".join(keys)
+            serialized_data = {k: _serialize_val(v) for k, v in data.items()}
+            keys = list(serialized_data.keys())
+            placeholders = ", ".join(["?"] * len(keys))
+            cols = ", ".join(keys)
 
-        conn.execute(f"INSERT INTO {table} ({cols}) VALUES ({placeholders})", list(serialized_data.values()))
-        conn.commit()
+            conn.execute(f"INSERT INTO {table} ({cols}) VALUES ({placeholders})", list(serialized_data.values()))
+            conn.commit()
 
-        # Notify
-        self._notify(table, "INSERT", data)
-        return data
+            # Notify
+            self._notify(table, "INSERT", data)
+            return data
 
     async def insert(self, table: str, data: dict[str, Any]) -> dict:
-        res = self.insert_sync(table, data)
-        # Notify
-        self._notify(table, "INSERT", data)
-        return res
+        import asyncio
+        return await asyncio.to_thread(self.insert_sync, table, data)
 
     async def upsert(self, table: str, data: dict[str, Any]) -> dict:
         filters = {}
@@ -433,62 +437,72 @@ class LocalDB:
         else:
             return await self.insert(table, data)
 
+    def update_sync(self, table: str, data: dict[str, Any], filters: dict[str, Any] | str | None = None) -> list[dict]:
+        with self._lock:
+            conn = self._get_conn()
+            if isinstance(filters, str):
+                filters = {"id": filters}
+
+            old_rows = []
+            if filters:
+                old_rows = self.select_sync(table, filters=filters)
+
+            serialized_data = {k: _serialize_val(v) for k, v in data.items()}
+            sets = ", ".join([f"{k} = ?" for k in serialized_data])
+            params = list(serialized_data.values())
+
+            where = ""
+            if filters:
+                serialized_filters = {k: _serialize_val(v) for k, v in filters.items()}
+                clauses = [f"{k} = ?" for k in serialized_filters]
+                where = " WHERE " + " AND ".join(clauses)
+                params.extend(serialized_filters.values())
+
+            conn.execute(f"UPDATE {table} SET {sets}{where}", params)
+            conn.commit()
+
+            new_rows = []
+            if filters:
+                new_rows = self.select_sync(table, filters=filters)
+                for i, new_row in enumerate(new_rows):
+                    old_row = old_rows[i] if i < len(old_rows) else None
+                    self._notify(table, "UPDATE", new_row, old_row)
+
+            return new_rows if new_rows else [data]
+
     async def update(self, table: str, data: dict[str, Any], filters: dict[str, Any] | str | None = None) -> list[dict]:
-        conn = self._get_conn()
-        if isinstance(filters, str):
-            filters = {"id": filters}
+        import asyncio
+        return await asyncio.to_thread(self.update_sync, table, data, filters)
 
-        old_rows = []
-        if filters:
-            old_rows = await self.select(table, filters=filters)
+    def delete_sync(self, table: str, filters: dict[str, Any] | str | None = None) -> bool:
+        with self._lock:
+            conn = self._get_conn()
+            if isinstance(filters, str):
+                filters = {"id": filters}
 
-        serialized_data = {k: _serialize_val(v) for k, v in data.items()}
-        sets = ", ".join([f"{k} = ?" for k in serialized_data])
-        params = list(serialized_data.values())
+            old_rows = []
+            if filters:
+                old_rows = self.select_sync(table, filters=filters)
 
-        where = ""
-        if filters:
-            serialized_filters = {k: _serialize_val(v) for k, v in filters.items()}
-            clauses = [f"{k} = ?" for k in serialized_filters]
-            where = " WHERE " + " AND ".join(clauses)
-            params.extend(serialized_filters.values())
+            where = ""
+            params: list[Any] = []
+            if filters:
+                serialized_filters = {k: _serialize_val(v) for k, v in filters.items()}
+                clauses = [f"{k} = ?" for k in serialized_filters]
+                where = " WHERE " + " AND ".join(clauses)
+                params = list(serialized_filters.values())
 
-        conn.execute(f"UPDATE {table} SET {sets}{where}", params)
-        conn.commit()
+            conn.execute(f"DELETE FROM {table}{where}", params)
+            conn.commit()
 
-        new_rows = []
-        if filters:
-            new_rows = await self.select(table, filters=filters)
-            for i, new_row in enumerate(new_rows):
-                old_row = old_rows[i] if i < len(old_rows) else None
-                self._notify(table, "UPDATE", new_row, old_row)
+            for old_row in old_rows:
+                self._notify(table, "DELETE", None, old_row)
 
-        return new_rows if new_rows else [data]
+            return True
 
     async def delete(self, table: str, filters: dict[str, Any] | str | None = None) -> bool:
-        conn = self._get_conn()
-        if isinstance(filters, str):
-            filters = {"id": filters}
-
-        old_rows = []
-        if filters:
-            old_rows = await self.select(table, filters=filters)
-
-        where = ""
-        params: list[Any] = []
-        if filters:
-            serialized_filters = {k: _serialize_val(v) for k, v in filters.items()}
-            clauses = [f"{k} = ?" for k in serialized_filters]
-            where = " WHERE " + " AND ".join(clauses)
-            params = list(serialized_filters.values())
-
-        conn.execute(f"DELETE FROM {table}{where}", params)
-        conn.commit()
-
-        for old_row in old_rows:
-            self._notify(table, "DELETE", None, old_row)
-
-        return True
+        import asyncio
+        return await asyncio.to_thread(self.delete_sync, table, filters)
 
     def subscribe(self, table: str, event_type: str, callback: Callable[[dict], None], filter_fn: Callable[[dict], bool] | None = None) -> str:
         sub_id = str(uuid.uuid4())
@@ -522,6 +536,7 @@ class LocalDB:
                             pass
 
     def close(self) -> None:
-        if self._conn:
-            self._conn.close()
-            self._conn = None
+        with self._lock:
+            if self._conn:
+                self._conn.close()
+                self._conn = None
