@@ -12,6 +12,7 @@ Coupling:
 from __future__ import annotations
 
 import asyncio
+import pytest
 import sys
 from pathlib import Path
 
@@ -326,73 +327,74 @@ async def test_orchestrator_plan_approval_and_decisions():
     from api.server import app
 
     # Test the API endpoints added in Step 7
-    client = TestClient(app)
+    with TestClient(app) as client:
+        # 1. Test POST /api/orchestrators/start
+        mock_pool = MagicMock()
+        mock_pool.close_all = AsyncMock()
+        mock_account = MagicMock()
+        mock_account.id = uuid4()
+        mock_pool.acquire.return_value = mock_account
+        mock_pool._accounts = [mock_account]
 
-    # 1. Test POST /api/orchestrators/start
-    mock_pool = MagicMock()
-    mock_pool.close_all = AsyncMock()
-    mock_account = MagicMock()
-    mock_account.id = uuid4()
-    mock_pool.acquire.return_value = mock_account
-    mock_pool._accounts = [mock_account]
+        mock_jules_client = AsyncMock()
+        mock_session = MagicMock()
+        mock_session.id = "orch-session-123"
+        mock_jules_client.create_session.return_value = mock_session
+        mock_pool.get_client.return_value = mock_jules_client
 
-    mock_jules_client = AsyncMock()
-    mock_session = MagicMock()
-    mock_session.id = "orch-session-123"
-    mock_jules_client.create_session.return_value = mock_session
-    mock_pool.get_client.return_value = mock_jules_client
+        app.state.account_pool = mock_pool
 
-    with patch("core.config_loader.build_jules_pool", return_value=mock_pool), \
-         patch("db.db.insert", new_callable=AsyncMock) as mock_insert, \
-         patch("api.execute._poll_orchestrator", new_callable=AsyncMock) as mock_poll:
+        with patch("core.config_loader.build_jules_pool", return_value=mock_pool), \
+             patch("db.db.insert", new_callable=AsyncMock) as mock_insert, \
+             patch("api.execute._poll_orchestrator", new_callable=AsyncMock) as mock_poll:
 
-        response = client.post("/api/orchestrators/start", json={
-            "repo_owner": "owner",
-            "repo_name": "repo",
-            "prompt": "Orchestrate auth feature"
-        })
-        assert response.status_code == 200
-        data = response.json()
-        assert data["session_id"] == "orch-session-123"
-        assert data["status"] == "running"
-        assert mock_insert.call_count == 2 # 1 for agent_tasks, 1 for orchestrator_sessions
+            response = client.post("/api/orchestrators/start", json={
+                "repo_owner": "owner",
+                "repo_name": "repo",
+                "prompt": "Orchestrate auth feature"
+            })
+            assert response.status_code == 200
+            data = response.json()
+            assert data["session_id"] == "orch-session-123"
+            assert data["status"] == "running"
+            assert mock_insert.call_count == 2 # 1 for agent_tasks, 1 for orchestrator_sessions
 
-    # 2. Test POST /api/orchestrators/{session_id}/approve
-    with patch("core.config_loader.build_jules_pool", return_value=mock_pool), \
-         patch("db.db.select", new_callable=AsyncMock) as mock_select, \
-         patch("db.db.update", new_callable=AsyncMock) as mock_update:
+        # 2. Test POST /api/orchestrators/{session_id}/approve
+        with patch("core.config_loader.build_jules_pool", return_value=mock_pool), \
+             patch("db.db.select", new_callable=AsyncMock) as mock_select, \
+             patch("db.db.update", new_callable=AsyncMock) as mock_update:
 
-        mock_select.return_value = [{"session_id": "orch-session-123", "id": "task-abc"}]
-        response = client.post("/api/orchestrators/orch-session-123/approve")
-        assert response.status_code == 200
-        assert response.json()["ok"] is True
-        assert mock_jules_client.approve_plan.call_count == 1
-        assert mock_update.call_count == 1
+            mock_select.return_value = [{"session_id": "orch-session-123", "id": "task-abc"}]
+            response = client.post("/api/orchestrators/orch-session-123/approve")
+            assert response.status_code == 200
+            assert response.json()["ok"] is True
+            assert mock_jules_client.approve_plan.call_count == 1
+            assert mock_update.call_count == 1
 
-    # 3. Test GET /api/orchestrators/{session_id}/decisions
-    with patch("db.db.select", new_callable=AsyncMock) as mock_select:
-        mock_select.side_effect = [
-            [{"id": "act-1", "description": "Planned tasks"}], # activities
-            [{"id": "task-1", "prompt": "Task 1", "orchestrator_session_id": "orch-session-123"}] # tasks
-        ]
-        response = client.get("/api/orchestrators/orch-session-123/decisions")
-        assert response.status_code == 200
-        data = response.json()
-        assert len(data["activities"]) == 1
-        assert len(data["tasks"]) == 1
+        # 3. Test GET /api/orchestrators/{session_id}/decisions
+        with patch("db.db.select", new_callable=AsyncMock) as mock_select:
+            mock_select.side_effect = [
+                [{"id": "act-1", "description": "Planned tasks"}], # activities
+                [{"id": "task-1", "prompt": "Task 1", "orchestrator_session_id": "orch-session-123"}] # tasks
+            ]
+            response = client.get("/api/orchestrators/orch-session-123/decisions")
+            assert response.status_code == 200
+            data = response.json()
+            assert len(data["activities"]) == 1
+            assert len(data["tasks"]) == 1
 
-    # 4. Test GET /api/projects/{owner}/{repo}/decisions
-    with patch("db.db.select", new_callable=AsyncMock) as mock_select:
-        mock_select.side_effect = [
-            [{"session_id": "orch-session-123", "status": "running", "created_at": "2026-07-24"}], # sessions
-            [{"id": "act-1", "description": "Planned tasks"}], # activities
-            [{"id": "task-1", "prompt": "Task 1", "orchestrator_session_id": "orch-session-123"}] # tasks
-        ]
-        response = client.get("/api/projects/owner/repo/decisions")
-        assert response.status_code == 200
-        data = response.json()
-        assert len(data["decisions"]) == 1
-        assert data["decisions"][0]["session_id"] == "orch-session-123"
+        # 4. Test GET /api/projects/{owner}/{repo}/decisions
+        with patch("db.db.select", new_callable=AsyncMock) as mock_select:
+            mock_select.side_effect = [
+                [{"session_id": "orch-session-123", "status": "running", "created_at": "2026-07-24"}], # sessions
+                [{"id": "act-1", "description": "Planned tasks"}], # activities
+                [{"id": "task-1", "prompt": "Task 1", "orchestrator_session_id": "orch-session-123"}] # tasks
+            ]
+            response = client.get("/api/projects/owner/repo/decisions")
+            assert response.status_code == 200
+            data = response.json()
+            assert len(data["decisions"]) == 1
+            assert data["decisions"][0]["session_id"] == "orch-session-123"
 
     print("[PASS] test_orchestrator_plan_approval_and_decisions: Orchestrator start, approve, and decision history endpoints verified")
 
@@ -1103,7 +1105,7 @@ async def test_prompt_builder_and_config_loader_caching():
 
 async def test_poll_orchestrator_behavior():
     import asyncio
-    from unittest.mock import AsyncMock, MagicMock, patch
+    from unittest.mock import AsyncMock, MagicMock
     from uuid import uuid4
 
     from api.execute import _poll_orchestrator
@@ -1143,11 +1145,15 @@ async def test_poll_orchestrator_behavior():
         "session_id": session_id,
     })
 
-    with patch("core.config_loader.build_jules_pool", return_value=mock_pool):
+    from core.account_pool import set_singleton_pool
+    set_singleton_pool(mock_pool)
+    try:
         await asyncio.wait_for(
             _poll_orchestrator(session_id, account_uuid, "owner", "repo", task_id),
             timeout=2.0
         )
+    finally:
+        set_singleton_pool(None)
 
     os_rows = await db.select("orchestrator_sessions", {"session_id": session_id})
     assert os_rows[0]["status"] == "completed"
@@ -1234,6 +1240,152 @@ async def test_encryption_key_rotation():
     # Decrypt with key B and verify it matches the original plaintext key!
     plain_decrypted = vault_b.decrypt(encrypted_key_b)
     assert plain_decrypted == plain_api_key
+
+
+@pytest.mark.asyncio
+async def test_get_client_for_session_routing():
+    from core.account_pool import Account, AccountPool
+    from core.context_store import ContextStore
+    from db import db
+    from uuid import uuid4
+
+    pool = AccountPool()
+    acc_a = Account(id=uuid4(), name="account-a", api_key="key-a")
+    acc_b = Account(id=uuid4(), name="account-b", api_key="key-b")
+    pool.add_account(acc_a)
+    pool.add_account(acc_b)
+
+    # Insert accounts into the DB to satisfy FOREIGN KEY constraints
+    await db.insert("accounts", {
+        "id": str(acc_a.id),
+        "name": acc_a.name,
+        "plan": "free",
+        "role": "worker",
+        "enabled": 1,
+    })
+    await db.insert("accounts", {
+        "id": str(acc_b.id),
+        "name": acc_b.name,
+        "plan": "free",
+        "role": "worker",
+        "enabled": 1,
+    })
+
+    store = ContextStore(db)
+
+    # Seed task owned by account B
+    task_id = uuid4()
+    session_id = f"session-routing-{uuid4()}"
+    await db.insert("agent_tasks", {
+        "id": str(task_id),
+        "prompt": "Test session routing",
+        "repo_owner": "owner",
+        "repo_name": "repo",
+        "branch": "main",
+        "status": "running",
+        "session_id": session_id,
+        "account_id": str(acc_b.id),
+    })
+
+    client = await pool.get_client_for_session(session_id, store)
+    # The client must belong to account B!
+    assert pool.get_client(acc_b.id) == client
+
+
+@pytest.mark.asyncio
+async def test_relay_worker_feedback_timeout():
+    from core.account_pool import Account, AccountPool
+    from core.context_store import ContextStore
+    from core.orchestrator_relay import relay_worker_feedback, get_orchestrator_lock
+    from models.workflow import AgentTask
+    from db import db
+    from uuid import uuid4
+    from unittest.mock import AsyncMock, MagicMock, patch
+
+    pool = AccountPool()
+    acc_orch = Account(id=uuid4(), name="orch-account", api_key="orch-key")
+    pool.add_account(acc_orch)
+
+    # Insert account into DB to satisfy FOREIGN KEY
+    await db.insert("accounts", {
+        "id": str(acc_orch.id),
+        "name": acc_orch.name,
+        "plan": "free",
+        "role": "worker",
+        "enabled": 1,
+    })
+
+    store = ContextStore(db)
+
+    # Seed the orchestrator task and session
+    orchestrator_session_id = f"orch-session-{uuid4()}"
+    orch_task_id = str(uuid4())
+    await db.insert("orchestrator_sessions", {
+        "id": orch_task_id,
+        "session_id": orchestrator_session_id,
+        "repo_owner": "owner",
+        "repo_name": "repo",
+        "status": "running",
+    })
+    await db.insert("agent_tasks", {
+        "id": orch_task_id,
+        "prompt": "Orchestrator task",
+        "repo_owner": "owner",
+        "repo_name": "repo",
+        "branch": "main",
+        "status": "running",
+        "session_id": orchestrator_session_id,
+        "orchestrator_session_id": orchestrator_session_id,
+        "account_id": str(acc_orch.id),
+    })
+
+    # Task being processed by worker
+    task_id = uuid4()
+    task = AgentTask(
+        id=task_id,
+        prompt="Worker task",
+        repo_owner="owner",
+        repo_name="repo",
+        branch="main",
+        status="running",
+        orchestrator_session_id=orchestrator_session_id,
+        account_id=acc_orch.id,
+    )
+    await db.insert("agent_tasks", {
+        "id": str(task_id),
+        "prompt": task.prompt,
+        "repo_owner": task.repo_owner,
+        "repo_name": task.repo_name,
+        "branch": task.branch,
+        "status": "running",
+        "orchestrator_session_id": task.orchestrator_session_id,
+        "account_id": str(acc_orch.id),
+    })
+
+    mock_worker_client = AsyncMock()
+    mock_worker_client.list_activities.return_value = []
+
+    # Mock list_activities of the orchestrator to raise exception or do nothing, causing a timeout
+    mock_orch_client = AsyncMock()
+    mock_orch_client.list_activities.return_value = []
+    pool._clients[acc_orch.id] = mock_orch_client
+
+    # Set feedback_timeout to a very low value (e.g., 0.1s)
+    mock_settings = MagicMock()
+    mock_settings.feedback_timeout = 0.1
+
+    with patch("config.load_settings", return_value=mock_settings):
+        # Trigger feedback relay, which should time out after 0.1s
+        await relay_worker_feedback(pool, store, mock_worker_client, "worker-sess", task)
+
+    # The task status in DB should be marked as "failed"
+    db_task = await store.get_task_state(task_id)
+    assert db_task["status"] == "failed"
+    assert "Awaiting feedback timed out" in db_task["error"]
+
+    # Verify that the lock has been released and is not locked!
+    lock = get_orchestrator_lock(orchestrator_session_id)
+    assert not lock.locked()
 
 
 async def test_reset_conversations_behavior():

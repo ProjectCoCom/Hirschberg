@@ -45,10 +45,11 @@ async def notify_orchestrator(
     if not orchestrator_id:
         return  # Notification is additive; preserve static path behavior
 
-    # Get any active client from the pool
-    if not pool._clients:
+    try:
+        client = await pool.get_client_for_session(orchestrator_id, store)
+    except Exception as e:
+        log.warning("failed_to_get_client_for_orchestrator_notification", orchestrator_id=orchestrator_id, error=str(e))
         return
-    client = list(pool._clients.values())[0]
 
     # Serialize notification turns per orchestrator
     lock = get_orchestrator_lock(orchestrator_id)
@@ -83,9 +84,11 @@ async def relay_worker_feedback(
     if not orchestrator_id:
         return
 
-    if not pool._clients:
+    try:
+        orchestrator_client = await pool.get_client_for_session(orchestrator_id, store)
+    except Exception as e:
+        log.warning("failed_to_get_client_for_worker_feedback", orchestrator_id=orchestrator_id, error=str(e))
         return
-    orchestrator_client = list(pool._clients.values())[0]
 
     # Serialize turns per orchestrator
     lock = get_orchestrator_lock(orchestrator_id)
@@ -117,20 +120,35 @@ async def relay_worker_feedback(
             log.warning("failed_to_send_feedback_request", error=str(e))
             return
 
-        # 3. Poll the orchestrator session specifically for a new agentMessaged activity after start_time
+        # 3. Poll the orchestrator session specifically for a new agentMessaged activity after start_time with timeout
         start_time = datetime.now(UTC)
         reply = None
-        while not reply:
-            await asyncio.sleep(15)
-            try:
-                orch_acts = await orchestrator_client.list_activities(orchestrator_id, page_size=10)
-                for act in orch_acts:
-                    if act.create_time and act.create_time >= start_time:
-                        if act.agent_messaged and act.agent_messaged.agent_message:
-                            reply = act.agent_messaged.agent_message
-                            break
-            except Exception as e:
-                log.warning("error_polling_orchestrator_reply", error=str(e))
+
+        async def poll_for_reply():
+            nonlocal reply
+            while not reply:
+                await asyncio.sleep(5)
+                try:
+                    orch_acts = await orchestrator_client.list_activities(orchestrator_id, page_size=10)
+                    for act in orch_acts:
+                        if act.create_time and act.create_time >= start_time:
+                            if act.agent_messaged and act.agent_messaged.agent_message:
+                                reply = act.agent_messaged.agent_message
+                                return
+                except Exception as e:
+                    log.warning("error_polling_orchestrator_reply", error=str(e))
+
+        from config import load_settings
+        timeout = getattr(load_settings(), "feedback_timeout", 300.0)
+        try:
+            await asyncio.wait_for(poll_for_reply(), timeout=timeout)
+        except asyncio.TimeoutError:
+            log.warning("relay_worker_feedback_timed_out", orchestrator_id=orchestrator_id, task_id=str(task.id))
+            # Mark the task state to reflect "awaiting feedback timed out"
+            task.status = "failed"
+            task.error = "Awaiting feedback timed out"
+            await store.save_task_state(task.id, task.model_dump(mode="json"))
+            return
 
         # 4. Relay the reply back to the worker session
         try:
