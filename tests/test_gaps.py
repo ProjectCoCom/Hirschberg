@@ -12,6 +12,7 @@ Coupling:
 from __future__ import annotations
 
 import asyncio
+import pytest
 import sys
 from pathlib import Path
 
@@ -1239,6 +1240,152 @@ async def test_encryption_key_rotation():
     # Decrypt with key B and verify it matches the original plaintext key!
     plain_decrypted = vault_b.decrypt(encrypted_key_b)
     assert plain_decrypted == plain_api_key
+
+
+@pytest.mark.asyncio
+async def test_get_client_for_session_routing():
+    from core.account_pool import Account, AccountPool
+    from core.context_store import ContextStore
+    from db import db
+    from uuid import uuid4
+
+    pool = AccountPool()
+    acc_a = Account(id=uuid4(), name="account-a", api_key="key-a")
+    acc_b = Account(id=uuid4(), name="account-b", api_key="key-b")
+    pool.add_account(acc_a)
+    pool.add_account(acc_b)
+
+    # Insert accounts into the DB to satisfy FOREIGN KEY constraints
+    await db.insert("accounts", {
+        "id": str(acc_a.id),
+        "name": acc_a.name,
+        "plan": "free",
+        "role": "worker",
+        "enabled": 1,
+    })
+    await db.insert("accounts", {
+        "id": str(acc_b.id),
+        "name": acc_b.name,
+        "plan": "free",
+        "role": "worker",
+        "enabled": 1,
+    })
+
+    store = ContextStore(db)
+
+    # Seed task owned by account B
+    task_id = uuid4()
+    session_id = f"session-routing-{uuid4()}"
+    await db.insert("agent_tasks", {
+        "id": str(task_id),
+        "prompt": "Test session routing",
+        "repo_owner": "owner",
+        "repo_name": "repo",
+        "branch": "main",
+        "status": "running",
+        "session_id": session_id,
+        "account_id": str(acc_b.id),
+    })
+
+    client = await pool.get_client_for_session(session_id, store)
+    # The client must belong to account B!
+    assert pool.get_client(acc_b.id) == client
+
+
+@pytest.mark.asyncio
+async def test_relay_worker_feedback_timeout():
+    from core.account_pool import Account, AccountPool
+    from core.context_store import ContextStore
+    from core.orchestrator_relay import relay_worker_feedback, get_orchestrator_lock
+    from models.workflow import AgentTask
+    from db import db
+    from uuid import uuid4
+    from unittest.mock import AsyncMock, MagicMock, patch
+
+    pool = AccountPool()
+    acc_orch = Account(id=uuid4(), name="orch-account", api_key="orch-key")
+    pool.add_account(acc_orch)
+
+    # Insert account into DB to satisfy FOREIGN KEY
+    await db.insert("accounts", {
+        "id": str(acc_orch.id),
+        "name": acc_orch.name,
+        "plan": "free",
+        "role": "worker",
+        "enabled": 1,
+    })
+
+    store = ContextStore(db)
+
+    # Seed the orchestrator task and session
+    orchestrator_session_id = f"orch-session-{uuid4()}"
+    orch_task_id = str(uuid4())
+    await db.insert("orchestrator_sessions", {
+        "id": orch_task_id,
+        "session_id": orchestrator_session_id,
+        "repo_owner": "owner",
+        "repo_name": "repo",
+        "status": "running",
+    })
+    await db.insert("agent_tasks", {
+        "id": orch_task_id,
+        "prompt": "Orchestrator task",
+        "repo_owner": "owner",
+        "repo_name": "repo",
+        "branch": "main",
+        "status": "running",
+        "session_id": orchestrator_session_id,
+        "orchestrator_session_id": orchestrator_session_id,
+        "account_id": str(acc_orch.id),
+    })
+
+    # Task being processed by worker
+    task_id = uuid4()
+    task = AgentTask(
+        id=task_id,
+        prompt="Worker task",
+        repo_owner="owner",
+        repo_name="repo",
+        branch="main",
+        status="running",
+        orchestrator_session_id=orchestrator_session_id,
+        account_id=acc_orch.id,
+    )
+    await db.insert("agent_tasks", {
+        "id": str(task_id),
+        "prompt": task.prompt,
+        "repo_owner": task.repo_owner,
+        "repo_name": task.repo_name,
+        "branch": task.branch,
+        "status": "running",
+        "orchestrator_session_id": task.orchestrator_session_id,
+        "account_id": str(acc_orch.id),
+    })
+
+    mock_worker_client = AsyncMock()
+    mock_worker_client.list_activities.return_value = []
+
+    # Mock list_activities of the orchestrator to raise exception or do nothing, causing a timeout
+    mock_orch_client = AsyncMock()
+    mock_orch_client.list_activities.return_value = []
+    pool._clients[acc_orch.id] = mock_orch_client
+
+    # Set feedback_timeout to a very low value (e.g., 0.1s)
+    mock_settings = MagicMock()
+    mock_settings.feedback_timeout = 0.1
+
+    with patch("config.load_settings", return_value=mock_settings):
+        # Trigger feedback relay, which should time out after 0.1s
+        await relay_worker_feedback(pool, store, mock_worker_client, "worker-sess", task)
+
+    # The task status in DB should be marked as "failed"
+    db_task = await store.get_task_state(task_id)
+    assert db_task["status"] == "failed"
+    assert "Awaiting feedback timed out" in db_task["error"]
+
+    # Verify that the lock has been released and is not locked!
+    lock = get_orchestrator_lock(orchestrator_session_id)
+    assert not lock.locked()
 
 
 async def test_reset_conversations_behavior():

@@ -15,9 +15,13 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import StrEnum
 from uuid import UUID, uuid4
+from typing import TYPE_CHECKING
 
 import structlog
 from fastapi import Request
+
+if TYPE_CHECKING:
+    from core.context_store import ContextStore
 
 from clients.jules import JulesClient
 from exceptions import AccountPoolExhausted
@@ -258,6 +262,28 @@ class AccountPool:
         self._accounts = new_accounts
         self._clients = new_clients
         log.info("account_pool_refreshed", count=len(self._accounts))
+
+    async def get_client_for_session(self, session_id: str, store: ContextStore) -> JulesClient:
+        """Looks up the account that owns the given session_id and returns its client."""
+        rows = await store._db.select("agent_tasks", {"session_id": session_id})
+        if not rows:
+            rows = await store._db.select("orchestrator_sessions", {"session_id": session_id})
+        if not rows:
+            raise KeyError(f"No task or session found with session_id '{session_id}'")
+
+        row = rows[0]
+        account_id_str = row.get("account_id")
+        if not account_id_str and "id" in row:
+            task_rows = await store._db.select("agent_tasks", {"id": row["id"]})
+            if task_rows:
+                account_id_str = task_rows[0].get("account_id")
+
+        if not account_id_str:
+            raise KeyError(f"No account_id associated with session_id '{session_id}'")
+
+        from uuid import UUID
+        account_id = UUID(account_id_str) if isinstance(account_id_str, str) else account_id_str
+        return self.get_client(account_id)
 
     async def close_all(self) -> None:
         for client in self._clients.values():

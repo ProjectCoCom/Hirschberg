@@ -192,6 +192,7 @@ async def start_orchestrator(request: StartOrchestratorRequest, pool: AccountPoo
             "status": "running",
             "session_id": session_id,
             "orchestrator_session_id": session_id,
+            "account_id": str(account.id),
         })
 
         await db.insert("orchestrator_sessions", {
