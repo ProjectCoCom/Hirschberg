@@ -935,6 +935,11 @@
     "description": "Runner for standalone agent sessions."
   },
   {
+    "path": "src/core/session_transitions.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/core/session_transitions.py",
+    "description": "Shared session transition and state handling."
+  },
+  {
     "path": "src/core/state_recovery.py",
     "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/core/state_recovery.py",
     "description": "Crash recovery state manager."

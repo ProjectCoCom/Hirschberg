@@ -15,12 +15,12 @@ import asyncio
 from datetime import UTC
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from clients.github import GitHubClient
 from config import load_settings
-from core.config_loader import build_jules_pool, load_config
+from core.account_pool import AccountPool, get_account_pool, get_singleton_pool
 from core.context_store import ContextStore
 from core.coordinator import AgentCoordinator
 from core.plan_executor import parse_plan
@@ -54,7 +54,7 @@ class ExecuteResponse(BaseModel):
 
 
 @router.post("/api/execute")
-async def execute_plan(request: ExecuteRequest):
+async def execute_plan(request: ExecuteRequest, pool: AccountPool = Depends(get_account_pool)):
     token = settings.github_token
     if not token:
         raise HTTPException(400, "No GitHub token configured in .env")
@@ -65,13 +65,8 @@ async def execute_plan(request: ExecuteRequest):
     except Exception as e:
         raise HTTPException(400, f"Invalid plan: {e}")
 
-    # 2. Build AccountPool from the database with config.json fallback
-    config = load_config()
-    pool = build_jules_pool(config)
-
     # 3. Check if we have any active/enabled accounts configured
     if not pool._accounts:
-        await pool.close_all()
         raise HTTPException(400, "No enabled Jules API accounts configured")
 
     # 4. Insert workflow and pre-register tasks in SQLite database
@@ -87,7 +82,6 @@ async def execute_plan(request: ExecuteRequest):
             task.workflow_id = workflow.id
             await db.insert("agent_tasks", task.model_dump(mode="json"))
     except Exception as e:
-        await pool.close_all()
         raise HTTPException(500, f"Database persistence failed: {e}")
 
     # 5. Execute using System A (WorkflowEngine)
@@ -102,7 +96,6 @@ async def execute_plan(request: ExecuteRequest):
         print(f"[WORKFLOW] Engine execution failed: {e}")
     finally:
         await db.update("workflows", {"status": str(workflow.status)}, {"id": str(workflow.id)})
-        await pool.close_all()
 
     # 6. Retrieve latest tasks state from DB to return complete results
     results = []
@@ -161,14 +154,10 @@ class StartOrchestratorRequest(BaseModel):
 
 
 @router.post("/api/orchestrators/start")
-async def start_orchestrator(request: StartOrchestratorRequest):
+async def start_orchestrator(request: StartOrchestratorRequest, pool: AccountPool = Depends(get_account_pool)):
     from uuid import uuid4
 
     from core.account_pool import AccountRole
-    from core.config_loader import build_jules_pool, load_config
-
-    config = load_config()
-    pool = build_jules_pool(config)
 
     source = f"sources/github/{request.repo_owner}/{request.repo_name}"
     try:
@@ -179,7 +168,6 @@ async def start_orchestrator(request: StartOrchestratorRequest):
             # Fall back to any available
             account = pool.acquire(source)
         except Exception as e:
-            await pool.close_all()
             raise HTTPException(400, f"No available accounts configured: {e}")
 
     client = pool.get_client(account.id)
@@ -225,22 +213,17 @@ async def start_orchestrator(request: StartOrchestratorRequest):
         }
     except Exception as e:
         raise HTTPException(500, f"Failed to start orchestrator: {e}")
-    finally:
-        await pool.close_all()
 
 
 async def _poll_orchestrator(session_id: str, account_id: str, owner: str, repo: str, task_id: str):
     import asyncio
 
-    from core.config_loader import build_jules_pool, load_config
     from models.jules import SessionState
 
-    config = load_config()
-    pool = build_jules_pool(config)
+    pool = get_singleton_pool()
     try:
         client = pool.get_client(UUID(account_id))
     except Exception:
-        await pool.close_all()
         return
 
     last_activity_time = None
@@ -283,20 +266,16 @@ async def _poll_orchestrator(session_id: str, account_id: str, owner: str, repo:
                 pass
             await asyncio.sleep(15)
     finally:
-        await pool.close_all()
+        pass
 
 
 @router.post("/api/orchestrators/{session_id}/approve")
-async def approve_orchestrator_plan(session_id: str):
-    from core.config_loader import build_jules_pool, load_config
+async def approve_orchestrator_plan(session_id: str, pool: AccountPool = Depends(get_account_pool)):
     # Find account associated with the session
     try:
         tasks = await db.select("agent_tasks", {"session_id": session_id})
         if not tasks:
             raise HTTPException(404, "Orchestrator session not found in tasks")
-
-        config = load_config()
-        pool = build_jules_pool(config)
 
         # Try to find client
         client = None
@@ -305,12 +284,10 @@ async def approve_orchestrator_plan(session_id: str):
             break
 
         if not client:
-            await pool.close_all()
             raise HTTPException(400, "No active Jules clients available")
 
         await client.approve_plan(session_id)
         await db.update("orchestrator_sessions", {"status": "running"}, {"session_id": session_id})
-        await pool.close_all()
         return {"ok": True}
     except Exception as e:
         raise HTTPException(500, f"Approve plan failed: {e}")

@@ -17,6 +17,7 @@ from enum import StrEnum
 from uuid import UUID, uuid4
 
 import structlog
+from fastapi import Request
 
 from clients.jules import JulesClient
 from exceptions import AccountPoolExhausted
@@ -188,7 +189,98 @@ class AccountPool:
             })
         return res
 
+    def refresh(self, config: dict) -> None:
+        """Re-syncs the account list from DB/config without discarding in-flight active_sessions."""
+        from uuid import UUID
+
+        from config import load_settings
+        from core.account_pool import AccountRole, PlanTier
+        from core.ai_interface import KeyVault
+        from db import db
+
+        vault = KeyVault(load_settings().encryption_key)
+        try:
+            rows = db.select_sync("accounts")
+        except Exception as e:
+            log.warning("refresh_accounts_db_error", error=str(e))
+            return
+
+        # Keep a map of current active accounts to preserve active_sessions and reset timestamps
+        current_map = {a.id: a for a in self._accounts}
+        new_accounts = []
+        new_clients = {}
+
+        for r in rows:
+            if not r.get("enabled", True):
+                continue
+            acc_id = UUID(r["id"]) if isinstance(r["id"], str) else r["id"]
+
+            try:
+                decrypted_key = vault.decrypt(r["api_key_encrypted"]) if r.get("api_key_encrypted") else ""
+            except Exception:
+                decrypted_key = r.get("api_key_encrypted", "")
+
+            tier_str = r.get("plan_tier", r.get("plan", "free")).lower()
+            role_str = r.get("role", "worker").lower()
+
+            if acc_id in current_map:
+                # Update attributes while preserving active_sessions
+                existing = current_map[acc_id]
+                existing.name = r["name"]
+                existing.api_key = decrypted_key
+                existing.plan = PlanTier(tier_str)
+                existing.role = AccountRole(role_str)
+                existing.label = r.get("label", "")
+                existing.daily_tasks_used = r.get("sessions_today", 0)
+                new_accounts.append(existing)
+                new_clients[acc_id] = self._clients.get(acc_id) or JulesClient(decrypted_key)
+            else:
+                # Add new account
+                new_acc = Account(
+                    id=acc_id,
+                    name=r["name"],
+                    api_key=decrypted_key,
+                    plan=PlanTier(tier_str),
+                    role=AccountRole(role_str),
+                    label=r.get("label", ""),
+                    daily_tasks_used=r.get("sessions_today", 0),
+                )
+                new_accounts.append(new_acc)
+                new_clients[acc_id] = JulesClient(decrypted_key)
+
+        # Close clients for accounts that were deleted
+        for deleted_id in (set(self._clients.keys()) - set(new_clients.keys())):
+            try:
+                pass
+            except Exception:
+                pass
+
+        self._accounts = new_accounts
+        self._clients = new_clients
+        log.info("account_pool_refreshed", count=len(self._accounts))
+
     async def close_all(self) -> None:
         for client in self._clients.values():
             await client.close()
         self._clients.clear()
+
+
+_pool_instance: AccountPool | None = None
+
+
+def set_singleton_pool(pool: AccountPool) -> None:
+    global _pool_instance
+    _pool_instance = pool
+
+
+def get_singleton_pool() -> AccountPool:
+    global _pool_instance
+    if _pool_instance is None:
+        from core.config_loader import build_jules_pool, load_config
+        config = load_config()
+        _pool_instance = build_jules_pool(config)
+    return _pool_instance
+
+
+def get_account_pool(request: Request) -> AccountPool:
+    return request.app.state.account_pool
