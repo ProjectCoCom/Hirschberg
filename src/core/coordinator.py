@@ -76,9 +76,9 @@ class AgentCoordinator:
             delegating_task_id = None
             if task.orchestrator_session_id:
                 try:
-                    orch_rows = await self._store._db.select("agent_tasks", {"session_id": task.orchestrator_session_id})
-                    if orch_rows:
-                        delegating_task_id = orch_rows[0]["id"]
+                    orch_row = await self._store.get_task_by_session(task.orchestrator_session_id)
+                    if orch_row:
+                        delegating_task_id = orch_row["id"]
                 except Exception:
                     pass
 
@@ -87,9 +87,9 @@ class AgentCoordinator:
             curr_parent_id = delegating_task_id
             while curr_parent_id:
                 try:
-                    parent_rows = await self._store._db.select("agent_tasks", {"id": str(curr_parent_id)})
-                    if parent_rows and parent_rows[0].get("parent_task_id"):
-                        curr_parent_id = parent_rows[0]["parent_task_id"]
+                    parent_row = await self._store.get_task_state(curr_parent_id)
+                    if parent_row and parent_row.get("parent_task_id"):
+                        curr_parent_id = parent_row["parent_task_id"]
                         current_depth += 1
                     else:
                         break
@@ -137,9 +137,9 @@ class AgentCoordinator:
                 try:
                     base_branch = None
                     if task.workflow_id:
-                        wf_rows = await self._store._db.select("workflows", {"id": str(task.workflow_id)})
-                        if wf_rows:
-                            base_branch = wf_rows[0].get("integration_branch") or None
+                        wf_row = await self._store.get_workflow_state(task.workflow_id)
+                        if wf_row:
+                            base_branch = wf_row.get("integration_branch") or None
 
                     await gh_client.create_branch_with_base(
                         task.repo_owner, task.repo_name, task.branch, base_branch

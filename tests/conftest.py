@@ -35,5 +35,16 @@ def isolated_db(monkeypatch):
 
         yield test_local_db
 
+        # Cancel any leftover background tasks to prevent segfaults from concurrent SQLite access during teardown
+        try:
+            import asyncio
+            loop = asyncio.get_running_loop()
+            if loop.is_running():
+                for t in asyncio.all_tasks(loop):
+                    if not t.done() and t != asyncio.current_task(loop):
+                        t.cancel()
+        except RuntimeError:
+            pass
+
         # Close connection to release the file lock
         test_local_db.close()

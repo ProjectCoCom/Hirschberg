@@ -39,9 +39,16 @@ class AutoMerge:
         self,
         github: GitHubClient,
         strategy: MergeStrategy = MergeStrategy.SQUASH,
+        store: ContextStore | None = None,
     ) -> None:
         self._github = github
         self._strategy = strategy
+        if store is None:
+            from core.context_store import ContextStore
+            from db import db
+            self._store = ContextStore(db)
+        else:
+            self._store = store
 
     async def merge_when_ready(
         self,
@@ -59,22 +66,17 @@ class AutoMerge:
             return MergeResult(merged=False, message="CI checks failed or timed out")
 
         # Check if the head branch matches a known integration_branch of any workflow
-        from db import db
         is_integration_pr = False
         try:
-            workflows = await db.select("workflows", {"integration_branch": pr.head_ref})
-            if workflows and isinstance(workflows[0], dict) and "integration_branch" in workflows[0]:
-                is_integration_pr = bool(workflows[0].get("integration_branch"))
+            workflow_row = await self._store.get_workflow_by_branch(pr.head_ref)
+            if workflow_row:
+                is_integration_pr = bool(workflow_row.get("integration_branch"))
         except Exception:
             pass
 
         if is_integration_pr:
             # Look for integrator task
-            rows = await db.select("agent_tasks", {
-                "repo_owner": owner,
-                "repo_name": repo,
-                "branch": pr.head_ref,
-            })
+            rows = await self._store.get_tasks_by_branch(owner, repo, pr.head_ref)
             integrator_verdict_data = None
             integrator_task_row = None
             for r in rows:
@@ -91,14 +93,12 @@ class AutoMerge:
             if verdict == "reject":
                 # Notify responsible orchestrator
                 try:
-                    from core.config_loader import build_jules_pool, load_config
-                    from core.context_store import ContextStore
+                    from core.account_pool import get_singleton_pool
                     from models.workflow import AgentTask
 
                     task_obj = AgentTask.model_validate(integrator_task_row)
-                    config = load_config()
-                    pool = build_jules_pool(config)
-                    store = ContextStore(db)
+                    pool = get_singleton_pool()
+                    store = self._store
 
                     issues_summary = ""
                     for issue in integrator_verdict_data.get("blocking_issues", []):
@@ -107,7 +107,6 @@ class AutoMerge:
 
                     from core.orchestrator_relay import notify_orchestrator
                     await notify_orchestrator(pool, store, task_obj, "rejected", summary=summary)
-                    await pool.close_all()
                 except Exception as e:
                     log.warning("failed_to_notify_orchestrator_on_integrator_rejection", error=str(e))
 
@@ -117,15 +116,10 @@ class AutoMerge:
                 return MergeResult(merged=False, message=f"Integrator review has unhandled verdict: {verdict}")
         else:
             # Query database for the QA task matching this branch
-            from core.config_loader import build_jules_pool, load_config
-            from core.context_store import ContextStore
+            from core.account_pool import get_singleton_pool
             from models.workflow import AgentTask
 
-            rows = await db.select("agent_tasks", {
-                "repo_owner": owner,
-                "repo_name": repo,
-                "branch": pr.head_ref,
-            })
+            rows = await self._store.get_tasks_by_branch(owner, repo, pr.head_ref)
             qa_verdict_data = None
             qa_task_row = None
             for r in rows:
@@ -143,9 +137,10 @@ class AutoMerge:
                 # Notify the orchestrator session on rejection
                 try:
                     task_obj = AgentTask.model_validate(qa_task_row)
-                    config = load_config()
-                    pool = build_jules_pool(config)
-                    store = ContextStore(db)
+                    from core.account_pool import get_singleton_pool
+
+                    pool = get_singleton_pool()
+                    store = self._store
 
                     issues_summary = ""
                     for issue in qa_verdict_data.get("blocking_issues", []):
@@ -154,7 +149,6 @@ class AutoMerge:
 
                     from core.orchestrator_relay import notify_orchestrator
                     await notify_orchestrator(pool, store, task_obj, "rejected", summary=summary)
-                    await pool.close_all()
                 except Exception as e:
                     log.warning("failed_to_notify_orchestrator_on_rejection", error=str(e))
 
@@ -172,11 +166,7 @@ class AutoMerge:
         # Post-merge individual branch into integration branch for multi-task workflows
         if merge_res.merged and not is_integration_pr:
             try:
-                task_rows = await db.select("agent_tasks", {
-                    "repo_owner": owner,
-                    "repo_name": repo,
-                    "branch": pr.head_ref,
-                })
+                task_rows = await self._store.get_tasks_by_branch(owner, repo, pr.head_ref)
                 worker_task_row = None
                 for tr in task_rows:
                     ctx = tr.get("context", {})
@@ -185,9 +175,9 @@ class AutoMerge:
                         break
 
                 if worker_task_row and worker_task_row.get("workflow_id"):
-                    wf_rows = await db.select("workflows", {"id": str(worker_task_row["workflow_id"])})
-                    if wf_rows:
-                        integration_branch = wf_rows[0].get("integration_branch")
+                    wf_row = await self._store.get_workflow_state(worker_task_row["workflow_id"])
+                    if wf_row:
+                        integration_branch = wf_row.get("integration_branch")
                         if integration_branch:
                             log.info("merging_individual_task_branch_into_integration", branch=pr.base_ref, integration=integration_branch)
                             await self._github.merge_branch(

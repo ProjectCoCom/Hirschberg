@@ -1068,5 +1068,10 @@
     "path": "tests/test_jdocs.py",
     "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/tests/test_jdocs.py",
     "description": "Dry-run integration test suite 'Test Jdocs'."
+  },
+  {
+    "path": "tests/test_task_2_8.py",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/tests/test_task_2_8.py",
+    "description": "Automated unit tests for Task 2.8 client routing integration."
   }
 ]

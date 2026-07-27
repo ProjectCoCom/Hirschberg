@@ -265,18 +265,17 @@ class AccountPool:
 
     async def get_client_for_session(self, session_id: str, store: ContextStore) -> JulesClient:
         """Looks up the account that owns the given session_id and returns its client."""
-        rows = await store._db.select("agent_tasks", {"session_id": session_id})
-        if not rows:
-            rows = await store._db.select("orchestrator_sessions", {"session_id": session_id})
-        if not rows:
+        row = await store.get_task_by_session(session_id)
+        if not row:
+            row = await store.get_orchestrator_session(session_id)
+        if not row:
             raise KeyError(f"No task or session found with session_id '{session_id}'")
 
-        row = rows[0]
         account_id_str = row.get("account_id")
         if not account_id_str and "id" in row:
-            task_rows = await store._db.select("agent_tasks", {"id": row["id"]})
-            if task_rows:
-                account_id_str = task_rows[0].get("account_id")
+            task_row = await store.get_task_state(row["id"])
+            if task_row:
+                account_id_str = task_row.get("account_id")
 
         if not account_id_str:
             raise KeyError(f"No account_id associated with session_id '{session_id}'")

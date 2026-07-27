@@ -11,7 +11,6 @@ Coupling:
 
 from __future__ import annotations
 
-import httpx
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
@@ -142,15 +141,16 @@ async def test_account(account_id: str):
         key = vault.decrypt(key_raw)
     except Exception:
         key = key_raw
-    async with httpx.AsyncClient(timeout=15.0) as client:
-        res = await client.get(
-            "https://jules.googleapis.com/v1alpha/sources",
-            headers={"X-Goog-Api-Key": key},
-        )
-    if res.status_code == 200:
-        sources = res.json().get("sources", [])
+
+    from clients.jules import JulesClient
+    client = JulesClient(key)
+    try:
+        sources = await client.list_sources()
         return {"ok": True, "sources_count": len(sources)}
-    return {"ok": False, "error": f"HTTP {res.status_code}", "detail": res.text[:200]}
+    except Exception as e:
+        return {"ok": False, "error": "API Error", "detail": str(e)[:200]}
+    finally:
+        await client.close()
 
 
 @router.get("/api/jules/sessions")
@@ -161,6 +161,7 @@ async def list_jules_sessions(repo: str | None = None):
         return {"sessions": []}
 
     all_sessions = []
+    from clients.jules import JulesClient
     for acc in accounts:
         if not acc.get("enabled", True):
             continue
@@ -171,17 +172,16 @@ async def list_jules_sessions(repo: str | None = None):
             key = key_raw
 
         try:
-            async with httpx.AsyncClient(timeout=15.0) as client:
-                res = await client.get(
-                    "https://jules.googleapis.com/v1alpha/sessions",
-                    headers={"X-Goog-Api-Key": key},
-                )
-            if res.status_code == 200:
-                sessions = res.json().get("sessions", [])
+            client = JulesClient(key)
+            try:
+                sessions = await client.list_sessions()
                 for s in sessions:
-                    s["_account_name"] = acc.get("name", "")
-                    s["_account_id"] = str(acc["id"])
-                all_sessions.extend(sessions)
+                    s_dict = s.model_dump(by_alias=True, mode="json")
+                    s_dict["_account_name"] = acc.get("name", "")
+                    s_dict["_account_id"] = str(acc["id"])
+                    all_sessions.append(s_dict)
+            finally:
+                await client.close()
         except Exception:
             continue
 
@@ -201,8 +201,9 @@ async def get_session_detail(session_id: str):
     try:
         accounts = await db.select("accounts")
     except Exception:
-        raise HTTPException(404, "DB unavailable")
+        raise HTTPException(500, "DB unavailable")
 
+    from clients.jules import JulesClient
     for acc in accounts:
         key_raw = acc.get("api_key_encrypted", acc.get("api_key", ""))
         try:
@@ -211,15 +212,14 @@ async def get_session_detail(session_id: str):
             key = key_raw
 
         try:
-            async with httpx.AsyncClient(timeout=15.0) as client:
-                res = await client.get(
-                    f"https://jules.googleapis.com/v1alpha/sessions/{session_id}",
-                    headers={"X-Goog-Api-Key": key},
-                )
-            if res.status_code == 200:
-                data = res.json()
+            client = JulesClient(key)
+            try:
+                session = await client.get_session(session_id)
+                data = session.model_dump(by_alias=True, mode="json")
                 data["_account_name"] = acc.get("name", "")
                 return data
+            finally:
+                await client.close()
         except Exception:
             continue
 
@@ -237,6 +237,7 @@ async def send_session_message(session_id: str, body: dict):
     except Exception:
         raise HTTPException(500, "DB unavailable")
 
+    from clients.jules import JulesClient
     for acc in accounts:
         key_raw = acc.get("api_key_encrypted", acc.get("api_key", ""))
         try:
@@ -245,14 +246,12 @@ async def send_session_message(session_id: str, body: dict):
             key = key_raw
 
         try:
-            async with httpx.AsyncClient(timeout=15.0) as client:
-                res = await client.post(
-                    f"https://jules.googleapis.com/v1alpha/sessions/{session_id}:sendMessage",
-                    headers={"X-Goog-Api-Key": key, "Content-Type": "application/json"},
-                    json={"message": message},
-                )
-            if res.status_code == 200:
-                return {"ok": True, "response": res.json()}
+            client = JulesClient(key)
+            try:
+                await client.send_message(session_id, message)
+                return {"ok": True}
+            finally:
+                await client.close()
         except Exception:
             continue
 

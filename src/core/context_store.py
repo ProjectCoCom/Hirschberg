@@ -33,6 +33,14 @@ class ContextStore:
         rows = await self._db.select("agent_tasks", filters={"id": str(task_id)})
         return rows[0] if rows else {}
 
+    async def get_task_by_session(self, session_id: str) -> dict:
+        rows = await self._db.select("agent_tasks", filters={"session_id": session_id})
+        return rows[0] if rows else {}
+
+    async def get_orchestrator_session(self, session_id: str) -> dict:
+        rows = await self._db.select("orchestrator_sessions", filters={"session_id": session_id})
+        return rows[0] if rows else {}
+
     async def save_task_orchestrator(self, task_id: UUID, orchestrator_session_id: str) -> None:
         await self._db.update("agent_tasks", {"orchestrator_session_id": orchestrator_session_id}, {"id": str(task_id)})
 
@@ -85,6 +93,29 @@ class ContextStore:
     async def get_messages_for_task(self, task_id: UUID) -> list[dict]:
         return await self._db.select(
             "context_messages", filters={"to_task_id": str(task_id)}
+        )
+
+    async def save_workflow_integration_branch(self, workflow_id: UUID, integration_branch: str) -> None:
+        await self._db.update("workflows", {"integration_branch": integration_branch}, {"id": str(workflow_id)})
+
+    async def get_workflow_state(self, workflow_id: UUID) -> dict:
+        rows = await self._db.select("workflows", filters={"id": str(workflow_id)})
+        return rows[0] if rows else {}
+
+    async def get_workflow_by_branch(self, branch: str) -> dict:
+        rows = await self._db.select("workflows", filters={"integration_branch": branch})
+        return rows[0] if rows else {}
+
+    async def insert_task(self, task_data: dict) -> dict:
+        return await self._db.insert("agent_tasks", task_data)
+
+    async def update_task(self, task_id: UUID, task_data: dict) -> list[dict]:
+        return await self._db.update("agent_tasks", task_data, filters={"id": str(task_id)})
+
+    async def get_tasks_by_branch(self, repo_owner: str, repo_name: str, branch: str) -> list[dict]:
+        return await self._db.select(
+            "agent_tasks",
+            filters={"repo_owner": repo_owner, "repo_name": repo_name, "branch": branch}
         )
 
 
