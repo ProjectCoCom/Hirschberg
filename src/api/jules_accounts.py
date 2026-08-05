@@ -1,12 +1,11 @@
 """
-API router for managing Jules account configurations.
+Summary: API router for managing Jules account configurations.
 
-Responsibilities:
-- Handles CRUD operations for roles, labels, plans, and budget metrics on Jules accounts in SQLite.
+What it does: Handles CRUD operations for roles, labels, plans, and budget metrics on Jules accounts in SQLite.
 
-Coupling:
-- Queries and updates accounts via 'src/clients/database.py'.
+How it fits in: Queries and updates accounts via 'src/clients/database.py'.
 """
+
 
 
 from __future__ import annotations

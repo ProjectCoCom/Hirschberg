@@ -1,12 +1,11 @@
 /**
- * Custom React hook 'Usecodexusagepolling'.
+ * Summary: Custom React hook 'Usecodexusagepolling'.
  *
- * Responsibilities:
- * Abstracts state management, data polling, or backend API actions for 'Usecodexusagepolling' into a reusable hook.
+ * What it does: Abstracts state management, data polling, or backend API actions for 'Usecodexusagepolling' into a reusable hook.
  *
- * Coupling:
- * Consumed by React UI components inside the 'dashboard/src/components' component tree.
+ * How it fits in: Consumed by React UI components inside the 'dashboard/src/components' component tree.
  */
+
 
 
 import { useRef } from "react";

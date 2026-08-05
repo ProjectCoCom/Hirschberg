@@ -1,5 +1,9 @@
 {
-  "_description": "1. Sample workflow JSON schema. 2. Details structured parallel/dependent multi-task agent workflow instructions. 3. Used as standard target input for workflow engine test dispatches.",
+  "_description": [
+    "Summary: Sample workflow JSON schema.",
+    "What it does: Details structured parallel/dependent multi-task agent workflow instructions.",
+    "How it fits in: Used as standard target input for workflow engine test dispatches."
+  ],
   "name": "parallel-review",
   "description": "Review two repos in parallel, then create a summary",
   "tasks": [

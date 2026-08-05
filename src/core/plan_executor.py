@@ -1,12 +1,11 @@
 """
-Script-level plan executor.
+Summary: Script-level plan executor.
 
-Responsibilities:
-- Triggers serial plan run execution for manual plans.
+What it does: Triggers serial plan run execution for manual plans.
 
-Coupling:
-- Used by legacy CLI runner.
+How it fits in: Used by legacy CLI runner.
 """
+
 
 
 from __future__ import annotations

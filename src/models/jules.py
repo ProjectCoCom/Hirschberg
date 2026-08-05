@@ -1,12 +1,11 @@
 """
-Python logic module 'Jules'.
+Summary: Python logic module 'Jules'.
 
-Responsibilities:
-- Provides backend utility operations and core logical helper interfaces for 'Jules'.
+What it does: Provides backend utility operations and core logical helper interfaces for 'Jules'.
 
-Coupling:
-- Imported and utilized by surrounding backend structures.
+How it fits in: Imported and utilized by surrounding backend structures.
 """
+
 
 
 from __future__ import annotations

@@ -1,12 +1,11 @@
 /**
- * Frontend JavaScript/TypeScript module 'Ws.D'.
+ * Summary: Frontend JavaScript/TypeScript module 'Ws.D'.
  *
- * Responsibilities:
- * Provides application-level UI helper functions, adapters, or configurations for 'Ws.D'.
+ * What it does: Provides application-level UI helper functions, adapters, or configurations for 'Ws.D'.
  *
- * Coupling:
- * Used to build or bundle the React dashboard application.
+ * How it fits in: Used to build or bundle the React dashboard application.
  */
+
 
 
 declare module "ws" {

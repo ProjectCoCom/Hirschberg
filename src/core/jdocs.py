@@ -1,12 +1,11 @@
 """
-JDOCS prompt template manager.
+Summary: JDOCS prompt template manager.
 
-Responsibilities:
-- Compiles XML structures and manages prompt templates for agent context, rules, and history.
+What it does: Compiles XML structures and manages prompt templates for agent context, rules, and history.
 
-Coupling:
-- Utilized by 'src/core/prompt_builder.py'.
+How it fits in: Utilized by 'src/core/prompt_builder.py'.
 """
+
 
 
 from __future__ import annotations

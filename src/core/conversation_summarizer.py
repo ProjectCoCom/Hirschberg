@@ -1,12 +1,11 @@
 """
-LLM-based conversation summarization helper.
+Summary: LLM-based conversation summarization helper.
 
-Responsibilities:
-- Shrinks long chat transcripts into concise summaries to save context window tokens.
+What it does: Shrinks long chat transcripts into concise summaries to save context window tokens.
 
-Coupling:
-- Invoked by conversation manager.
+How it fits in: Invoked by conversation manager.
 """
+
 
 
 from __future__ import annotations

@@ -1,12 +1,11 @@
 """
-JSON object extraction utility.
+Summary: Python logic module 'Json Extract'.
 
-Responsibilities:
-- Provides a robust, brace-nesting-aware helper to extract JSON objects from mixed conversational text using `json.JSONDecoder().raw_decode()`.
+What it does: Provides backend utility operations and core logical helper interfaces for 'Json Extract'.
 
-Coupling:
-- Used by `src/core/qa_reviewer.py`, `src/core/decomposer.py`, and `src/core/auto_mode.py`.
+How it fits in: Imported and utilized by surrounding backend structures.
 """
+
 
 from __future__ import annotations
 

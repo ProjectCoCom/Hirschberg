@@ -1,12 +1,11 @@
 """
-API router for GitHub repository integration.
+Summary: API router for GitHub repository integration.
 
-Responsibilities:
-- Exposes endpoints for listing files, branches, PRs, and triggers file-write or branch operations.
+What it does: Exposes endpoints for listing files, branches, PRs, and triggers file-write or branch operations.
 
-Coupling:
-- Depends on 'src/clients/github.py'.
+How it fits in: Depends on 'src/clients/github.py'.
 """
+
 
 
 from __future__ import annotations

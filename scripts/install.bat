@@ -1,11 +1,10 @@
 @echo off
-REM Windows setup and installation batch script.
+REM Summary: Windows setup and installation batch script.
 REM
-REM Responsibilities:
-REM Installs python dependencies and configures PNPM packages on Windows.
+REM What it does: Installs python dependencies and configures PNPM packages on Windows.
 REM
-REM Coupling:
-REM Windows equivalent of install.sh.
+REM How it fits in: Windows equivalent of install.sh.
+
 
 
 title JAT-AI Installer

@@ -1,12 +1,11 @@
 """
-Low-level SQLite database client.
+Summary: Low-level SQLite database client.
 
-Responsibilities:
-- Manages raw connection pools, implements JSON/Array serialization/deserialization transparently, and supports WAL.
+What it does: Manages raw connection pools, implements JSON/Array serialization/deserialization transparently, and supports WAL.
 
-Coupling:
-- Foundation of data-access layer; wrapped by 'src/clients/database.py'.
+How it fits in: Foundation of data-access layer; wrapped by 'src/clients/database.py'.
 """
+
 
 
 import json

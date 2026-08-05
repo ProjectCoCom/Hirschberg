@@ -1,12 +1,11 @@
 /**
- * Frontend JavaScript/TypeScript module 'Supabase'.
+ * Summary: Frontend JavaScript/TypeScript module 'Supabase'.
  *
- * Responsibilities:
- * Provides application-level UI helper functions, adapters, or configurations for 'Supabase'.
+ * What it does: Provides application-level UI helper functions, adapters, or configurations for 'Supabase'.
  *
- * Coupling:
- * Used to build or bundle the React dashboard application.
+ * How it fits in: Used to build or bundle the React dashboard application.
  */
+
 
 
 import { createClient } from "@supabase/supabase-js";

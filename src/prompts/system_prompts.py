@@ -1,12 +1,11 @@
 """
-Python logic module 'System Prompts'.
+Summary: Python logic module 'System Prompts'.
 
-Responsibilities:
-- Provides backend utility operations and core logical helper interfaces for 'System Prompts'.
+What it does: Provides backend utility operations and core logical helper interfaces for 'System Prompts'.
 
-Coupling:
-- Imported and utilized by surrounding backend structures.
+How it fits in: Imported and utilized by surrounding backend structures.
 """
+
 
 
 from __future__ import annotations

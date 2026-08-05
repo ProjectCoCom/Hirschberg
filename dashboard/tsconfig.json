@@ -1,5 +1,9 @@
 {
-  "_description": "1. TypeScript project compiler configurations. 2. Specifies module resolution, typing paths, and target output specifications for frontend source code. 3. Governs TypeScript checking during development and Vite builds.",
+  "_description": [
+    "Summary: TypeScript project compiler configurations.",
+    "What it does: Specifies module resolution, typing paths, and target output specifications for frontend source code.",
+    "How it fits in: Governs TypeScript checking during development and Vite builds."
+  ],
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",

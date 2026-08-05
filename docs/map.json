@@ -1,8 +1,23 @@
 [
   {
+    "path": "AGENTS.md",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/AGENTS.md",
+    "description": "AGENTS.md — Hirschberg / JAT Repair Backlog"
+  },
+  {
+    "path": "README.md",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/README.md",
+    "description": "This is a fork of https://github.com/iceyxsm/JAT-AI. It is undergoing an extreme remodel, and should not be considered functional or stable, in any way, until this document is updated to advise as such."
+  },
+  {
     "path": "config.example.json",
     "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/config.example.json",
     "description": "Configuration template file."
+  },
+  {
+    "path": "dashboard/OCTOGENT_ADAPTATION.md",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/OCTOGENT_ADAPTATION.md",
+    "description": "Octogent → JAT-AI UI Adaptation Plan"
   },
   {
     "path": "dashboard/api-mock.mjs",
@@ -90,6 +105,11 @@
     "description": "Frontend JavaScript/TypeScript module 'Typecoercion'."
   },
   {
+    "path": "dashboard/dead-code-audit.md",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/dead-code-audit.md",
+    "description": "Dead Code Audit — JAT-AI Dashboard"
+  },
+  {
     "path": "dashboard/index.html",
     "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/index.html",
     "description": "Main HTML template for React dashboard."
@@ -98,6 +118,61 @@
     "path": "dashboard/package.json",
     "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/package.json",
     "description": "React dashboard NPM packages and scripts."
+  },
+  {
+    "path": "dashboard/prompts/meta-prompt-generator.md",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/prompts/meta-prompt-generator.md",
+    "description": "You are a prompt engineering specialist who builds production-grade system"
+  },
+  {
+    "path": "dashboard/prompts/octoboss-clean-contexts.md",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/prompts/octoboss-clean-contexts.md",
+    "description": "You are the Octoboss — a cross-tentacle orchestrator. Your task is to audit and clean the context files in each tentacle folder under `.octogent/tentacles/*/`."
+  },
+  {
+    "path": "dashboard/prompts/octoboss-reorganize-tentacles.md",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/prompts/octoboss-reorganize-tentacles.md",
+    "description": "You are the Octoboss — a cross-tentacle orchestrator. Your task is to audit the current tentacle structure in `.octogent/tentacles/`."
+  },
+  {
+    "path": "dashboard/prompts/octoboss-reorganize-todos.md",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/prompts/octoboss-reorganize-todos.md",
+    "description": "You are the Octoboss — a cross-tentacle orchestrator. Your task is to read, analyze, and reorganize the todo items across all tentacles."
+  },
+  {
+    "path": "dashboard/prompts/sandbox-init.md",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/prompts/sandbox-init.md",
+    "description": "You are the **{{tentacleId}}** tentacle agent — a specialist responsible for the work domain defined in your vault instructions."
+  },
+  {
+    "path": "dashboard/prompts/swarm-parent.md",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/prompts/swarm-parent.md",
+    "description": "You are the swarm coordinator for the **{{tentacleName}}** tentacle. Your job is NOT to do the work — it's to create, supervise, and merge {{workerCount}} worker agents cleanly."
+  },
+  {
+    "path": "dashboard/prompts/swarm-worker.md",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/prompts/swarm-worker.md",
+    "description": "You are a swarm worker agent for the **{{tentacleName}}** tentacle. Your single job is to complete one todo item, leave a clean result in your assigned workspace mode, and report back. Nothing else."
+  },
+  {
+    "path": "dashboard/prompts/tentacle-context-init.md",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/prompts/tentacle-context-init.md",
+    "description": "You are working on the {{tentacleName}} section. For tool-list items, context, and docs, check {{tentacleContextPath}}."
+  },
+  {
+    "path": "dashboard/prompts/tentacle-planner.md",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/prompts/tentacle-planner.md",
+    "description": "You are the Tentacle Planner — a meta-agent that analyzes this codebase and creates **department tentacles** to organize it for parallel agent work. You must present your proposal and wait for operator confirmation before creating anything."
+  },
+  {
+    "path": "dashboard/prompts/tentacle-reorganize-todos.md",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/prompts/tentacle-reorganize-todos.md",
+    "description": "You are the maintainer for the `{{tentacleId}}` tentacle. Your task is to read, analyze, and reorganize the todo items for this single tentacle only."
+  },
+  {
+    "path": "dashboard/prompts/tentacle-update-tentacle.md",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/dashboard/prompts/tentacle-update-tentacle.md",
+    "description": "You are the maintainer for the `{{tentacleId}}` tentacle. Your task is to perform a full maintenance pass for this single tentacle: review its todo list, review its markdown files, compare them against the codebase, and recommend the updates needed to keep the tentacle useful."
   },
   {
     "path": "dashboard/src/App.tsx",
@@ -652,7 +727,7 @@
   {
     "path": "docs/changelog.json",
     "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/docs/changelog.json",
-    "description": ""
+    "description": "JSON configuration/data file 'Changelog'."
   },
   {
     "path": "examples/seed_dashboard.py",
@@ -663,6 +738,16 @@
     "path": "examples/workflow_parallel.json",
     "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/examples/workflow_parallel.json",
     "description": "Sample workflow JSON schema."
+  },
+  {
+    "path": "prompts/integrator_reviewer.md",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/prompts/integrator_reviewer.md",
+    "description": "<identity>"
+  },
+  {
+    "path": "prompts/qa_reviewer.md",
+    "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/prompts/qa_reviewer.md",
+    "description": "<identity>"
   },
   {
     "path": "pyproject.toml",
@@ -677,7 +762,7 @@
   {
     "path": "scripts/generate_map.py",
     "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/scripts/generate_map.py",
-    "description": "Responsibilities:"
+    "description": "Python logic module 'Generate Map'."
   },
   {
     "path": "scripts/install.bat",
@@ -687,7 +772,7 @@
   {
     "path": "scripts/install.sh",
     "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/scripts/install.sh",
-    "description": "!/usr/bin/env bash"
+    "description": "Unix setup and installation shell script."
   },
   {
     "path": "scripts/jat.bat",
@@ -697,7 +782,7 @@
   {
     "path": "scripts/jat.sh",
     "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/scripts/jat.sh",
-    "description": "!/usr/bin/env bash"
+    "description": "Unix CLI command wrapper."
   },
   {
     "path": "src/__init__.py",
@@ -877,7 +962,7 @@
   {
     "path": "src/core/json_extract.py",
     "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/core/json_extract.py",
-    "description": "JSON object extraction utility."
+    "description": "Python logic module 'Json Extract'."
   },
   {
     "path": "src/core/logging.py",
@@ -937,7 +1022,7 @@
   {
     "path": "src/core/session_transitions.py",
     "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/src/core/session_transitions.py",
-    "description": "Shared session transition and state handling."
+    "description": "Python logic module 'Session Transitions'."
   },
   {
     "path": "src/core/state_recovery.py",
@@ -1027,51 +1112,51 @@
   {
     "path": "tests/conftest.py",
     "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/tests/conftest.py",
-    "description": "Pytest configuration and shared fixtures."
+    "description": "Python logic module 'Conftest'."
   },
   {
     "path": "tests/mocks.py",
     "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/tests/mocks.py",
-    "description": "Dry-run integration test suite 'Mocks'."
+    "description": "Python logic module 'Mocks'."
   },
   {
     "path": "tests/test_auto_mode.py",
     "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/tests/test_auto_mode.py",
-    "description": "Dry-run integration test suite 'Test Auto Mode'."
+    "description": "Python logic module 'Test Auto Mode'."
   },
   {
     "path": "tests/test_e2e_happy_path.py",
     "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/tests/test_e2e_happy_path.py",
-    "description": "End-to-end happy-path integration test."
+    "description": "Python logic module 'Test E2E Happy Path'."
   },
   {
     "path": "tests/test_e2e_simulation.py",
     "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/tests/test_e2e_simulation.py",
-    "description": "Dry-run integration test suite 'Test E2E Simulation'."
+    "description": "Python logic module 'Test E2E Simulation'."
   },
   {
     "path": "tests/test_full_workflow.py",
     "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/tests/test_full_workflow.py",
-    "description": "Dry-run integration test suite 'Test Full Workflow'."
+    "description": "Python logic module 'Test Full Workflow'."
   },
   {
     "path": "tests/test_gaps.py",
     "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/tests/test_gaps.py",
-    "description": "Dry-run integration test suite 'Test Gaps'."
+    "description": "Python logic module 'Test Gaps'."
   },
   {
     "path": "tests/test_imports.py",
     "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/tests/test_imports.py",
-    "description": "Import-everything smoke test."
+    "description": "Python logic module 'Test Imports'."
   },
   {
     "path": "tests/test_jdocs.py",
     "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/tests/test_jdocs.py",
-    "description": "Dry-run integration test suite 'Test Jdocs'."
+    "description": "Python logic module 'Test Jdocs'."
   },
   {
     "path": "tests/test_task_2_8.py",
     "raw_url": "https://raw.githubusercontent.com/ProjectCoCom/Hirschberg/refs/heads/development/tests/test_task_2_8.py",
-    "description": "Automated unit tests for Task 2.8 client routing integration."
+    "description": "Python logic module 'Test Task 2 8'."
   }
 ]

@@ -1,12 +1,11 @@
 """
-Evaluator for pull request merge reviews.
+Summary: Evaluator for pull request merge reviews.
 
-Responsibilities:
-- Performs pre-merge checks and orchestrates QA evaluations.
+What it does: Performs pre-merge checks and orchestrates QA evaluations.
 
-Coupling:
-- Used by 'src/core/auto_merge.py'.
+How it fits in: Used by 'src/core/auto_merge.py'.
 """
+
 
 
 from __future__ import annotations

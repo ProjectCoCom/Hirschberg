@@ -1,12 +1,11 @@
 /**
- * Domain model definitions for 'Terminal'.
+ * Summary: Domain model definitions for 'Terminal'.
  *
- * Responsibilities:
- * Defines TypeScript interfaces, validation types, and helper algorithms for 'Terminal' model states.
+ * What it does: Defines TypeScript interfaces, validation types, and helper algorithms for 'Terminal' model states.
  *
- * Coupling:
- * Core domain logic consumed by application ports, adapters, and UI presentation views.
+ * How it fits in: Core domain logic consumed by application ports, adapters, and UI presentation views.
  */
+
 
 
 import type { AgentRuntimeState } from "./agentRuntime";

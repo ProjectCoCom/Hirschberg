@@ -1,12 +1,11 @@
 /**
- * React UI component 'Promptsprimaryview'.
+ * Summary: React UI component 'Promptsprimaryview'.
  *
- * Responsibilities:
- * Renders the 'Promptsprimaryview' dashboard interface, manages localized state, and handles user actions.
+ * What it does: Renders the 'Promptsprimaryview' dashboard interface, manages localized state, and handles user actions.
  *
- * Coupling:
- * Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
+ * How it fits in: Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
  */
+
 
 
 import { type ReactNode, useCallback, useEffect, useState } from "react";

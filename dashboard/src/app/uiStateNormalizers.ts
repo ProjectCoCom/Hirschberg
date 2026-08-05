@@ -1,12 +1,11 @@
 /**
- * Frontend JavaScript/TypeScript module 'Uistatenormalizers'.
+ * Summary: Frontend JavaScript/TypeScript module 'Uistatenormalizers'.
  *
- * Responsibilities:
- * Provides application-level UI helper functions, adapters, or configurations for 'Uistatenormalizers'.
+ * What it does: Provides application-level UI helper functions, adapters, or configurations for 'Uistatenormalizers'.
  *
- * Coupling:
- * Used to build or bundle the React dashboard application.
+ * How it fits in: Used to build or bundle the React dashboard application.
  */
+
 
 
 import { asRecord } from "@octogent/core";

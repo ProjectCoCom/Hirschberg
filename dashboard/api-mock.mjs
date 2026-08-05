@@ -1,12 +1,11 @@
 /**
- * Mock server script for dashboard API prototyping.
+ * Summary: Mock server script for dashboard API prototyping.
  *
- * Responsibilities:
- * Spins up an express/node API mock serving pre-packaged dummy metrics and tasks data.
+ * What it does: Spins up an express/node API mock serving pre-packaged dummy metrics and tasks data.
  *
- * Coupling:
- * Used to prototype UI views without running a full SQLite server backend.
+ * How it fits in: Used to prototype UI views without running a full SQLite server backend.
  */
+
 
 
 import { createServer } from "node:http";

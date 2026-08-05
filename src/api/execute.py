@@ -1,12 +1,11 @@
 """
-API router for task and session execution.
+Summary: API router for task and session execution.
 
-Responsibilities:
-- Triggers manual task dispatches, polls running session logs, and relays task feedback.
+What it does: Triggers manual task dispatches, polls running session logs, and relays task feedback.
 
-Coupling:
-- Integrates with 'src/core/session_runner.py' and 'src/core/workflow_engine.py'.
+How it fits in: Integrates with 'src/core/session_runner.py' and 'src/core/workflow_engine.py'.
 """
+
 
 
 from __future__ import annotations

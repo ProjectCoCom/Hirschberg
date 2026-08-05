@@ -1,12 +1,11 @@
 """
-Automated QA reviewer gatekeeper.
+Summary: Automated QA reviewer gatekeeper.
 
-Responsibilities:
-- Spins up a QA review session to validate changes on completed branches and parses verdict blocks.
+What it does: Spins up a QA review session to validate changes on completed branches and parses verdict blocks.
 
-Coupling:
-- Mandatory step prior to pull request merge.
+How it fits in: Mandatory step prior to pull request merge.
 """
+
 
 
 from __future__ import annotations

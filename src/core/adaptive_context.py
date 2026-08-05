@@ -1,12 +1,11 @@
 """
-RAG and adaptive workspace context builder.
+Summary: RAG and adaptive workspace context builder.
 
-Responsibilities:
-- Indexes files, trims overly long file contexts, and compiles relevant context snippets for agents.
+What it does: Indexes files, trims overly long file contexts, and compiles relevant context snippets for agents.
 
-Coupling:
-- Depends on 'src/core/rag_store.py'.
+How it fits in: Depends on 'src/core/rag_store.py'.
 """
+
 
 
 from __future__ import annotations

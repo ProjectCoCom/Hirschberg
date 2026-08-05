@@ -1,12 +1,11 @@
 """
-API router for token and task budget tracking.
+Summary: API router for token and task budget tracking.
 
-Responsibilities:
-- Returns detailed metrics of daily token consumption, costs, and remaining task budgets.
+What it does: Returns detailed metrics of daily token consumption, costs, and remaining task budgets.
 
-Coupling:
-- Queries session activities and database logs.
+How it fits in: Queries session activities and database logs.
 """
+
 
 
 from __future__ import annotations

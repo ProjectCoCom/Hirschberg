@@ -1,12 +1,11 @@
 """
-Session message history manager.
+Summary: Session message history manager.
 
-Responsibilities:
-- Appends and retrieves message models for ongoing chats and records them in SQLite.
+What it does: Appends and retrieves message models for ongoing chats and records them in SQLite.
 
-Coupling:
-- Connected to backend chat endpoints.
+How it fits in: Connected to backend chat endpoints.
 """
+
 
 
 from __future__ import annotations

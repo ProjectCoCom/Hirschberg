@@ -1,4 +1,9 @@
 {
+  "_description": [
+    "Summary: JSON configuration/data file 'Changelog'.",
+    "What it does: Maintains static metadata, options, or mock parameters for JAT-AI workspaces.",
+    "How it fits in: Read and parsed by backend configurations or frontend loaders."
+  ],
   "schema_version": 1,
   "entries": [
     {

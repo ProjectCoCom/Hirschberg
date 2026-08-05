@@ -1,12 +1,11 @@
 """
-API router for conversation logs and history.
+Summary: API router for conversation logs and history.
 
-Responsibilities:
-- Handles endpoints for creating, deleting, and fetching chat conversation models and transcripts.
+What it does: Handles endpoints for creating, deleting, and fetching chat conversation models and transcripts.
 
-Coupling:
-- Communicates with local database client.
+How it fits in: Communicates with local database client.
 """
+
 
 
 from __future__ import annotations

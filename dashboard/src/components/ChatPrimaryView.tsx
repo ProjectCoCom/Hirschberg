@@ -1,12 +1,11 @@
 /**
- * React UI component 'Chatprimaryview'.
+ * Summary: React UI component 'Chatprimaryview'.
  *
- * Responsibilities:
- * Renders the 'Chatprimaryview' dashboard interface, manages localized state, and handles user actions.
+ * What it does: Renders the 'Chatprimaryview' dashboard interface, manages localized state, and handles user actions.
  *
- * Coupling:
- * Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
+ * How it fits in: Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
  */
+
 
 
 import { memo, useCallback, useEffect, useRef, useState } from "react";

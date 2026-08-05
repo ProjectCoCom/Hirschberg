@@ -1,12 +1,11 @@
 /**
- * React UI component 'Julesaccountspanel'.
+ * Summary: React UI component 'Julesaccountspanel'.
  *
- * Responsibilities:
- * Renders the 'Julesaccountspanel' dashboard interface, manages localized state, and handles user actions.
+ * What it does: Renders the 'Julesaccountspanel' dashboard interface, manages localized state, and handles user actions.
  *
- * Coupling:
- * Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
+ * How it fits in: Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
  */
+
 
 
 import { useCallback, useEffect, useState, type MutableRefObject } from "react";

@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 """
-Python logic module 'Generate Headers'.
+Summary: Python logic module 'Generate Headers'.
 
-Responsibilities:
-- Provides backend utility operations and core logical helper interfaces for 'Generate Headers'.
+What it does: Provides backend utility operations and core logical helper interfaces for 'Generate Headers'.
 
-Coupling:
-- Imported and utilized by surrounding backend structures.
+How it fits in: Imported and utilized by surrounding backend structures.
 """
 
 
@@ -16,13 +14,12 @@ import sys
 
 # Standardized exclusions
 EXCLUSIONS = [
-    "node_modules", ".venv", "site-packages", ".git", ".pytest_cache", "__pycache__", ".jules", "docs/map.json"
+    "node_modules", ".venv", "site-packages", ".git", ".pytest_cache", "__pycache__", ".jules", "docs/map.json", "docs/depreciated"
 ]
 LOCK_FILES = ["uv.lock", "package-lock.json", "pnpm-lock.yaml"]
 
-# Detailed high-quality custom metadata for key files
+# Detailed high-quality custom metadata for key files using strict three-part shape
 CUSTOM_METADATA = {
-    # Backend server & utilities
     "src/db.py": (
         "Database connection and session management.",
         "Initializes the SQLite database engine, sets WAL mode, enforces foreign keys, and manages thread-local connection sessions.",
@@ -53,7 +50,6 @@ CUSTOM_METADATA = {
         "Configures Uvicorn parameters, resolves host/port settings, and starts the FastAPI server instance.",
         "Depends on 'src/api/server.py' to run the actual FastAPI app."
     ),
-    # Backend API Handlers
     "src/api/server.py": (
         "FastAPI application entrypoint and middleware setup.",
         "Instantiates the FastAPI app, configures CORS and JSON response overrides, and registers all feature routers.",
@@ -109,7 +105,6 @@ CUSTOM_METADATA = {
         "Returns detailed metrics of daily token consumption, costs, and remaining task budgets.",
         "Queries session activities and database logs."
     ),
-    # Clients
     "src/clients/github.py": (
         "High-level GitHub API client wrapper.",
         "Handles branch management, PR creation/merging, auto-retries for 5xx/429s, and file manipulation on GitHub.",
@@ -135,7 +130,6 @@ CUSTOM_METADATA = {
         "Resolves API credentials, instantiates clients, and standardizes completion payloads.",
         "Foundation for 'src/core/ai_interface.py'."
     ),
-    # Core Engine
     "src/core/account_pool.py": (
         "Jules account pool manager.",
         "Loads, tracks, and manages concurrency slots and daily budgets; sorts accounts by headroom score for balanced routing.",
@@ -281,13 +275,11 @@ CUSTOM_METADATA = {
         "Orchestrates parallel DAG task executions, manages integration branches, and coordinates multi-agent merges.",
         "Orchestrates coordinator, AutoMerge, and QAReviewer."
     ),
-    # MCP
     "src/mcp/server.py": (
         "Model Context Protocol (MCP) server.",
         "Defines async-native tool functions and allows external tools/agents to safely inspect databases and coordinate tasks.",
         "Exposes tools to MCP clients."
     ),
-    # SQL Schemas
     "supabase/schema.sql": (
         "Supabase-compatible PostgreSQL schema definitions.",
         "Defines tables, triggers, and views for the remote workspace database layout.",
@@ -298,7 +290,6 @@ CUSTOM_METADATA = {
         "Establishes SQLite database tables, indexes, busy timeouts, and WAL configuration.",
         "Used to initialize 'data/jat.db' database instances."
     ),
-    # Scripts
     "scripts/install.sh": (
         "Unix setup and installation shell script.",
         "Installs python requirements and configures NPM/PNPM frontend packages.",
@@ -319,7 +310,6 @@ CUSTOM_METADATA = {
         "Executes the python-based JAT commands on Windows machines.",
         "Windows equivalent of jat.sh."
     ),
-    # Configurations
     "config.example.json": (
         "Configuration template file.",
         "Details standard settings, recursion limits, default models, and provider keys for the agent workspace.",
@@ -378,18 +368,15 @@ CUSTOM_METADATA = {
 }
 
 def clean_name(path_or_file: str) -> str:
-    # Get base name without extension and convert to friendly title
     base = os.path.basename(path_or_file)
     name_no_ext = os.path.splitext(base)[0]
     friendly = name_no_ext.replace("_", " ").replace("-", " ").title()
     return friendly
 
 def get_metadata_for_file(filepath: str) -> tuple[str, str, str]:
-    # Match custom metadata first
     if filepath in CUSTOM_METADATA:
         return CUSTOM_METADATA[filepath]
 
-    # Otherwise, apply dynamic fallback rules based on directories and file types
     parts = filepath.split("/")
     filename = parts[-1]
     name_friendly = clean_name(filename)
@@ -425,7 +412,6 @@ def get_metadata_for_file(filepath: str) -> tuple[str, str, str]:
             f"Triggered by pytest or CI workflows to guarantee codebase stability without making active live API requests."
         )
 
-    # Generic extension-based fallback
     ext = os.path.splitext(filename)[1]
     if ext == ".py":
         return (
@@ -458,12 +444,20 @@ def get_metadata_for_file(filepath: str) -> tuple[str, str, str]:
         f"Used by relevant backend/frontend build or runtime engines."
     )
 
-# Writers for each file extension using 'summary' instead of 'filepath' as the first line
-def write_python_header(filepath: str, summary: str, responsibilities: str, coupling: str):
+def format_header_text(summary: str, what_it_does: str, how_it_fits_in: str) -> str:
+    # Build text using exact three-part labels
+    return (
+        f"Summary: {summary}\n\n"
+        f"What it does: {what_it_does}\n\n"
+        f"How it fits in: {how_it_fits_in}"
+    )
+
+def write_python_header(filepath: str, summary: str, what_it_does: str, how_it_fits_in: str):
     with open(filepath, "r", encoding="utf-8") as f:
         content = f.read()
 
-    header = f'"""\n{summary}\n\nResponsibilities:\n- {responsibilities}\n\nCoupling:\n- {coupling}\n"""'
+    body_text = format_header_text(summary, what_it_does, how_it_fits_in)
+    header = f'"""\n{body_text}\n"""'
     lines = content.splitlines(keepends=True)
     shebang_idx = -1
     coding_idx = -1
@@ -483,7 +477,6 @@ def write_python_header(filepath: str, summary: str, responsibilities: str, coup
         second_marker_pos = rest_str.find(marker, first_marker_pos + 3)
         if second_marker_pos != -1:
             new_rest = rest_str[second_marker_pos + 3:]
-            # Make sure to keep any leading newline if needed, but clean it up
             if new_rest.startswith("\n"):
                 new_rest = new_rest[1:]
             content = "".join(lines[:insert_at]) + header + "\n\n" + new_rest
@@ -495,11 +488,14 @@ def write_python_header(filepath: str, summary: str, responsibilities: str, coup
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(content)
 
-def write_ts_header(filepath: str, summary: str, responsibilities: str, coupling: str):
+def write_ts_header(filepath: str, summary: str, what_it_does: str, how_it_fits_in: str):
     with open(filepath, "r", encoding="utf-8") as f:
         content = f.read()
 
-    header = f'/**\n * {summary}\n *\n * Responsibilities:\n * {responsibilities}\n *\n * Coupling:\n * {coupling}\n */'
+    body_text = format_header_text(summary, what_it_does, how_it_fits_in)
+    lines = [f" * {line}" if line.strip() else " *" for line in body_text.splitlines()]
+    header = "/**\n" + "\n".join(lines) + "\n */"
+
     stripped = content.strip()
     if stripped.startswith("/**") or stripped.startswith("/*"):
         end_pos = content.find("*/")
@@ -516,11 +512,14 @@ def write_ts_header(filepath: str, summary: str, responsibilities: str, coupling
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(content)
 
-def write_css_header(filepath: str, summary: str, responsibilities: str, coupling: str):
+def write_css_header(filepath: str, summary: str, what_it_does: str, how_it_fits_in: str):
     with open(filepath, "r", encoding="utf-8") as f:
         content = f.read()
 
-    header = f'/* {summary}\n *\n * Responsibilities:\n * {responsibilities}\n *\n * Coupling:\n * {coupling}\n */'
+    body_text = format_header_text(summary, what_it_does, how_it_fits_in)
+    lines = [f" * {line}" if line.strip() else " *" for line in body_text.splitlines()]
+    header = "/*\n" + "\n".join(lines) + "\n */"
+
     stripped = content.strip()
     if stripped.startswith("/*"):
         end_pos = content.find("*/")
@@ -537,11 +536,14 @@ def write_css_header(filepath: str, summary: str, responsibilities: str, couplin
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(content)
 
-def write_html_header(filepath: str, summary: str, responsibilities: str, coupling: str):
+def write_html_header(filepath: str, summary: str, what_it_does: str, how_it_fits_in: str):
     with open(filepath, "r", encoding="utf-8") as f:
         content = f.read()
 
-    header = f'<!--\n  {summary}\n\n  Responsibilities:\n  {responsibilities}\n\n  Coupling:\n  {coupling}\n-->'
+    body_text = format_header_text(summary, what_it_does, how_it_fits_in)
+    lines = [f"  {line}" if line.strip() else "" for line in body_text.splitlines()]
+    header = "<!--\n" + "\n".join(lines) + "\n-->"
+
     stripped = content.strip()
     if stripped.startswith("<!--"):
         end_pos = content.find("-->")
@@ -558,20 +560,14 @@ def write_html_header(filepath: str, summary: str, responsibilities: str, coupli
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(content)
 
-def write_sh_header(filepath: str, summary: str, responsibilities: str, coupling: str):
+def write_sh_header(filepath: str, summary: str, what_it_does: str, how_it_fits_in: str):
     with open(filepath, "r", encoding="utf-8") as f:
         content = f.read()
 
-    header_lines = [
-        f"# {summary}",
-        "#",
-        f"# Responsibilities:",
-        f"# {responsibilities}",
-        "#",
-        f"# Coupling:",
-        f"# {coupling}"
-    ]
-    header = "\n".join(header_lines)
+    body_text = format_header_text(summary, what_it_does, how_it_fits_in)
+    lines = [f"# {line}" if line.strip() else "#" for line in body_text.splitlines()]
+    header = "\n".join(lines)
+
     lines = content.splitlines(keepends=True)
     shebang_idx = -1
     for i, line in enumerate(lines[:2]):
@@ -581,7 +577,6 @@ def write_sh_header(filepath: str, summary: str, responsibilities: str, coupling
     insert_at = shebang_idx + 1
     rest_lines = lines[insert_at:]
 
-    # Strip existing top comments if any
     while rest_lines and rest_lines[0].startswith("#"):
         rest_lines.pop(0)
 
@@ -589,20 +584,14 @@ def write_sh_header(filepath: str, summary: str, responsibilities: str, coupling
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(content)
 
-def write_bat_header(filepath: str, summary: str, responsibilities: str, coupling: str):
+def write_bat_header(filepath: str, summary: str, what_it_does: str, how_it_fits_in: str):
     with open(filepath, "r", encoding="utf-8") as f:
         content = f.read()
 
-    header_lines = [
-        f"REM {summary}",
-        "REM",
-        f"REM Responsibilities:",
-        f"REM {responsibilities}",
-        "REM",
-        f"REM Coupling:",
-        f"REM {coupling}"
-    ]
-    header = "\n".join(header_lines)
+    body_text = format_header_text(summary, what_it_does, how_it_fits_in)
+    lines = [f"REM {line}" if line.strip() else "REM" for line in body_text.splitlines()]
+    header = "\n".join(lines)
+
     lines = content.splitlines(keepends=True)
     echo_idx = -1
     for i, line in enumerate(lines[:2]):
@@ -619,20 +608,14 @@ def write_bat_header(filepath: str, summary: str, responsibilities: str, couplin
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(content)
 
-def write_sql_header(filepath: str, summary: str, responsibilities: str, coupling: str):
+def write_sql_header(filepath: str, summary: str, what_it_does: str, how_it_fits_in: str):
     with open(filepath, "r", encoding="utf-8") as f:
         content = f.read()
 
-    header_lines = [
-        f"-- {summary}",
-        "--",
-        f"-- Responsibilities:",
-        f"-- {responsibilities}",
-        "--",
-        f"-- Coupling:",
-        f"-- {coupling}"
-    ]
-    header = "\n".join(header_lines)
+    body_text = format_header_text(summary, what_it_does, how_it_fits_in)
+    lines = [f"-- {line}" if line.strip() else "--" for line in body_text.splitlines()]
+    header = "\n".join(lines)
+
     lines = content.splitlines(keepends=True)
     while lines and lines[0].startswith("--"):
         lines.pop(0)
@@ -641,20 +624,14 @@ def write_sql_header(filepath: str, summary: str, responsibilities: str, couplin
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(content)
 
-def write_toml_header(filepath: str, summary: str, responsibilities: str, coupling: str):
+def write_toml_header(filepath: str, summary: str, what_it_does: str, how_it_fits_in: str):
     with open(filepath, "r", encoding="utf-8") as f:
         content = f.read()
 
-    header_lines = [
-        f"# {summary}",
-        "#",
-        f"# Responsibilities:",
-        f"# {responsibilities}",
-        "#",
-        f"# Coupling:",
-        f"# {coupling}"
-    ]
-    header = "\n".join(header_lines)
+    body_text = format_header_text(summary, what_it_does, how_it_fits_in)
+    lines = [f"# {line}" if line.strip() else "#" for line in body_text.splitlines()]
+    header = "\n".join(lines)
+
     lines = content.splitlines(keepends=True)
     while lines and lines[0].startswith("#"):
         lines.pop(0)
@@ -663,7 +640,7 @@ def write_toml_header(filepath: str, summary: str, responsibilities: str, coupli
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(content)
 
-def write_json_header(filepath: str, summary: str, responsibilities: str, coupling: str):
+def write_json_header(filepath: str, summary: str, what_it_does: str, how_it_fits_in: str):
     with open(filepath, "r", encoding="utf-8") as f:
         content = f.read()
 
@@ -673,14 +650,18 @@ def write_json_header(filepath: str, summary: str, responsibilities: str, coupli
         print(f"Error parsing JSON in {filepath}: {e}")
         return
 
-    desc_val = f"1. {summary} 2. {responsibilities} 3. {coupling}"
+    desc_val = [
+        f"Summary: {summary}",
+        f"What it does: {what_it_does}",
+        f"How it fits in: {how_it_fits_in}"
+    ]
+
     if isinstance(data, dict):
         new_data = {"_description": desc_val}
         for k, v in data.items():
             if k != "_description":
                 new_data[k] = v
 
-        # Detect indentation
         indent = 2
         if "  " in content:
             indent = 2
@@ -692,27 +673,27 @@ def write_json_header(filepath: str, summary: str, responsibilities: str, coupli
             f.write(new_content)
 
 def apply_header_to_file(filepath: str):
-    summary, resp, coup = get_metadata_for_file(filepath)
+    summary, what_it_does, how_it_fits_in = get_metadata_for_file(filepath)
     ext = os.path.splitext(filepath)[1]
 
     if ext == ".py":
-        write_python_header(filepath, summary, resp, coup)
+        write_python_header(filepath, summary, what_it_does, how_it_fits_in)
     elif ext in [".ts", ".tsx", ".js", ".mjs"]:
-        write_ts_header(filepath, summary, resp, coup)
+        write_ts_header(filepath, summary, what_it_does, how_it_fits_in)
     elif ext == ".css":
-        write_css_header(filepath, summary, resp, coup)
+        write_css_header(filepath, summary, what_it_does, how_it_fits_in)
     elif ext == ".html":
-        write_html_header(filepath, summary, resp, coup)
+        write_html_header(filepath, summary, what_it_does, how_it_fits_in)
     elif ext == ".sh":
-        write_sh_header(filepath, summary, resp, coup)
+        write_sh_header(filepath, summary, what_it_does, how_it_fits_in)
     elif ext == ".bat":
-        write_bat_header(filepath, summary, resp, coup)
+        write_bat_header(filepath, summary, what_it_does, how_it_fits_in)
     elif ext == ".sql":
-        write_sql_header(filepath, summary, resp, coup)
+        write_sql_header(filepath, summary, what_it_does, how_it_fits_in)
     elif ext == ".toml":
-        write_toml_header(filepath, summary, resp, coup)
+        write_toml_header(filepath, summary, what_it_does, how_it_fits_in)
     elif ext == ".json":
-        write_json_header(filepath, summary, resp, coup)
+        write_json_header(filepath, summary, what_it_does, how_it_fits_in)
 
 def main():
     print("Scanning repository for hand-authored source and config files...")
@@ -724,6 +705,10 @@ def main():
 
         for file in files:
             if file in LOCK_FILES:
+                continue
+
+            # Skip backup and editor files
+            if file.endswith((".bak", ".orig", ".old")) or file.endswith("~") or file.startswith("."):
                 continue
 
             filepath = os.path.join(root, file)

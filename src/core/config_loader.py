@@ -1,12 +1,11 @@
 """
-Configuration loader with in-memory caching.
+Summary: Configuration loader with in-memory caching.
 
-Responsibilities:
-- Loads and caches database accounts and global configurations to eliminate redundant disk reads.
+What it does: Loads and caches database accounts and global configurations to eliminate redundant disk reads.
 
-Coupling:
-- Used by startup initialization and account pool loaders.
+How it fits in: Used by startup initialization and account pool loaders.
 """
+
 
 
 from __future__ import annotations

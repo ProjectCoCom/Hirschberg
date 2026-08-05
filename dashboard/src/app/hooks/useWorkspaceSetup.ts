@@ -1,12 +1,11 @@
 /**
- * Custom React hook 'Useworkspacesetup'.
+ * Summary: Custom React hook 'Useworkspacesetup'.
  *
- * Responsibilities:
- * Abstracts state management, data polling, or backend API actions for 'Useworkspacesetup' into a reusable hook.
+ * What it does: Abstracts state management, data polling, or backend API actions for 'Useworkspacesetup' into a reusable hook.
  *
- * Coupling:
- * Consumed by React UI components inside the 'dashboard/src/components' component tree.
+ * How it fits in: Consumed by React UI components inside the 'dashboard/src/components' component tree.
  */
+
 
 
 import type { WorkspaceSetupSnapshot, WorkspaceSetupStepId } from "@octogent/core";

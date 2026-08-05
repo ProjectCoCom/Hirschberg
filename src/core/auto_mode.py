@@ -1,12 +1,11 @@
 """
-Auto-run orchestrator loop for standalone agent sessions.
+Summary: Auto-run orchestrator loop for standalone agent sessions.
 
-Responsibilities:
-- Parses goals, maintains loop state, and automatically proceeds with agent instructions.
+What it does: Parses goals, maintains loop state, and automatically proceeds with agent instructions.
 
-Coupling:
-- Integrates with 'src/core/ai_interface.py'.
+How it fits in: Integrates with 'src/core/ai_interface.py'.
 """
+
 
 
 from __future__ import annotations

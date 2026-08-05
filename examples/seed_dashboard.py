@@ -1,12 +1,11 @@
 """
-Dashboard seeding script.
+Summary: Dashboard seeding script.
 
-Responsibilities:
-- Seeds SQLite databases with initial active worker sessions, budgets, and mock tasks for testing dashboard renders.
+What it does: Seeds SQLite databases with initial active worker sessions, budgets, and mock tasks for testing dashboard renders.
 
-Coupling:
-- Used for development or manual verifications.
+How it fits in: Used for development or manual verifications.
 """
+
 
 
 # Usage: python examples/seed_dashboard.py

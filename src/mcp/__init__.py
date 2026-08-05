@@ -1,10 +1,8 @@
 """
-Python logic module '  Init  '.
+Summary: Python logic module '  Init  '.
 
-Responsibilities:
-- Provides backend utility operations and core logical helper interfaces for '  Init  '.
+What it does: Provides backend utility operations and core logical helper interfaces for '  Init  '.
 
-Coupling:
-- Imported and utilized by surrounding backend structures.
+How it fits in: Imported and utilized by surrounding backend structures.
 """
 

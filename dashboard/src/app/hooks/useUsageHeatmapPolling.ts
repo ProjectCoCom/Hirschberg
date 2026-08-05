@@ -1,12 +1,11 @@
 /**
- * Custom React hook 'Useusageheatmappolling'.
+ * Summary: Custom React hook 'Useusageheatmappolling'.
  *
- * Responsibilities:
- * Abstracts state management, data polling, or backend API actions for 'Useusageheatmappolling' into a reusable hook.
+ * What it does: Abstracts state management, data polling, or backend API actions for 'Useusageheatmappolling' into a reusable hook.
  *
- * Coupling:
- * Consumed by React UI components inside the 'dashboard/src/components' component tree.
+ * How it fits in: Consumed by React UI components inside the 'dashboard/src/components' component tree.
  */
+
 
 
 import { buildUsageHeatmapUrl } from "../../runtime/runtimeEndpoints";

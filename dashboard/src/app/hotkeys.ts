@@ -1,12 +1,11 @@
 /**
- * Frontend JavaScript/TypeScript module 'Hotkeys'.
+ * Summary: Frontend JavaScript/TypeScript module 'Hotkeys'.
  *
- * Responsibilities:
- * Provides application-level UI helper functions, adapters, or configurations for 'Hotkeys'.
+ * What it does: Provides application-level UI helper functions, adapters, or configurations for 'Hotkeys'.
  *
- * Coupling:
- * Used to build or bundle the React dashboard application.
+ * How it fits in: Used to build or bundle the React dashboard application.
  */
+
 
 
 import { PRIMARY_NAV_MAX, type PrimaryNavIndex } from "./constants";

@@ -1,12 +1,11 @@
 /**
- * Frontend JavaScript/TypeScript module 'Types'.
+ * Summary: Frontend JavaScript/TypeScript module 'Types'.
  *
- * Responsibilities:
- * Provides application-level UI helper functions, adapters, or configurations for 'Types'.
+ * What it does: Provides application-level UI helper functions, adapters, or configurations for 'Types'.
  *
- * Coupling:
- * Used to build or bundle the React dashboard application.
+ * How it fits in: Used to build or bundle the React dashboard application.
  */
+
 
 
 import type {

@@ -1,10 +1,9 @@
--- Supabase-compatible PostgreSQL schema definitions.
+-- Summary: Supabase-compatible PostgreSQL schema definitions.
 --
--- Responsibilities:
--- Defines tables, triggers, and views for the remote workspace database layout.
+-- What it does: Defines tables, triggers, and views for the remote workspace database layout.
 --
--- Coupling:
--- Kept for reference and documentation of schema structure.
+-- How it fits in: Kept for reference and documentation of schema structure.
+
 
 
 

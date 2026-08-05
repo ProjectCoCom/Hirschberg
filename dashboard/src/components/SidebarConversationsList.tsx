@@ -1,12 +1,11 @@
 /**
- * React UI component 'Sidebarconversationslist'.
+ * Summary: React UI component 'Sidebarconversationslist'.
  *
- * Responsibilities:
- * Renders the 'Sidebarconversationslist' dashboard interface, manages localized state, and handles user actions.
+ * What it does: Renders the 'Sidebarconversationslist' dashboard interface, manages localized state, and handles user actions.
  *
- * Coupling:
- * Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
+ * How it fits in: Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
  */
+
 
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";

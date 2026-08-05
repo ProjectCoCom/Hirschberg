@@ -1,12 +1,11 @@
 """
-Multi-task parallel workflow engine.
+Summary: Multi-task parallel workflow engine.
 
-Responsibilities:
-- Orchestrates parallel DAG task executions, manages integration branches, and coordinates multi-agent merges.
+What it does: Orchestrates parallel DAG task executions, manages integration branches, and coordinates multi-agent merges.
 
-Coupling:
-- Orchestrates coordinator, AutoMerge, and QAReviewer.
+How it fits in: Orchestrates coordinator, AutoMerge, and QAReviewer.
 """
+
 
 
 from __future__ import annotations

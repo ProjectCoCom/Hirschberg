@@ -1,12 +1,11 @@
 """
-Core application configuration loaded from the environment.
+Summary: Core application configuration loaded from the environment.
 
-Responsibilities:
-- Retrieves and exposes configurations like database URL, GitHub keys, and security credentials.
+What it does: Retrieves and exposes configurations like database URL, GitHub keys, and security credentials.
 
-Coupling:
-- Referenced by server launch and backend clients to get operational parameters.
+How it fits in: Referenced by server launch and backend clients to get operational parameters.
 """
+
 
 
 import logging

@@ -1,12 +1,11 @@
 /**
- * Frontend JavaScript/TypeScript module 'Constants'.
+ * Summary: Frontend JavaScript/TypeScript module 'Constants'.
  *
- * Responsibilities:
- * Provides application-level UI helper functions, adapters, or configurations for 'Constants'.
+ * What it does: Provides application-level UI helper functions, adapters, or configurations for 'Constants'.
  *
- * Coupling:
- * Used to build or bundle the React dashboard application.
+ * How it fits in: Used to build or bundle the React dashboard application.
  */
+
 
 
 export const CODEX_USAGE_SCAN_INTERVAL_MS = 600_000;

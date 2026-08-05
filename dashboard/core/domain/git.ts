@@ -1,12 +1,11 @@
 /**
- * Domain model definitions for 'Git'.
+ * Summary: Domain model definitions for 'Git'.
  *
- * Responsibilities:
- * Defines TypeScript interfaces, validation types, and helper algorithms for 'Git' model states.
+ * What it does: Defines TypeScript interfaces, validation types, and helper algorithms for 'Git' model states.
  *
- * Coupling:
- * Core domain logic consumed by application ports, adapters, and UI presentation views.
+ * How it fits in: Core domain logic consumed by application ports, adapters, and UI presentation views.
  */
+
 
 
 import type { TentacleWorkspaceMode } from "./terminal";

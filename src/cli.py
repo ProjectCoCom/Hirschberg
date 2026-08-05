@@ -1,12 +1,11 @@
 """
-CLI entrypoint for running tasks and workflows.
+Summary: CLI entrypoint for running tasks and workflows.
 
-Responsibilities:
-- Handles command-line arguments, triggers workflow plan dispatches, and initializes the local environment.
+What it does: Handles command-line arguments, triggers workflow plan dispatches, and initializes the local environment.
 
-Coupling:
-- Depends on 'src/core/plan_executor.py' and 'src/core/workflow_engine.py' to run CLI operations.
+How it fits in: Depends on 'src/core/plan_executor.py' and 'src/core/workflow_engine.py' to run CLI operations.
 """
+
 
 
 from __future__ import annotations

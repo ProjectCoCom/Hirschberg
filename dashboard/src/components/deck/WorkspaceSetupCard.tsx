@@ -1,12 +1,11 @@
 /**
- * React UI component 'Workspacesetupcard'.
+ * Summary: React UI component 'Workspacesetupcard'.
  *
- * Responsibilities:
- * Renders the 'Workspacesetupcard' dashboard interface, manages localized state, and handles user actions.
+ * What it does: Renders the 'Workspacesetupcard' dashboard interface, manages localized state, and handles user actions.
  *
- * Coupling:
- * Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
+ * How it fits in: Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
  */
+
 
 
 import type { WorkspaceSetupSnapshot, WorkspaceSetupStepId } from "@octogent/core";

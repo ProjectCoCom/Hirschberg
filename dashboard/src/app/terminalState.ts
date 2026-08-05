@@ -1,12 +1,11 @@
 /**
- * Frontend JavaScript/TypeScript module 'Terminalstate'.
+ * Summary: Frontend JavaScript/TypeScript module 'Terminalstate'.
  *
- * Responsibilities:
- * Provides application-level UI helper functions, adapters, or configurations for 'Terminalstate'.
+ * What it does: Provides application-level UI helper functions, adapters, or configurations for 'Terminalstate'.
  *
- * Coupling:
- * Used to build or bundle the React dashboard application.
+ * How it fits in: Used to build or bundle the React dashboard application.
  */
+
 
 
 export const retainActiveTerminalIds = (

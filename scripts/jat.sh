@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
-# Unix CLI command wrapper.
+# Summary: Unix CLI command wrapper.
 #
-# Responsibilities:
-# Executes the python-based JAT commands on Unix machines.
+# What it does: Executes the python-based JAT commands on Unix machines.
 #
-# Coupling:
-# CLI command script.
+# How it fits in: CLI command script.
+
 
 
 set -e

@@ -1,12 +1,11 @@
 """
-Python logic module 'Github'.
+Summary: Python logic module 'Github'.
 
-Responsibilities:
-- Provides backend utility operations and core logical helper interfaces for 'Github'.
+What it does: Provides backend utility operations and core logical helper interfaces for 'Github'.
 
-Coupling:
-- Imported and utilized by surrounding backend structures.
+How it fits in: Imported and utilized by surrounding backend structures.
 """
+
 
 
 from __future__ import annotations

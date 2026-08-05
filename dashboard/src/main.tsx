@@ -1,12 +1,11 @@
 /**
- * Frontend JavaScript/TypeScript module 'Main'.
+ * Summary: Frontend JavaScript/TypeScript module 'Main'.
  *
- * Responsibilities:
- * Provides application-level UI helper functions, adapters, or configurations for 'Main'.
+ * What it does: Provides application-level UI helper functions, adapters, or configurations for 'Main'.
  *
- * Coupling:
- * Used to build or bundle the React dashboard application.
+ * How it fits in: Used to build or bundle the React dashboard application.
  */
+
 
 
 import { StrictMode } from "react";

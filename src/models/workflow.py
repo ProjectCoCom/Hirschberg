@@ -1,12 +1,11 @@
 """
-Python logic module 'Workflow'.
+Summary: Python logic module 'Workflow'.
 
-Responsibilities:
-- Provides backend utility operations and core logical helper interfaces for 'Workflow'.
+What it does: Provides backend utility operations and core logical helper interfaces for 'Workflow'.
 
-Coupling:
-- Imported and utilized by surrounding backend structures.
+How it fits in: Imported and utilized by surrounding backend structures.
 """
+
 
 
 from __future__ import annotations

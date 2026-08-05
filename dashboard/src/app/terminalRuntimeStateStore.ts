@@ -1,12 +1,11 @@
 /**
- * Frontend JavaScript/TypeScript module 'Terminalruntimestatestore'.
+ * Summary: Frontend JavaScript/TypeScript module 'Terminalruntimestatestore'.
  *
- * Responsibilities:
- * Provides application-level UI helper functions, adapters, or configurations for 'Terminalruntimestatestore'.
+ * What it does: Provides application-level UI helper functions, adapters, or configurations for 'Terminalruntimestatestore'.
  *
- * Coupling:
- * Used to build or bundle the React dashboard application.
+ * How it fits in: Used to build or bundle the React dashboard application.
  */
+
 
 
 export type TerminalRuntimeStateStore = {

@@ -1,12 +1,11 @@
 """
-Task coordinator for running multi-step agent workflows.
+Summary: Task coordinator for running multi-step agent workflows.
 
-Responsibilities:
-- Coordinates task runs, creates git branches, builds prompts, handles pool exhaustions, and notifies orchestrators.
+What it does: Coordinates task runs, creates git branches, builds prompts, handles pool exhaustions, and notifies orchestrators.
 
-Coupling:
-- Heart of task-dispatch system; couples with WorkflowEngine.
+How it fits in: Heart of task-dispatch system; couples with WorkflowEngine.
 """
+
 
 
 from __future__ import annotations

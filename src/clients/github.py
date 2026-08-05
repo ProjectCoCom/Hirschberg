@@ -1,12 +1,11 @@
 """
-High-level GitHub API client wrapper.
+Summary: High-level GitHub API client wrapper.
 
-Responsibilities:
-- Handles branch management, PR creation/merging, auto-retries for 5xx/429s, and file manipulation on GitHub.
+What it does: Handles branch management, PR creation/merging, auto-retries for 5xx/429s, and file manipulation on GitHub.
 
-Coupling:
-- Tightly coupled to GitHub API endpoints and utilized across core engines.
+How it fits in: Tightly coupled to GitHub API endpoints and utilized across core engines.
 """
+
 
 
 from __future__ import annotations

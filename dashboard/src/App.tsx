@@ -1,12 +1,11 @@
 /**
- * Frontend JavaScript/TypeScript module 'App'.
+ * Summary: Frontend JavaScript/TypeScript module 'App'.
  *
- * Responsibilities:
- * Provides application-level UI helper functions, adapters, or configurations for 'App'.
+ * What it does: Provides application-level UI helper functions, adapters, or configurations for 'App'.
  *
- * Coupling:
- * Used to build or bundle the React dashboard application.
+ * How it fits in: Used to build or bundle the React dashboard application.
  */
+
 
 
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";

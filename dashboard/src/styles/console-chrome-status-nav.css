@@ -1,11 +1,11 @@
-/* Custom CSS style sheet 'Console Chrome Status Nav'.
+/*
+ * Summary: Custom CSS style sheet 'Console Chrome Status Nav'.
  *
- * Responsibilities:
- * Specifies UI class designs, responsive layouts, animations, and color scheme tokens.
+ * What it does: Specifies UI class designs, responsive layouts, animations, and color scheme tokens.
  *
- * Coupling:
- * Loaded by 'main.tsx' or 'App.tsx' to style React dashboard views.
+ * How it fits in: Loaded by 'main.tsx' or 'App.tsx' to style React dashboard views.
  */
+
 
 
 .console-shell {

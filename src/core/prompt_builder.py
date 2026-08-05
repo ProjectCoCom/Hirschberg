@@ -1,12 +1,11 @@
 """
-Builder for agent system and user prompts with template caching.
+Summary: Builder for agent system and user prompts with template caching.
 
-Responsibilities:
-- Interpolates rules, anti-patterns, and environment details into an integrated agent prompt.
+What it does: Interpolates rules, anti-patterns, and environment details into an integrated agent prompt.
 
-Coupling:
-- Core component for session initialization.
+How it fits in: Core component for session initialization.
 """
+
 
 
 from __future__ import annotations

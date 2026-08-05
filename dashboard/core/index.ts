@@ -1,12 +1,11 @@
 /**
- * Frontend JavaScript/TypeScript module 'Index'.
+ * Summary: Frontend JavaScript/TypeScript module 'Index'.
  *
- * Responsibilities:
- * Provides application-level UI helper functions, adapters, or configurations for 'Index'.
+ * What it does: Provides application-level UI helper functions, adapters, or configurations for 'Index'.
  *
- * Coupling:
- * Used to build or bundle the React dashboard application.
+ * How it fits in: Used to build or bundle the React dashboard application.
  */
+
 
 
 export * from "./application/buildTerminalList";

@@ -1,12 +1,11 @@
 /**
- * React UI component 'Confirmationdialog'.
+ * Summary: React UI component 'Confirmationdialog'.
  *
- * Responsibilities:
- * Renders the 'Confirmationdialog' dashboard interface, manages localized state, and handles user actions.
+ * What it does: Renders the 'Confirmationdialog' dashboard interface, manages localized state, and handles user actions.
  *
- * Coupling:
- * Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
+ * How it fits in: Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
  */
+
 
 
 import type { ReactNode } from "react";

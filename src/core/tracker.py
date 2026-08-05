@@ -1,12 +1,11 @@
 """
-Realtime state and activity tracker.
+Summary: Realtime state and activity tracker.
 
-Responsibilities:
-- Maintains pub/sub mechanism to broadcast session updates and writes activity logs using custom database indexes.
+What it does: Maintains pub/sub mechanism to broadcast session updates and writes activity logs using custom database indexes.
 
-Coupling:
-- Supplies real-time events to React dashboard.
+How it fits in: Supplies real-time events to React dashboard.
 """
+
 
 
 from __future__ import annotations

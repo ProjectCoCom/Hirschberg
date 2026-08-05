@@ -1,12 +1,11 @@
 """
-API router for workspace settings.
+Summary: API router for workspace settings.
 
-Responsibilities:
-- Saves and retrieves global settings, recursion limits, and system configurations.
+What it does: Saves and retrieves global settings, recursion limits, and system configurations.
 
-Coupling:
-- Reads/writes settings via local database.
+How it fits in: Reads/writes settings via local database.
 """
+
 
 
 from __future__ import annotations

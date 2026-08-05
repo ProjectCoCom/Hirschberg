@@ -1,12 +1,11 @@
 /**
- * Domain model definitions for 'Completionsound'.
+ * Summary: Domain model definitions for 'Completionsound'.
  *
- * Responsibilities:
- * Defines TypeScript interfaces, validation types, and helper algorithms for 'Completionsound' model states.
+ * What it does: Defines TypeScript interfaces, validation types, and helper algorithms for 'Completionsound' model states.
  *
- * Coupling:
- * Core domain logic consumed by application ports, adapters, and UI presentation views.
+ * How it fits in: Core domain logic consumed by application ports, adapters, and UI presentation views.
  */
+
 
 
 export const TERMINAL_COMPLETION_SOUND_IDS = [

@@ -1,12 +1,11 @@
 /**
- * React UI component 'Sidebarpromptslist'.
+ * Summary: React UI component 'Sidebarpromptslist'.
  *
- * Responsibilities:
- * Renders the 'Sidebarpromptslist' dashboard interface, manages localized state, and handles user actions.
+ * What it does: Renders the 'Sidebarpromptslist' dashboard interface, manages localized state, and handles user actions.
  *
- * Coupling:
- * Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
+ * How it fits in: Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
  */
+
 
 
 import { useEffect, useMemo, useState } from "react";

@@ -1,12 +1,11 @@
 /**
- * React UI component 'Settingsprimaryview'.
+ * Summary: React UI component 'Settingsprimaryview'.
  *
- * Responsibilities:
- * Renders the 'Settingsprimaryview' dashboard interface, manages localized state, and handles user actions.
+ * What it does: Renders the 'Settingsprimaryview' dashboard interface, manages localized state, and handles user actions.
  *
- * Coupling:
- * Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
+ * How it fits in: Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
  */
+
 
 
 import { useCallback, useEffect, useState } from "react";

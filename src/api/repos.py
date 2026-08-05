@@ -1,12 +1,11 @@
 """
-API router for workspace repository metadata.
+Summary: API router for workspace repository metadata.
 
-Responsibilities:
-- Manages target repo details and configurations for the agent runtime.
+What it does: Manages target repo details and configurations for the agent runtime.
 
-Coupling:
-- Interacts with database.
+How it fits in: Interacts with database.
 """
+
 
 
 from __future__ import annotations

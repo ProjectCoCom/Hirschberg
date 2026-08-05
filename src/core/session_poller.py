@@ -1,12 +1,11 @@
 """
-Shared adaptive polling engine.
+Summary: Shared adaptive polling engine.
 
-Responsibilities:
-- Centralizes polling for both tasks and standalone sessions using adaptive backoff and jitter.
+What it does: Centralizes polling for both tasks and standalone sessions using adaptive backoff and jitter.
 
-Coupling:
-- Direct replacement of scattered thread-loops.
+How it fits in: Direct replacement of scattered thread-loops.
 """
+
 
 
 from __future__ import annotations

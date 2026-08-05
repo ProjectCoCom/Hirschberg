@@ -1,12 +1,11 @@
 """
-Feedback relay loop between workers and orchestrators.
+Summary: Feedback relay loop between workers and orchestrators.
 
-Responsibilities:
-- Coordinates multi-turn message exchanges when a worker session requires interactive feedback.
+What it does: Coordinates multi-turn message exchanges when a worker session requires interactive feedback.
 
-Coupling:
-- Used by 'src/core/coordinator.py'.
+How it fits in: Used by 'src/core/coordinator.py'.
 """
+
 
 
 from __future__ import annotations

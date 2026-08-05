@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
-# Unix setup and installation shell script.
+# Summary: Unix setup and installation shell script.
 #
-# Responsibilities:
-# Installs python requirements and configures NPM/PNPM frontend packages.
+# What it does: Installs python requirements and configures NPM/PNPM frontend packages.
 #
-# Coupling:
-# Main environment setup script.
+# How it fits in: Main environment setup script.
+
 
 
 set -e

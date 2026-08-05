@@ -1,12 +1,11 @@
 """
-XML string helpers and raw templates.
+Summary: XML string helpers and raw templates.
 
-Responsibilities:
-- Holds hardcoded fallbacks and templates for quick XML construction.
+What it does: Holds hardcoded fallbacks and templates for quick XML construction.
 
-Coupling:
-- Used by JDocs.
+How it fits in: Used by JDocs.
 """
+
 
 
 from __future__ import annotations

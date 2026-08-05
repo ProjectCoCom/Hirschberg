@@ -1,12 +1,11 @@
 """
-API router for parsing and managing agent workflow plans.
+Summary: API router for parsing and managing agent workflow plans.
 
-Responsibilities:
-- Exposes endpoints for plan generation, DAG parsing, and standing orchestrator plan approvals.
+What it does: Exposes endpoints for plan generation, DAG parsing, and standing orchestrator plan approvals.
 
-Coupling:
-- Connects with 'src/core/workflow_engine.py' and database.
+How it fits in: Connects with 'src/core/workflow_engine.py' and database.
 """
+
 
 
 from __future__ import annotations

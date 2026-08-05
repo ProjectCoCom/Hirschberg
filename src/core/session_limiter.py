@@ -1,12 +1,11 @@
 """
-Session rate and limit guard.
+Summary: Session rate and limit guard.
 
-Responsibilities:
-- Enforces max durations and active session counts to avoid runaway loops.
+What it does: Enforces max durations and active session counts to avoid runaway loops.
 
-Coupling:
-- Integrates with session execution loops.
+How it fits in: Integrates with session execution loops.
 """
+
 
 
 from __future__ import annotations

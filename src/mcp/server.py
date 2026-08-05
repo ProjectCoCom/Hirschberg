@@ -1,12 +1,11 @@
 """
-Model Context Protocol (MCP) server.
+Summary: Model Context Protocol (MCP) server.
 
-Responsibilities:
-- Defines async-native tool functions and allows external tools/agents to safely inspect databases and coordinate tasks.
+What it does: Defines async-native tool functions and allows external tools/agents to safely inspect databases and coordinate tasks.
 
-Coupling:
-- Exposes tools to MCP clients.
+How it fits in: Exposes tools to MCP clients.
 """
+
 
 
 from __future__ import annotations

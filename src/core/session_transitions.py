@@ -1,12 +1,11 @@
 """
-Shared session transition and state handling.
+Summary: Python logic module 'Session Transitions'.
 
-Responsibilities:
-- Processes Jules session state transitions, stores activities, and sends orchestrator notifications.
+What it does: Provides backend utility operations and core logical helper interfaces for 'Session Transitions'.
 
-Coupling:
-- Couples with `SessionPoller`, `ContextStore`, and `orchestrator_relay.py`.
+How it fits in: Imported and utilized by surrounding backend structures.
 """
+
 
 from __future__ import annotations
 

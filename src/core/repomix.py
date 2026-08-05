@@ -1,12 +1,11 @@
 """
-Repomix file tree compiler.
+Summary: Repomix file tree compiler.
 
-Responsibilities:
-- Packages files in the workspace into a structured format for LLM processing.
+What it does: Packages files in the workspace into a structured format for LLM processing.
 
-Coupling:
-- Used by context compilation tools.
+How it fits in: Used by context compilation tools.
 """
+
 
 
 from __future__ import annotations

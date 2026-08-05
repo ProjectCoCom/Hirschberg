@@ -1,12 +1,11 @@
 /**
- * React UI component 'Prompt Templates'.
+ * Summary: React UI component 'Prompt Templates'.
  *
- * Responsibilities:
- * Renders the 'Prompt Templates' dashboard interface, manages localized state, and handles user actions.
+ * What it does: Renders the 'Prompt Templates' dashboard interface, manages localized state, and handles user actions.
  *
- * Coupling:
- * Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
+ * How it fits in: Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
  */
+
 
 
 export type PromptCategory = "general" | "skill";

@@ -1,12 +1,11 @@
 """
-Structured interface for LLM calls.
+Summary: Structured interface for LLM calls.
 
-Responsibilities:
-- Executes non-streaming and streaming LLM completion requests across various model backends.
+What it does: Executes non-streaming and streaming LLM completion requests across various model backends.
 
-Coupling:
-- Relies on 'src/clients/ai_providers.py'.
+How it fits in: Relies on 'src/clients/ai_providers.py'.
 """
+
 
 
 from __future__ import annotations

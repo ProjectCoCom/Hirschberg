@@ -1,12 +1,11 @@
 """
-API router for model providers (e.g., Anthropic, OpenAI).
+Summary: API router for model providers (e.g., Anthropic, OpenAI).
 
-Responsibilities:
-- Lists available models, verifies API keys, and checks provider health.
+What it does: Lists available models, verifies API keys, and checks provider health.
 
-Coupling:
-- Uses 'src/clients/ai_providers.py'.
+How it fits in: Uses 'src/clients/ai_providers.py'.
 """
+
 
 
 from __future__ import annotations

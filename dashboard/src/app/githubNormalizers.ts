@@ -1,12 +1,11 @@
 /**
- * Frontend JavaScript/TypeScript module 'Githubnormalizers'.
+ * Summary: Frontend JavaScript/TypeScript module 'Githubnormalizers'.
  *
- * Responsibilities:
- * Provides application-level UI helper functions, adapters, or configurations for 'Githubnormalizers'.
+ * What it does: Provides application-level UI helper functions, adapters, or configurations for 'Githubnormalizers'.
  *
- * Coupling:
- * Used to build or bundle the React dashboard application.
+ * How it fits in: Used to build or bundle the React dashboard application.
  */
+
 
 
 import { asNumber, asRecord, asString } from "@octogent/core";

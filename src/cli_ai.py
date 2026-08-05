@@ -1,12 +1,11 @@
 """
-Interactive AI-assisted CLI command runner.
+Summary: Interactive AI-assisted CLI command runner.
 
-Responsibilities:
-- Implements command-line AI-assistant interactions, streaming completions, and workspace context parsing.
+What it does: Implements command-line AI-assistant interactions, streaming completions, and workspace context parsing.
 
-Coupling:
-- Relies on 'src/core/ai_interface.py' to chat and stream responses to the CLI.
+How it fits in: Relies on 'src/core/ai_interface.py' to chat and stream responses to the CLI.
 """
+
 
 
 from __future__ import annotations

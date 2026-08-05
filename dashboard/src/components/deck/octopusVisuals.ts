@@ -1,12 +1,11 @@
 /**
- * React UI component 'Octopusvisuals'.
+ * Summary: React UI component 'Octopusvisuals'.
  *
- * Responsibilities:
- * Renders the 'Octopusvisuals' dashboard interface, manages localized state, and handles user actions.
+ * What it does: Renders the 'Octopusvisuals' dashboard interface, manages localized state, and handles user actions.
  *
- * Coupling:
- * Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
+ * How it fits in: Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
  */
+
 
 
 import type { DeckTentacleSummary } from "@octogent/core";

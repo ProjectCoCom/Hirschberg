@@ -1,12 +1,11 @@
 """
-System-wide custom exception classes.
+Summary: System-wide custom exception classes.
 
-Responsibilities:
-- Defines standard error classes (e.g., JATException, AccountPoolExhausted) to organize error handling.
+What it does: Defines standard error classes (e.g., JATException, AccountPoolExhausted) to organize error handling.
 
-Coupling:
-- Imported by core managers, clients, and API handlers to raise and catch exceptions consistently.
+How it fits in: Imported by core managers, clients, and API handlers to raise and catch exceptions consistently.
 """
+
 
 
 class JatError(Exception):

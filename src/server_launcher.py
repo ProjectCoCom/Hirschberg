@@ -1,12 +1,11 @@
 """
-Launcher script to spin up the API server.
+Summary: Launcher script to spin up the API server.
 
-Responsibilities:
-- Configures Uvicorn parameters, resolves host/port settings, and starts the FastAPI server instance.
+What it does: Configures Uvicorn parameters, resolves host/port settings, and starts the FastAPI server instance.
 
-Coupling:
-- Depends on 'src/api/server.py' to run the actual FastAPI app.
+How it fits in: Depends on 'src/api/server.py' to run the actual FastAPI app.
 """
+
 
 
 from __future__ import annotations

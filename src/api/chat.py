@@ -1,12 +1,11 @@
 """
-API router for interactive chat sessions.
+Summary: API router for interactive chat sessions.
 
-Responsibilities:
-- Manages chat message streams, historical message lookups, and direct user-facing AI chat completions.
+What it does: Manages chat message streams, historical message lookups, and direct user-facing AI chat completions.
 
-Coupling:
-- Uses 'src/core/conversation.py' and 'src/core/ai_interface.py'.
+How it fits in: Uses 'src/core/conversation.py' and 'src/core/ai_interface.py'.
 """
+
 
 
 from __future__ import annotations

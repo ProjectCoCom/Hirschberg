@@ -1,12 +1,11 @@
 /**
- * React UI component 'Activityprimaryview'.
+ * Summary: React UI component 'Activityprimaryview'.
  *
- * Responsibilities:
- * Renders the 'Activityprimaryview' dashboard interface, manages localized state, and handles user actions.
+ * What it does: Renders the 'Activityprimaryview' dashboard interface, manages localized state, and handles user actions.
  *
- * Coupling:
- * Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
+ * How it fits in: Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'.
  */
+
 
 
 import { useEffect, useState, type ComponentProps } from "react";

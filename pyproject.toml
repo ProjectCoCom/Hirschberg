@@ -1,10 +1,9 @@
-# Python project metadata and dev dependency settings.
+# Summary: Python project metadata and dev dependency settings.
 #
-# Responsibilities:
-# Defines project dependencies, packaging configuration, entrypoints, and Pytest/Ruff environments.
+# What it does: Defines project dependencies, packaging configuration, entrypoints, and Pytest/Ruff environments.
 #
-# Coupling:
-# Core configuration used by uv, pip, and Pytest.
+# How it fits in: Core configuration used by uv, pip, and Pytest.
+
 
 
 [build-system]
