@@ -10,11 +10,11 @@ Coupling:
 
 
 from core.account_pool import AccountPool
-from core.coordinator import AgentCoordinator
-from core.workflow_engine import WorkflowEngine
-from core.context_store import ContextStore
 from core.auto_merge import AutoMerge
+from core.context_store import ContextStore
+from core.coordinator import AgentCoordinator
 from core.tracker import Tracker
+from core.workflow_engine import WorkflowEngine
 
 __all__ = [
     "AccountPool",

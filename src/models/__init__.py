@@ -9,6 +9,7 @@ Coupling:
 """
 
 
+from models.github import CheckRun, MergeResult, PullRequest
 from models.jules import (
     Activity,
     Plan,
@@ -20,7 +21,6 @@ from models.jules import (
     Source,
 )
 from models.workflow import AgentTask, TaskStatus, Workflow, WorkflowStatus
-from models.github import CheckRun, MergeResult, PullRequest
 
 __all__ = [
     "Activity",

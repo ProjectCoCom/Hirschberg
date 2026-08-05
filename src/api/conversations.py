@@ -11,6 +11,7 @@ Coupling:
 
 from __future__ import annotations
 
+import contextlib
 import json
 from datetime import UTC, datetime
 
@@ -88,10 +89,8 @@ async def add_message(conv_id: str, body: MessageCreate):
         "content": body.content,
         "metadata": json.dumps(body.metadata) if body.metadata else "{}",
     })
-    try:
+    with contextlib.suppress(Exception):
         await db.update("conversations", {"updated_at": datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")}, {"id": conv_id})
-    except Exception:
-        pass
     return row
 
 

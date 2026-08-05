@@ -94,14 +94,12 @@ class WorkflowEngine:
         try:
             while pending or running:
                 ready = self._find_ready_tasks(pending, completed)
-                dispatched_any = False
                 for task in ready:
                     role, source = self._get_task_requirements(task)
                     if self._coordinator._pool.has_capacity_for(source, role=role, assign_to=task.assign_to):
                         del pending[task.id]
                         coro = self._coordinator.run_task(task)
                         running[task.id] = asyncio.create_task(coro)
-                        dispatched_any = True
 
                 if not running:
                     if pending:

@@ -11,6 +11,7 @@ Coupling:
 
 from __future__ import annotations
 
+import contextlib
 from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter
@@ -77,7 +78,7 @@ async def get_usage_stats():
 
 @router.post("/api/usage/track")
 async def track_usage(body: dict):
-    try:
+    with contextlib.suppress(Exception):
         await db.insert("token_usage", {
             "provider_type": body.get("provider_type", ""),
             "model": body.get("model", ""),
@@ -85,6 +86,4 @@ async def track_usage(body: dict):
             "output_tokens": body.get("output_tokens", 0),
             "conversation_id": body.get("conversation_id", ""),
         })
-    except Exception:
-        pass
     return {"ok": True}

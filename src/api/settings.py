@@ -163,7 +163,7 @@ def _is_masked(value: str) -> bool:
 
 @router.put("/api/settings")
 async def update_app_settings(body: AppSettingsPayload):
-    existing = _read_env()
+    _read_env()
     updates: dict[str, str] = {}
     incoming = body.model_dump()
     key_map = {

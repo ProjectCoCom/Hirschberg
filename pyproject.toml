@@ -61,8 +61,8 @@ select = ["E", "F", "I", "N", "W", "UP", "B", "SIM"]
 [tool.mypy]
 python_version = "3.11"
 strict = true
-packages = ["src"]
-mypy_path = "src"
+mypy_path = "."
+explicit_package_bases = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

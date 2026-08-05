@@ -89,7 +89,7 @@ def build_parser() -> argparse.ArgumentParser:
     chat_cmd.add_argument("--conversation-id", default="", help="Continue existing conversation")
     chat_cmd.add_argument("message", nargs="?", default="")
 
-    tmpl_cmd = sub.add_parser("templates", help="List available prompt templates")
+    sub.add_parser("templates", help="List available prompt templates")
 
     decompose_cmd = sub.add_parser("decompose", help="Decompose a task into agent specs")
     decompose_cmd.add_argument("--provider", required=True, help="Provider name for AI")

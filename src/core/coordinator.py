@@ -125,7 +125,7 @@ class AgentCoordinator:
         task.status = TaskStatus.WAITING
 
         try:
-            dep_results = await self.wait_for_dependencies(task)
+            await self.wait_for_dependencies(task)
             task.status = TaskStatus.RUNNING
 
             # Dynamically create Git branch on GitHub if token is available
