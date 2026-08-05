@@ -33,8 +33,9 @@ def test_import_all_modules():
     sys.modules.pop("mcp.server.fastmcp", None)
 
     try:
-        import mcp  # noqa: F401
         import mcp.server.fastmcp  # noqa: F401
+
+        import mcp  # noqa: F401
     except Exception:
         pass
     finally:

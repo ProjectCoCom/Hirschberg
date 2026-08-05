@@ -10,9 +10,8 @@ Coupling:
 """
 
 
-import os
 import json
-import sys
+import os
 
 # Standardized exclusions
 EXCLUSIONS = [
@@ -25,8 +24,8 @@ CUSTOM_METADATA = {
     # Backend server & utilities
     "src/db.py": (
         "Database connection and session management.",
-        "Initializes the SQLite database engine, sets WAL mode, enforces foreign keys, and manages thread-local connection sessions.",
-        "Used by 'src/clients/database.py' and across the API controllers to interact with the database."
+        "Initializes SQLite DB engine, sets WAL mode, enforces FKs, manages thread-local sessions.",
+        "Used by 'src/clients/database.py' and API controllers for DB interaction."
     ),
     "src/exceptions.py": (
         "System-wide custom exception classes.",
@@ -122,7 +121,7 @@ CUSTOM_METADATA = {
     ),
     "src/clients/local_db.py": (
         "Low-level SQLite database client.",
-        "Manages raw connection pools, implements JSON/Array serialization/deserialization transparently, and supports WAL.",
+        "Manages raw connection pools, JSON/Array serialization, supports WAL.",
         "Foundation of data-access layer; wrapped by 'src/clients/database.py'."
     ),
     "src/clients/database.py": (
@@ -138,7 +137,7 @@ CUSTOM_METADATA = {
     # Core Engine
     "src/core/account_pool.py": (
         "Jules account pool manager.",
-        "Loads, tracks, and manages concurrency slots and daily budgets; sorts accounts by headroom score for balanced routing.",
+        "Loads, tracks concurrency slots and budgets; sorts by headroom score for routing.",
         "Used by 'src/core/workflow_engine.py' and 'src/core/coordinator.py'."
     ),
     "src/core/adaptive_context.py": (
@@ -187,8 +186,8 @@ CUSTOM_METADATA = {
         "Invoked by conversation manager."
     ),
     "src/core/coordinator.py": (
-        "Task coordinator for running multi-step agent workflows.",
-        "Coordinates task runs, creates git branches, builds prompts, handles pool exhaustions, and notifies orchestrators.",
+        "Task coordinator for multi-step agent workflows.",
+        "Coordinates runs, creates branches, builds prompts, handles pool exhaustions, notifies orchestrators.",
         "Heart of task-dispatch system; couples with WorkflowEngine."
     ),
     "src/core/decomposer.py": (
@@ -273,7 +272,7 @@ CUSTOM_METADATA = {
     ),
     "src/core/tracker.py": (
         "Realtime state and activity tracker.",
-        "Maintains pub/sub mechanism to broadcast session updates and writes activity logs using custom database indexes.",
+        "Maintains pub/sub for session updates, writes activity logs with custom DB indexes.",
         "Supplies real-time events to React dashboard."
     ),
     "src/core/workflow_engine.py": (
@@ -284,7 +283,8 @@ CUSTOM_METADATA = {
     # MCP
     "src/mcp/server.py": (
         "Model Context Protocol (MCP) server.",
-        "Defines async-native tool functions and allows external tools/agents to safely inspect databases and coordinate tasks.",
+        "Defines async-native tool functions for external tools/agents",
+        "to safely inspect databases and coordinate tasks.",
         "Exposes tools to MCP clients."
     ),
     # SQL Schemas
@@ -367,7 +367,8 @@ CUSTOM_METADATA = {
     ),
     "examples/seed_dashboard.py": (
         "Dashboard seeding script.",
-        "Seeds SQLite databases with initial active worker sessions, budgets, and mock tasks for testing dashboard renders.",
+        "Seeds SQLite DBs with active worker sessions, budgets,",
+        "and mock tasks for testing dashboard renders.",
         "Used for development or manual verifications."
     ),
     "examples/workflow_parallel.json": (
@@ -397,32 +398,41 @@ def get_metadata_for_file(filepath: str) -> tuple[str, str, str]:
     if "dashboard/src/components" in filepath:
         return (
             f"React UI component '{name_friendly}'.",
-            f"Renders the '{name_friendly}' dashboard interface, manages localized state, and handles user actions.",
-            f"Layout component rendered by parent dashboard containers; interacts with hooks and contexts from 'dashboard/src/app'."
+            f"Renders the '{name_friendly}' dashboard interface,",
+            "manages localized state, and handles user actions.",
+            "Layout component rendered by parent dashboard containers;",
+            "interacts with hooks and contexts from 'dashboard/src/app'."
         )
     elif "dashboard/src/app/hooks" in filepath:
         return (
             f"Custom React hook '{name_friendly}'.",
-            f"Abstracts state management, data polling, or backend API actions for '{name_friendly}' into a reusable hook.",
-            f"Consumed by React UI components inside the 'dashboard/src/components' component tree."
+            f"Abstracts state management, data polling, or backend API",
+            f"actions for '{name_friendly}' into a reusable hook.",
+            "Consumed by React UI components inside the",
+            "'dashboard/src/components' component tree."
         )
     elif "dashboard/core/domain" in filepath:
         return (
             f"Domain model definitions for '{name_friendly}'.",
-            f"Defines TypeScript interfaces, validation types, and helper algorithms for '{name_friendly}' model states.",
-            f"Core domain logic consumed by application ports, adapters, and UI presentation views."
+            f"Defines TypeScript interfaces, validation types, and helpers",
+            f"for '{name_friendly}' model states.",
+            "Core domain logic consumed by application ports, adapters,",
+            "and UI presentation views."
         )
     elif "dashboard/src/styles" in filepath:
         return (
             f"Custom CSS style sheet '{name_friendly}'.",
-            f"Specifies UI class designs, responsive layouts, animations, and color scheme tokens.",
-            f"Loaded by 'main.tsx' or 'App.tsx' to style React dashboard views."
+            "Specifies UI class designs, responsive layouts,",
+            "animations, and color scheme tokens.",
+            "Loaded by 'main.tsx' or 'App.tsx' to style React dashboard views."
         )
     elif "dryrun" in filepath and filepath.endswith(".py"):
         return (
             f"Dry-run integration test suite '{name_friendly}'.",
-            f"Implements automated tests, mock execution environments, or workflow assertions to verify core features.",
-            f"Triggered by pytest or CI workflows to guarantee codebase stability without making active live API requests."
+            "Implements automated tests, mock execution environments,",
+            "or workflow assertions to verify core features.",
+            "Triggered by pytest or CI workflows to guarantee codebase",
+            "stability without making active live API requests."
         )
 
     # Generic extension-based fallback
@@ -431,36 +441,36 @@ def get_metadata_for_file(filepath: str) -> tuple[str, str, str]:
         return (
             f"Python logic module '{name_friendly}'.",
             f"Provides backend utility operations and core logical helper interfaces for '{name_friendly}'.",
-            f"Imported and utilized by surrounding backend structures."
+            "Imported and utilized by surrounding backend structures."
         )
     elif ext in [".ts", ".tsx", ".js", ".mjs"]:
         return (
             f"Frontend JavaScript/TypeScript module '{name_friendly}'.",
             f"Provides application-level UI helper functions, adapters, or configurations for '{name_friendly}'.",
-            f"Used to build or bundle the React dashboard application."
+            "Used to build or bundle the React dashboard application."
         )
     elif ext == ".json":
         return (
             f"JSON configuration/data file '{name_friendly}'.",
-            f"Maintains static metadata, options, or mock parameters for JAT-AI workspaces.",
-            f"Read and parsed by backend configurations or frontend loaders."
+            "Maintains static metadata, options, or mock parameters for JAT-AI workspaces.",
+            "Read and parsed by backend configurations or frontend loaders."
         )
     elif ext == ".sql":
         return (
             f"SQL database scripts for '{name_friendly}'.",
-            f"Handles database tables setup or seed actions on local or remote database instances.",
-            f"Parsed and executed by the database client connection on setup."
+            "Handles database tables setup or seed actions on local or remote database instances.",
+            "Parsed and executed by the database client connection on setup."
         )
 
     return (
         f"Workspace file '{name_friendly}'.",
-        f"Maintains specialized configuration, script, or template parameters.",
-        f"Used by relevant backend/frontend build or runtime engines."
+        "Maintains specialized configuration, script, or template parameters.",
+        "Used by relevant backend/frontend build or runtime engines."
     )
 
 # Writers for each file extension using 'summary' instead of 'filepath' as the first line
 def write_python_header(filepath: str, summary: str, responsibilities: str, coupling: str):
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, encoding="utf-8") as f:
         content = f.read()
 
     header = f'"""\n{summary}\n\nResponsibilities:\n- {responsibilities}\n\nCoupling:\n- {coupling}\n"""'
@@ -496,7 +506,7 @@ def write_python_header(filepath: str, summary: str, responsibilities: str, coup
         f.write(content)
 
 def write_ts_header(filepath: str, summary: str, responsibilities: str, coupling: str):
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, encoding="utf-8") as f:
         content = f.read()
 
     header = f'/**\n * {summary}\n *\n * Responsibilities:\n * {responsibilities}\n *\n * Coupling:\n * {coupling}\n */'
@@ -517,7 +527,7 @@ def write_ts_header(filepath: str, summary: str, responsibilities: str, coupling
         f.write(content)
 
 def write_css_header(filepath: str, summary: str, responsibilities: str, coupling: str):
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, encoding="utf-8") as f:
         content = f.read()
 
     header = f'/* {summary}\n *\n * Responsibilities:\n * {responsibilities}\n *\n * Coupling:\n * {coupling}\n */'
@@ -538,7 +548,7 @@ def write_css_header(filepath: str, summary: str, responsibilities: str, couplin
         f.write(content)
 
 def write_html_header(filepath: str, summary: str, responsibilities: str, coupling: str):
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, encoding="utf-8") as f:
         content = f.read()
 
     header = f'<!--\n  {summary}\n\n  Responsibilities:\n  {responsibilities}\n\n  Coupling:\n  {coupling}\n-->'
@@ -559,16 +569,16 @@ def write_html_header(filepath: str, summary: str, responsibilities: str, coupli
         f.write(content)
 
 def write_sh_header(filepath: str, summary: str, responsibilities: str, coupling: str):
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, encoding="utf-8") as f:
         content = f.read()
 
     header_lines = [
         f"# {summary}",
         "#",
-        f"# Responsibilities:",
+        "# Responsibilities:",
         f"# {responsibilities}",
         "#",
-        f"# Coupling:",
+        "# Coupling:",
         f"# {coupling}"
     ]
     header = "\n".join(header_lines)
@@ -590,16 +600,16 @@ def write_sh_header(filepath: str, summary: str, responsibilities: str, coupling
         f.write(content)
 
 def write_bat_header(filepath: str, summary: str, responsibilities: str, coupling: str):
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, encoding="utf-8") as f:
         content = f.read()
 
     header_lines = [
         f"REM {summary}",
         "REM",
-        f"REM Responsibilities:",
+        "REM Responsibilities:",
         f"REM {responsibilities}",
         "REM",
-        f"REM Coupling:",
+        "REM Coupling:",
         f"REM {coupling}"
     ]
     header = "\n".join(header_lines)
@@ -620,16 +630,16 @@ def write_bat_header(filepath: str, summary: str, responsibilities: str, couplin
         f.write(content)
 
 def write_sql_header(filepath: str, summary: str, responsibilities: str, coupling: str):
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, encoding="utf-8") as f:
         content = f.read()
 
     header_lines = [
         f"-- {summary}",
         "--",
-        f"-- Responsibilities:",
+        "-- Responsibilities:",
         f"-- {responsibilities}",
         "--",
-        f"-- Coupling:",
+        "-- Coupling:",
         f"-- {coupling}"
     ]
     header = "\n".join(header_lines)
@@ -642,16 +652,16 @@ def write_sql_header(filepath: str, summary: str, responsibilities: str, couplin
         f.write(content)
 
 def write_toml_header(filepath: str, summary: str, responsibilities: str, coupling: str):
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, encoding="utf-8") as f:
         content = f.read()
 
     header_lines = [
         f"# {summary}",
         "#",
-        f"# Responsibilities:",
+        "# Responsibilities:",
         f"# {responsibilities}",
         "#",
-        f"# Coupling:",
+        "# Coupling:",
         f"# {coupling}"
     ]
     header = "\n".join(header_lines)
@@ -664,7 +674,7 @@ def write_toml_header(filepath: str, summary: str, responsibilities: str, coupli
         f.write(content)
 
 def write_json_header(filepath: str, summary: str, responsibilities: str, coupling: str):
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, encoding="utf-8") as f:
         content = f.read()
 
     try:

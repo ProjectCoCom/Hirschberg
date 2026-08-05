@@ -104,7 +104,8 @@ async def relay_worker_feedback(
                 elif act.description:
                     question = act.description
                     break
-        except Exception:
+        except Exception as e:
+            log.error("unhandled_exception", error=str(e))
             question = "Session is awaiting user feedback."
 
         # 2. Send the question to the orchestrator session
@@ -131,10 +132,15 @@ async def relay_worker_feedback(
                 try:
                     orch_acts = await orchestrator_client.list_activities(orchestrator_id, page_size=10)
                     for act in orch_acts:
-                        if act.create_time and act.create_time >= start_time:
-                            if act.agent_messaged and act.agent_messaged.agent_message:
-                                reply = act.agent_messaged.agent_message
-                                return
+                        has_message = (
+                            act.create_time
+                            and act.create_time >= start_time
+                            and act.agent_messaged
+                            and act.agent_messaged.agent_message
+                        )
+                        if has_message:
+                            reply = act.agent_messaged.agent_message
+                            return
                 except Exception as e:
                     log.warning("error_polling_orchestrator_reply", error=str(e))
 

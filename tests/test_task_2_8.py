@@ -11,16 +11,22 @@ Coupling:
 
 from __future__ import annotations
 
-import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
 
-from api.server import app, _find_session_by_prompt, _recover_orphaned_tasks, _count_today_sessions, _fetch_jules_repos_as_tentacles, _fetch_jules_sessions_all_accounts
+from api.server import (
+    _count_today_sessions,
+    _fetch_jules_repos_as_tentacles,
+    _fetch_jules_sessions_all_accounts,
+    _find_session_by_prompt,
+    _recover_orphaned_tasks,
+    app,
+)
 from db import db
-from models.jules import Session, Source, GitHubRepo
+from models.jules import GitHubRepo, Session, Source
 
 
 @pytest.mark.asyncio
@@ -106,7 +112,7 @@ async def test_count_today_sessions_client_routing():
         }
     ]
     # Current date
-    from datetime import datetime, UTC
+    from datetime import UTC, datetime
     today_prefix = datetime.now(UTC).strftime("%Y-%m-%d")
 
     j_session = Session(
@@ -155,7 +161,7 @@ async def test_fetch_jules_sessions_all_accounts_client_routing():
             "api_key_encrypted": "encrypted-e",
         }
     ]
-    from datetime import datetime, UTC
+    from datetime import UTC, datetime
     j_session = Session(
         id="s-paginated",
         create_time=datetime.now(UTC),

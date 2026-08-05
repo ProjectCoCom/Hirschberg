@@ -480,4 +480,29 @@ These items may be addressed in future planning phases once the core backend is 
 
 ---
 
+## Deferred Items from Phase 1 (Out of Scope for Current Pass)
+
+The following items from Phase 1 were identified but deferred to a future remediation pass:
+
+### Task 1.3: Add Missing Type Annotations - High Priority Files
+- **Status**: DEFERRED
+- **Reason**: Requires significant refactoring across the codebase (583 MyPy errors remain)
+- **Files Affected**: `src/api/server.py`, `src/clients/ai_providers.py`, `src/core/context_store.py`
+- **Work Required**: 
+  - Add return type annotations to all functions
+  - Replace bare `dict` with `dict[str, Any]`
+  - Add missing imports for typing constructs
+- **Verification Criteria**: `python -m mypy src/api/server.py src/clients/ai_providers.py src/core/context_store.py` passes
+
+### Task 1.4: Fix Generic Type Parameters Throughout Codebase
+- **Status**: DEFERRED  
+- **Reason**: Systematic replacement requires comprehensive pass through all files with mypy errors
+- **Files Affected**: All files with mypy errors
+- **Work Required**: Replace `dict` → `dict[str, Any]`, `list` → `list[Any]` throughout codebase
+- **Verification Criteria**: `python -m mypy src/` shows < 50 errors (down from 583)
+
+**Note**: These type annotation tasks will be revisited after completing Phases 2-6, once the core architecture and error handling improvements are in place.
+
+---
+
 *This plan is machine-actionable. Each task can be executed autonomously with clear verification criteria.*

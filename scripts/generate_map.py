@@ -13,10 +13,10 @@ Coupling:
 - Consumes file headers written by 'scripts/generate_headers.py'.
 """
 
-import os
 import json
-import subprocess
+import os
 import re
+import subprocess
 
 # Standardized exclusions (same as Part A)
 EXCLUSIONS = [
@@ -53,7 +53,7 @@ def extract_description(filepath: str) -> str:
     """Parses a file's header comment block to extract the one-line summary."""
     ext = os.path.splitext(filepath)[1]
     try:
-        with open(filepath, "r", encoding="utf-8") as f:
+        with open(filepath, encoding="utf-8") as f:
             content = f.read()
     except Exception:
         return ""

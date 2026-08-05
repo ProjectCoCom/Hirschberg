@@ -11,11 +11,14 @@ Coupling:
 
 from __future__ import annotations
 
+import structlog
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from config import load_settings
 from db import db
+
+log = structlog.get_logger()
 
 settings = load_settings()
 
@@ -95,7 +98,7 @@ async def create_provider(body: ProviderCreate):
         })
         return row
     except Exception as exc:
-        raise HTTPException(500, f"Failed to add provider: {exc}")
+        raise HTTPException(500, f"Failed to add provider: {exc}") from exc
 
 
 @router.patch("/{provider_id}")
@@ -125,7 +128,8 @@ async def get_provider_docs(provider_id: str):
 async def get_provider_models(provider_id: str):
     try:
         rows = await db.select("ai_providers", filters={"id": provider_id})
-    except Exception:
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
         return {"models": [], "limits": {}, "provider_type": "unknown", "error": "Database timeout"}
     if not rows:
         raise HTTPException(404, "Provider not found")
@@ -144,7 +148,8 @@ async def get_provider_models(provider_id: str):
         vault = KeyVault(settings.encryption_key)
         try:
             api_key = vault.decrypt(row["api_key_encrypted"]) if row["api_key_encrypted"] else ""
-        except Exception:
+        except Exception as e:
+            log.error("unhandled_exception", error=str(e))
             api_key = row["api_key_encrypted"] or ""
 
         provider_type = ProviderType(row["provider_type"])
@@ -196,7 +201,8 @@ async def test_provider_chat(provider_id: str, body: TestChatRequest):
         if stored.startswith("\\x"):
             stored = bytes.fromhex(stored[2:]).decode()
         api_key = vault.decrypt(stored) if stored else ""
-    except Exception:
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
         api_key = row["api_key_encrypted"] or ""
 
     provider_type = ProviderType(row["provider_type"])
@@ -211,7 +217,8 @@ async def test_provider_chat(provider_id: str, body: TestChatRequest):
     pool.add_account(account)
 
     try:
-        response = await pool.complete(body.message, account.id, system="You are a helpful assistant. Keep responses brief.")
+        system_prompt = "You are a helpful assistant. Keep responses brief."
+        response = await pool.complete(body.message, account.id, system=system_prompt)
         await pool.close()
         return {"response": response}
     except Exception as exc:
@@ -219,4 +226,4 @@ async def test_provider_chat(provider_id: str, body: TestChatRequest):
         err_str = str(exc)
         if "404" in err_str or "Not Found" in err_str:
             return {"error": f"Model '{body.model}' is not available. Try a different model."}
-        raise HTTPException(500, f"Test failed: {exc}")
+        raise HTTPException(500, f"Test failed: {exc}") from exc

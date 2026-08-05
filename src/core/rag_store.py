@@ -219,5 +219,6 @@ async def query_conversation_context(
 
     try:
         return await asyncio.to_thread(_query)
-    except Exception:
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
         return []

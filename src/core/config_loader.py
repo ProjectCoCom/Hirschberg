@@ -70,7 +70,7 @@ def build_jules_pool(config: dict) -> AccountPool:
         config_accounts = jules_cfg.get("accounts", [])
         if config_accounts:
             log.info("build_jules_pool_migration_started", count=len(config_accounts))
-            PLAN_LIMITS_MAP = {
+            plan_limits_map = {
                 "free": {"daily": 15, "concurrent": 3},
                 "pro": {"daily": 100, "concurrent": 15},
                 "ultra": {"daily": 300, "concurrent": 60},
@@ -79,7 +79,7 @@ def build_jules_pool(config: dict) -> AccountPool:
                 if not acc.get("enabled", True):
                     continue
                 tier_str = acc.get("plan", "free").lower()
-                limits = PLAN_LIMITS_MAP.get(tier_str, PLAN_LIMITS_MAP["free"])
+                limits = plan_limits_map.get(tier_str, plan_limits_map["free"])
                 encrypted = vault.encrypt(acc.get("api_key", "")) if acc.get("api_key") else ""
 
                 db_acc = {
@@ -102,7 +102,8 @@ def build_jules_pool(config: dict) -> AccountPool:
             # Select again after insertion
             try:
                 rows = db.select_sync("accounts")
-            except Exception:
+            except Exception as e:
+                log.error("unhandled_exception", error=str(e))
                 rows = []
 
     # 3. Load accounts from DB rows into pool
@@ -111,7 +112,8 @@ def build_jules_pool(config: dict) -> AccountPool:
             continue
         try:
             decrypted_key = vault.decrypt(r["api_key_encrypted"]) if r.get("api_key_encrypted") else ""
-        except Exception:
+        except Exception as e:
+            log.error("unhandled_exception", error=str(e))
             decrypted_key = r.get("api_key_encrypted", "")
 
         tier_str = r.get("plan_tier", r.get("plan", "free")).lower()

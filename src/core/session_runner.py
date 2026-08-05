@@ -11,6 +11,8 @@ Coupling:
 
 from __future__ import annotations
 
+import contextlib
+
 import structlog
 
 from clients.database import Database
@@ -19,6 +21,7 @@ from clients.jules import JulesClient
 from core.auto_merge import AutoMerge, MergeStrategy
 from core.context_store import ContextStore
 from core.prompt_builder import build_session_prompt
+from core.session_poller import SessionPoller, store_activity
 from models.jules import SessionState
 
 log = structlog.get_logger()
@@ -102,11 +105,6 @@ async def _try_auto_merge(
     return result
 
 
-import contextlib
-
-from core.session_poller import SessionPoller, store_activity
-
-
 async def _poll_until_done(
     jules: JulesClient,
     db: Database,
@@ -148,11 +146,23 @@ async def _poll_until_done(
                         await notify_orchestrator(pool, store, task_obj, "failed", summary="Jules session failed")
                     elif session.state == SessionState.AWAITING_USER_FEEDBACK:
                         from core.orchestrator_relay import notify_orchestrator, relay_worker_feedback
-                        await notify_orchestrator(pool, store, task_obj, "awaiting_user_feedback", summary="Worker session needs feedback")
+                        await notify_orchestrator(
+                            pool,
+                            store,
+                            task_obj,
+                            "awaiting_user_feedback",
+                            summary="Worker session needs feedback",
+                        )
                         await relay_worker_feedback(pool, store, jules, session_id, task_obj)
                     elif session.state == SessionState.AWAITING_PLAN_APPROVAL:
                         from core.orchestrator_relay import notify_orchestrator
-                        await notify_orchestrator(pool, store, task_obj, "awaiting_plan_approval", summary="Session is awaiting plan approval")
+                        await notify_orchestrator(
+                            pool,
+                            store,
+                            task_obj,
+                            "awaiting_plan_approval",
+                            summary="Session is awaiting plan approval",
+                        )
                         with contextlib.suppress(Exception):
                             await db.update("agent_tasks", {"status": "awaiting_plan_approval"}, {"id": task_id})
                     elif session.state == SessionState.PAUSED:

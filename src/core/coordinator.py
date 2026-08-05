@@ -28,24 +28,71 @@ SESSION_TIMEOUT = 1800
 
 
 class AgentCoordinator:
+    """Coordinates multi-step agent workflows and task execution.
+    
+    This class manages the lifecycle of agent tasks including:
+    - Waiting for task completion via async events
+    - Managing task dependencies
+    - Running individual tasks with proper context setup
+    
+    Attributes:
+        _pool: Account pool for managing API credentials
+        _store: Context store for persisting task state
+        _completion_events: Map of task IDs to completion events
+    """
+    
     def __init__(
         self, pool: AccountPool, store: ContextStore
     ) -> None:
+        """Initialize the coordinator with pool and store.
+        
+        Args:
+            pool: AccountPool instance for API credential management
+            store: ContextStore instance for state persistence
+        """
         self._pool = pool
         self._store = store
         self._completion_events: dict[UUID, asyncio.Event] = {}
 
     def _get_or_create_event(self, task_id: UUID) -> asyncio.Event:
+        """Get or create a completion event for a task.
+        
+        Args:
+            task_id: The unique identifier of the task
+            
+        Returns:
+            An asyncio.Event for signaling task completion
+        """
         if task_id not in self._completion_events:
             self._completion_events[task_id] = asyncio.Event()
         return self._completion_events[task_id]
 
     async def wait_for_task(self, task_id: UUID, timeout: float = SESSION_TIMEOUT) -> dict:
+        """Wait for a task to complete with timeout.
+        
+        Args:
+            task_id: The unique identifier of the task to wait for
+            timeout: Maximum time to wait in seconds (default: SESSION_TIMEOUT)
+            
+        Returns:
+            The final task state from the context store
+            
+        Raises:
+            asyncio.TimeoutError: If the task doesn't complete within timeout
+        """
         event = self._get_or_create_event(task_id)
         await asyncio.wait_for(event.wait(), timeout=timeout)
         return await self._store.get_task_state(task_id)
 
     async def wait_for_dependencies(self, task: AgentTask) -> list[dict]:
+        """Wait for all dependency tasks to complete.
+        
+        Args:
+            task: The task whose dependencies need to be waited on
+            
+        Returns:
+            List of dependency task results
+        """
         if not task.depends_on:
             return []
 
@@ -55,6 +102,14 @@ class AgentCoordinator:
         return list(results)
 
     async def run_task(self, task: AgentTask) -> AgentTask:
+        """Execute a single agent task.
+        
+        Args:
+            task: The task to execute
+            
+        Returns:
+            The updated task with new status
+        """
         source = f"sources/github/{task.repo_owner}/{task.repo_name}"
         from config import load_settings
         from core.account_pool import AccountRole
@@ -79,7 +134,8 @@ class AgentCoordinator:
                     orch_row = await self._store.get_task_by_session(task.orchestrator_session_id)
                     if orch_row:
                         delegating_task_id = orch_row["id"]
-                except Exception:
+                except Exception as e:
+                    log.error("failed_to_resolve_delegating_task", error=str(e))
                     pass
 
             # Calculate current depth by climbing parent_task_id tree
@@ -93,16 +149,21 @@ class AgentCoordinator:
                         current_depth += 1
                     else:
                         break
-                except Exception:
+                except Exception as e:
+                    log.error("failed_to_climb_parent_tree", error=str(e), task_id=curr_parent_id)
                     break
 
             if current_depth < max_depth:
                 role_to_acquire = AccountRole.ORCHESTRATOR
                 task.prompt = f"you are responsible for this subtree of the goal: {task.prompt}"
                 if delegating_task_id:
-                    task.parent_task_id = UUID(delegating_task_id) if isinstance(delegating_task_id, str) else delegating_task_id
+                    task.parent_task_id = (
+                        UUID(delegating_task_id)
+                        if isinstance(delegating_task_id, str)
+                        else delegating_task_id
+                    )
 
-        from exceptions import AccountPoolExhausted
+        from exceptions import AccountPoolExhaustedError
         retries = 3
         backoff = 2
         account = None
@@ -110,14 +171,24 @@ class AgentCoordinator:
             try:
                 account = self._pool.acquire(source, role=role_to_acquire, assign_to=task.assign_to)
                 break
-            except AccountPoolExhausted as exc:
+            except AccountPoolExhaustedError as exc:
                 if attempt == retries - 1:
                     raise exc
                 log.info("task_waiting_on_capacity", task_id=str(task.id), attempt=attempt+1)
                 try:
                     from core.orchestrator_relay import notify_orchestrator
-                    await notify_orchestrator(self._pool, self._store, task, "waiting_on_capacity", summary=f"Task is waiting for pool capacity (attempt {attempt+1}/{retries})")
-                except Exception:
+                    await notify_orchestrator(
+                        self._pool,
+                        self._store,
+                        task,
+                        "waiting_on_capacity",
+                        summary=(
+                            f"Task is waiting for pool capacity "
+                            f"(attempt {attempt+1}/{retries})"
+                        ),
+                    )
+                except Exception as e:
+                    log.error("failed_to_notify_waiting", error=str(e), task_id=str(task.id))
                     pass
                 await asyncio.sleep(backoff)
 
@@ -220,15 +291,28 @@ class AgentCoordinator:
                     await notify_orchestrator(self._pool, self._store, task, "failed", summary="Jules session failed")
                 elif session.state == SessionState.AWAITING_USER_FEEDBACK:
                     from core.orchestrator_relay import notify_orchestrator, relay_worker_feedback
-                    await notify_orchestrator(self._pool, self._store, task, "awaiting_user_feedback", summary="Worker session needs feedback")
+                    await notify_orchestrator(
+                        self._pool,
+                        self._store,
+                        task,
+                        "awaiting_user_feedback",
+                        summary="Worker session needs feedback",
+                    )
                     await relay_worker_feedback(self._pool, self._store, client, task.session_id, task)
                 elif session.state == SessionState.AWAITING_PLAN_APPROVAL:
                     from core.orchestrator_relay import notify_orchestrator
-                    await notify_orchestrator(self._pool, self._store, task, "awaiting_plan_approval", summary="Session is awaiting plan approval")
+                    await notify_orchestrator(
+                        self._pool,
+                        self._store,
+                        task,
+                        "awaiting_plan_approval",
+                        summary="Session is awaiting plan approval",
+                    )
                     try:
                         task.status = "awaiting_plan_approval"
                         await self._store.save_task_state(task.id, task.model_dump(mode="json"))
-                    except Exception:
+                    except Exception as e:
+                        log.error("failed_to_save_awaiting_plan_state", error=str(e), task_id=str(task.id))
                         pass
                 elif session.state == SessionState.PAUSED:
                     from core.orchestrator_relay import notify_orchestrator

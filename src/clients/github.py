@@ -162,7 +162,8 @@ class GitHubClient:
             if ref_res.status_code != 200:
                 return None
             return ref_res.json()["object"]["sha"]
-        except Exception:
+        except Exception as e:
+            log.error("unhandled_exception", error=str(e))
             return None
 
     async def get_branch_sha(self, owner: str, repo: str, branch: str) -> str | None:
@@ -171,7 +172,8 @@ class GitHubClient:
             if ref_res.status_code != 200:
                 return None
             return ref_res.json()["object"]["sha"]
-        except Exception:
+        except Exception as e:
+            log.error("unhandled_exception", error=str(e))
             return None
 
     async def create_branch_with_base(
@@ -207,10 +209,12 @@ class GitHubClient:
         try:
             res = await self._client.delete(f"/repos/{owner}/{repo}/git/refs/heads/{branch_name}")
             return res.status_code == 204
-        except Exception:
+        except Exception as e:
+            log.error("unhandled_exception", error=str(e))
             return False
 
-    async def create_pull_request(self, owner: str, repo: str, title: str, head: str, base: str, body: str) -> str | None:
+    async def create_pull_request(self, owner: str, repo: str, title: str,
+                                  head: str, base: str, body: str) -> str | None:
         try:
             res = await self._client.post(
                 f"/repos/{owner}/{repo}/pulls",
@@ -218,7 +222,8 @@ class GitHubClient:
             )
             if res.status_code == 201:
                 return res.json().get("html_url")
-        except Exception:
+        except Exception as e:
+            log.error("unhandled_exception", error=str(e))
             pass
         return None
 

@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 import contextlib
 
 from clients.jules import JulesClient
-from exceptions import AccountPoolExhausted
+from exceptions import AccountPoolExhaustedError
 
 log = structlog.get_logger()
 
@@ -100,7 +100,12 @@ class AccountPool:
     def get_client(self, account_id: UUID) -> JulesClient:
         return self._clients[account_id]
 
-    def has_capacity_for(self, source: str | None = None, role: AccountRole | None = None, assign_to: str | None = None) -> bool:
+    def has_capacity_for(
+        self,
+        source: str | None = None,
+        role: AccountRole | None = None,
+        assign_to: str | None = None,
+    ) -> bool:
         eligible = [a for a in self._accounts if a.has_capacity]
 
         if role is not None:
@@ -116,18 +121,23 @@ class AccountPool:
 
         return len(eligible) > 0
 
-    def acquire(self, source: str | None = None, role: AccountRole | None = None, assign_to: str | None = None) -> Account:
+    def acquire(
+        self,
+        source: str | None = None,
+        role: AccountRole | None = None,
+        assign_to: str | None = None,
+    ) -> Account:
         eligible = [a for a in self._accounts if a.has_capacity]
 
         if role is not None:
             eligible = [a for a in eligible if a.role == role]
             if not eligible:
-                raise AccountPoolExhausted(f"No accounts available with role '{role}' and capacity")
+                raise AccountPoolExhaustedError(f"No accounts available with role '{role}' and capacity")
 
         if assign_to:
             eligible = [a for a in eligible if a.name == assign_to or a.label == assign_to]
             if not eligible:
-                raise AccountPoolExhausted(f"No accounts available with name or label '{assign_to}' and capacity")
+                raise AccountPoolExhaustedError(f"No accounts available with name or label '{assign_to}' and capacity")
 
         if source:
             with_source = [a for a in eligible if source in a.sources]
@@ -135,7 +145,7 @@ class AccountPool:
                 eligible = with_source
 
         if not eligible:
-            raise AccountPoolExhausted("No accounts with available capacity")
+            raise AccountPoolExhaustedError("No accounts with available capacity")
 
         def get_sort_key(a: Account) -> tuple[float, int]:
             a._maybe_reset_daily()
@@ -223,7 +233,8 @@ class AccountPool:
 
             try:
                 decrypted_key = vault.decrypt(r["api_key_encrypted"]) if r.get("api_key_encrypted") else ""
-            except Exception:
+            except Exception as e:
+                log.error("unhandled_exception", error=str(e))
                 decrypted_key = r.get("api_key_encrypted", "")
 
             tier_str = r.get("plan_tier", r.get("plan", "free")).lower()

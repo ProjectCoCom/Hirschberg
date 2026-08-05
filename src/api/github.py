@@ -31,7 +31,11 @@ async def _fetch_all_repos(client: httpx.AsyncClient, headers: dict) -> list[dic
     page = 1
     while True:
         try:
-            res = await client.get(f"https://api.github.com/user/repos?per_page=100&page={page}&sort=pushed", headers=headers)
+            res = await client.get(
+                "https://api.github.com/user/repos",
+                params={"per_page": 100, "page": page, "sort": "pushed"},
+                headers=headers
+            )
         except (httpx.ReadTimeout, httpx.ConnectTimeout):
             break
         if res.status_code != 200:
@@ -98,7 +102,11 @@ async def _get_owner(client: httpx.AsyncClient, headers: dict) -> str:
 
 async def _fetch_issue_count(client: httpx.AsyncClient, owner: str, headers: dict) -> int:
     try:
-        res = await client.get(f"https://api.github.com/search/issues?q=author:{owner}+is:issue+is:open&per_page=1", headers=headers)
+        res = await client.get(
+            "https://api.github.com/search/issues",
+            params={"q": f"author:{owner} is:issue is:open", "per_page": 1},
+            headers=headers
+        )
         return res.json().get("total_count", 0) if res.status_code == 200 else 0
     except (httpx.ReadTimeout, httpx.ConnectTimeout):
         return 0
@@ -106,7 +114,11 @@ async def _fetch_issue_count(client: httpx.AsyncClient, owner: str, headers: dic
 
 async def _fetch_pr_count(client: httpx.AsyncClient, owner: str, headers: dict) -> int:
     try:
-        res = await client.get(f"https://api.github.com/search/issues?q=author:{owner}+is:pr+is:open&per_page=1", headers=headers)
+        res = await client.get(
+            "https://api.github.com/search/issues",
+            params={"q": f"author:{owner} is:pr is:open", "per_page": 1},
+            headers=headers
+        )
         return res.json().get("total_count", 0) if res.status_code == 200 else 0
     except (httpx.ReadTimeout, httpx.ConnectTimeout):
         return 0
@@ -116,13 +128,27 @@ async def _fetch_pr_count(client: httpx.AsyncClient, owner: str, headers: dict) 
 async def get_github_summary():
     token = settings.github_token
     if not token:
-        return {"status": "error", "source": "none", "fetchedAt": _now(), "message": "No GitHub token", "commitsPerDay": [], "recentCommits": []}
+        return {
+            "status": "error",
+            "source": "none",
+            "fetchedAt": _now(),
+            "message": "No GitHub token",
+            "commitsPerDay": [],
+            "recentCommits": []
+        }
     headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
     since = (datetime.now(UTC) - timedelta(days=30)).strftime("%Y-%m-%d")
     async with httpx.AsyncClient(timeout=30.0) as client:
         owner = await _get_owner(client, headers)
         if owner == "unknown":
-            return {"status": "error", "source": "none", "fetchedAt": _now(), "message": "GitHub API timeout", "commitsPerDay": [], "recentCommits": []}
+            return {
+                "status": "error",
+                "source": "none",
+                "fetchedAt": _now(),
+                "message": "GitHub API timeout",
+                "commitsPerDay": [],
+                "recentCommits": []
+            }
         repos = await _fetch_all_repos(client, headers)
         total_stars = sum(r.get("stargazers_count", 0) for r in repos)
         total_issues = await _fetch_issue_count(client, owner, headers)
@@ -135,7 +161,10 @@ async def get_github_summary():
                 commits_by_day[date] = commits_by_day.get(date, 0) + 1
         today = datetime.now(UTC).date()
         commits_per_day = [
-            {"date": (today - timedelta(days=29 - i)).strftime("%Y-%m-%d"), "count": commits_by_day.get((today - timedelta(days=29 - i)).strftime("%Y-%m-%d"), 0)}
+            {
+                "date": (today - timedelta(days=29 - i)).strftime("%Y-%m-%d"),
+                "count": commits_by_day.get((today - timedelta(days=29 - i)).strftime("%Y-%m-%d"), 0)
+            }
             for i in range(30)
         ]
         return {
@@ -159,11 +188,24 @@ async def get_github_issues():
     headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
     async with httpx.AsyncClient(timeout=15.0) as client:
         owner = await _get_owner(client, headers)
-        res = await client.get(f"https://api.github.com/search/issues?q=author:{owner}+is:issue+is:open&per_page=20", headers=headers)
+        res = await client.get(
+            "https://api.github.com/search/issues",
+            params={"q": f"author:{owner} is:issue is:open", "per_page": 20},
+            headers=headers
+        )
         if res.status_code != 200:
             return []
         items = res.json().get("items", [])
-        return [{"title": i["title"], "repo": i["repository_url"].split("/")[-1], "url": i["html_url"], "created": i["created_at"][:10], "labels": [l["name"] for l in i.get("labels", [])]} for i in items]
+        return [
+            {
+                "title": i["title"],
+                "repo": i["repository_url"].split("/")[-1],
+                "url": i["html_url"],
+                "created": i["created_at"][:10],
+                "labels": [label["name"] for label in i.get("labels", [])]
+            }
+            for i in items
+        ]
 
 
 @router.get("/api/github/pulls")
@@ -174,11 +216,24 @@ async def get_github_pulls():
     headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
     async with httpx.AsyncClient(timeout=15.0) as client:
         owner = await _get_owner(client, headers)
-        res = await client.get(f"https://api.github.com/search/issues?q=author:{owner}+is:pr+is:open&per_page=20", headers=headers)
+        res = await client.get(
+            "https://api.github.com/search/issues",
+            params={"q": f"author:{owner} is:pr is:open", "per_page": 20},
+            headers=headers
+        )
         if res.status_code != 200:
             return []
         items = res.json().get("items", [])
-        return [{"title": i["title"], "repo": i["repository_url"].split("/")[-1], "url": i["html_url"], "created": i["created_at"][:10], "draft": i.get("draft", False)} for i in items]
+        return [
+            {
+                "title": i["title"],
+                "repo": i["repository_url"].split("/")[-1],
+                "url": i["html_url"],
+                "created": i["created_at"][:10],
+                "draft": i.get("draft", False)
+            }
+            for i in items
+        ]
 
 
 @router.get("/api/github/stars")
@@ -189,7 +244,10 @@ async def get_github_stars():
     headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
     async with httpx.AsyncClient(timeout=15.0) as client:
         repos = await _fetch_all_repos(client, headers)
-        return [{"repo": r["full_name"], "stars": r["stargazers_count"], "url": r["html_url"]} for r in repos if r.get("stargazers_count", 0) > 0]
+        return [
+            {"repo": r["full_name"], "stars": r["stargazers_count"], "url": r["html_url"]}
+            for r in repos if r.get("stargazers_count", 0) > 0
+        ]
 
 
 @router.get("/api/github/repos")
@@ -200,4 +258,9 @@ async def get_github_repos():
     headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
     async with httpx.AsyncClient(timeout=30.0) as client:
         repos = await _fetch_all_repos(client, headers)
-        return {"repos": [{"name": r["name"], "full_name": r["full_name"], "private": r.get("private", False)} for r in repos]}
+        return {
+            "repos": [
+                {"name": r["name"], "full_name": r["full_name"], "private": r.get("private", False)}
+                for r in repos
+            ]
+        }

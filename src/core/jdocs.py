@@ -49,7 +49,10 @@ SESSION_HISTORY_TEMPLATE = """<?xml version="1.0" encoding="UTF-8"?>
 """
 
 
-async def _get_file_sha(client: httpx.AsyncClient, owner: str, repo: str, path: str, branch: str, headers: dict) -> str | None:
+async def _get_file_sha(
+    client: httpx.AsyncClient, owner: str, repo: str,
+    path: str, branch: str, headers: dict
+) -> str | None:
     url = f"https://api.github.com/repos/{owner}/{repo}/contents/{path}?ref={branch}"
     res = await client.get(url, headers=headers)
     if res.status_code == 200:

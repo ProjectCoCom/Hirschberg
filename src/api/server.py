@@ -15,6 +15,7 @@ import asyncio
 from contextlib import asynccontextmanager
 from datetime import UTC
 
+import structlog
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -31,6 +32,8 @@ from api.settings import router as settings_router
 from api.usage import router as usage_router
 from config import load_settings
 from db import db
+
+log = structlog.get_logger()
 
 
 def _now() -> str:
@@ -73,7 +76,8 @@ async def _find_session_by_prompt(task_row: dict, jules_key: str) -> str | None:
             # Fallback: title match alone if no timestamp available
             if title_match and not task_created:
                 return s_dict.get("name", "").split("/")[-1]
-    except Exception:
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
         pass
     return None
 
@@ -90,7 +94,8 @@ def _times_within_minutes(local_time: str, jules_time: str, minutes: int) -> boo
         local_dt = datetime.strptime(lt, "%Y-%m-%d %H:%M:%S").replace(tzinfo=UTC)
         jules_dt = datetime.strptime(jt, "%Y-%m-%d %H:%M:%S").replace(tzinfo=UTC)
         return abs((local_dt - jules_dt).total_seconds()) < minutes * 60
-    except Exception:
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
         return True  # Parse failure — don't block on this
 
 
@@ -100,7 +105,8 @@ async def _get_jules_key() -> str | None:
     from db import db
     try:
         rows = await db.select("accounts")
-    except Exception:
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
         return None
     enabled = [r for r in rows if r.get("enabled", True)]
     if not enabled:
@@ -115,7 +121,8 @@ async def _get_jules_key() -> str | None:
     vault = KeyVault(load_settings().encryption_key)
     try:
         return vault.decrypt(encrypted)
-    except Exception:
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
         return encrypted
 
 
@@ -133,7 +140,8 @@ async def _local_poll_session_status(session_id: str, jules_key: str, timeout_mi
                     return {"state": str(state)}
                 if state == SessionState.AWAITING_PLAN_APPROVAL:
                     await client.approve_plan(session_id)
-            except Exception:
+            except Exception as e:
+                log.error("unhandled_exception", error=str(e))
                 pass
             await asyncio.sleep(15)
         return {"state": "TIMEOUT"}
@@ -146,7 +154,8 @@ async def _recover_orphaned_tasks():
     await asyncio.sleep(2)  # Let the DB connection settle
     try:
         rows = await db.select("agent_tasks", {"status": "running"})
-    except Exception:
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
         return
     if not rows:
         return
@@ -213,7 +222,8 @@ async def _resume_pending_tasks(jules_key: str):
     Reads the persisted execution context to reconstruct provider/model/mode."""
     try:
         pending = await db.select("agent_tasks", {"status": "pending"})
-    except Exception:
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
         pending = []
     if not pending:
         return
@@ -336,7 +346,15 @@ class PromptUpdate(BaseModel):
 @app.get("/api/prompts")
 async def list_prompts():
     rows = await db.select("prompts")
-    return {"prompts": [{"id": r.get("id") or r["name"], "name": r["name"], "content": r.get("content", ""), "source": r.get("source", "user")} for r in rows]}
+    prompts_list = []
+    for r in rows:
+        prompts_list.append({
+            "id": r.get("id") or r["name"],
+            "name": r["name"],
+            "content": r.get("content", ""),
+            "source": r.get("source", "user")
+        })
+    return {"prompts": prompts_list}
 
 
 @app.get("/api/prompts/system")
@@ -447,24 +465,35 @@ async def delete_prompt(name: str):
 async def list_terminals():
     try:
         rows = await db.select("agent_tasks")
-    except Exception:
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
         return []
     count = await _get_pending_approvals_count()
-    return [{
-        "terminalId": r["id"],
-        "label": r.get("prompt", "")[:40],
-        "state": "live" if r["status"] == "running" else ("queued" if r["status"] == "pending" else "idle"),
-        "tentacleId": f"{r['repo_owner']}/{r['repo_name']}",
-        "tentacleName": r.get("prompt", "")[:30],
-        "workspaceMode": "shared",
-        "createdAt": r["created_at"],
-        "agentRuntimeState": "processing" if r["status"] == "running" else "idle",
-        "lifecycleState": "running" if r["status"] == "running" else ("registered" if r["status"] == "pending" else "exited"),
-        "hasUserPrompt": True,
-        "sessionId": r.get("session_id", ""),
-        "pending_approvals_count": count,
-        "pendingApprovalsCount": count,
-    } for r in rows]
+    result = []
+    for r in rows:
+        status = r["status"]
+        state_val = "live" if status == "running" else ("queued" if status == "pending" else "idle")
+        lifecycle_val = (
+            "running"
+            if status == "running"
+            else ("registered" if status == "pending" else "exited")
+        )
+        result.append({
+            "terminalId": r["id"],
+            "label": r.get("prompt", "")[:40],
+            "state": state_val,
+            "tentacleId": f"{r['repo_owner']}/{r['repo_name']}",
+            "tentacleName": r.get("prompt", "")[:30],
+            "workspaceMode": "shared",
+            "createdAt": r["created_at"],
+            "agentRuntimeState": "processing" if r["status"] == "running" else "idle",
+            "lifecycleState": lifecycle_val,
+            "hasUserPrompt": True,
+            "sessionId": r.get("session_id", ""),
+            "pending_approvals_count": count,
+            "pendingApprovalsCount": count,
+        })
+    return result
 
 
 @app.delete("/api/agent-tasks/{task_id}")
@@ -490,7 +519,8 @@ async def list_terminal_snapshots():
 async def list_tentacles():
     try:
         rows = await db.select("agent_tasks")
-    except Exception:
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
         rows = []
 
     repos: dict[str, dict] = {}
@@ -552,7 +582,8 @@ async def list_tentacles():
 async def list_canvas_sessions():
     try:
         tasks = await db.select("agent_tasks")
-    except Exception:
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
         tasks = []
 
     sessions = []
@@ -591,7 +622,8 @@ async def get_usage():
         try:
             best = accounts[0]
             await db.update("accounts", {"sessions_today": sessions_today}, {"id": best["id"]})
-        except Exception:
+        except Exception as e:
+            log.error("unhandled_exception", error=str(e))
             pass
 
     pct = int((sessions_today / total_daily) * 100) if total_daily > 0 else 0
@@ -606,7 +638,11 @@ async def get_usage():
         "secondaryResetAt": None,
         "extraUsageCostUsed": sessions_today,
         "extraUsageCostLimit": total_daily,
-        "message": f"{sessions_today}/{total_daily} daily sessions | {active_count} account{'s' if active_count != 1 else ''}",
+        "account_word": "accounts" if active_count != 1 else "account",
+        "message": (
+            f"{sessions_today}/{total_daily} daily sessions | "
+            f"{active_count} {'accounts' if active_count != 1 else 'account'}"
+        ),
     }
 
 
@@ -628,7 +664,8 @@ async def _count_today_sessions(accounts: list[dict]) -> int:
             continue
         try:
             key = vault.decrypt(encrypted)
-        except Exception:
+        except Exception as e:
+            log.error("unhandled_exception", error=str(e))
             key = encrypted
         if not key:
             continue
@@ -645,7 +682,8 @@ async def _count_today_sessions(accounts: list[dict]) -> int:
                         total += 1
             finally:
                 await client.close()
-        except Exception:
+        except Exception as e:
+            log.error("unhandled_exception", error=str(e))
             continue
 
     return total
@@ -655,7 +693,8 @@ async def _get_pending_approvals_count() -> int:
     try:
         rows = await db.select("orchestrator_sessions", {"status": "awaiting_plan_approval"})
         return len(rows)
-    except Exception:
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
         return 0
 
 
@@ -737,7 +776,8 @@ async def _fetch_jules_repos_as_tentacles() -> dict[str, dict]:
                     "suggestedSkills": [],
                 }
         return repos
-    except Exception:
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
         return {}
 
 
@@ -751,7 +791,8 @@ async def _fetch_jules_sessions_all_accounts() -> tuple[dict[str, list[dict]], s
 
     try:
         accounts = await db.select("accounts")
-    except Exception:
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
         accounts = []
 
     from clients.jules import JulesClient
@@ -763,7 +804,8 @@ async def _fetch_jules_sessions_all_accounts() -> tuple[dict[str, list[dict]], s
             continue
         try:
             key = vault.decrypt(encrypted)
-        except Exception:
+        except Exception as e:
+            log.error("unhandled_exception", error=str(e))
             key = encrypted
         if not key:
             continue
@@ -797,7 +839,8 @@ async def _fetch_jules_sessions_all_accounts() -> tuple[dict[str, list[dict]], s
                 page_token = next_page_token
                 if not page_token:
                     break
-            except Exception:
+            except Exception as e:
+                log.error("unhandled_exception", error=str(e))
                 break
 
     return sessions_by_date, projects
@@ -826,11 +869,14 @@ async def get_usage_heatmap():
         total_sessions += count
         if count > 0:
             total_days_active += 1
+        projects_list = [{"key": k, "tokens": v} for k, v in day_projects.items()]
+        if not projects_list:
+            projects_list = [{"key": "none", "tokens": 0}]
         days.append({
             "date": date,
             "totalTokens": count,
             "sessions": count,
-            "projects": [{"key": k, "tokens": v} for k, v in day_projects.items()] if day_projects else [{"key": "none", "tokens": 0}],
+            "projects": projects_list,
             "models": [{"key": "sessions", "tokens": count}],
         })
 
@@ -851,7 +897,16 @@ async def get_monitor_feed():
 
 @app.get("/api/monitor/config")
 async def get_monitor_config():
-    return {"providerId": "x", "queryTerms": [], "refreshPolicy": {"maxCacheAgeMs": 3600000, "maxPosts": 30, "searchWindowDays": 7}, "providers": {}}
+    return {
+        "providerId": "x",
+        "queryTerms": [],
+        "refreshPolicy": {
+            "maxCacheAgeMs": 3600000,
+            "maxPosts": 30,
+            "searchWindowDays": 7
+        },
+        "providers": {}
+    }
 
 
 @app.get("/api/code-intel/events")

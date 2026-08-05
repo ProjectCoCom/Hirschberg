@@ -15,12 +15,13 @@ import asyncio
 from datetime import UTC
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+import structlog
+from fastapi import APIRouter, HTTPException, Request, Depends
 from pydantic import BaseModel
 
 from clients.github import GitHubClient
 from config import load_settings
-from core.account_pool import AccountPool, get_account_pool, get_singleton_pool
+from core.account_pool import get_singleton_pool
 from core.context_store import ContextStore
 from core.coordinator import AgentCoordinator
 from core.plan_executor import parse_plan
@@ -28,8 +29,16 @@ from core.workflow_engine import WorkflowEngine
 from db import db
 from models.workflow import WorkflowStatus
 
+log = structlog.get_logger()
+
 router = APIRouter()
 settings = load_settings()
+
+
+def get_request_from_body(body: dict) -> Request:
+    """Helper to extract Request from FastAPI dependency injection."""
+    # This is a workaround - the actual Request will be injected by FastAPI
+    pass
 
 
 class ExecuteRequest(BaseModel):
@@ -54,7 +63,8 @@ class ExecuteResponse(BaseModel):
 
 
 @router.post("/api/execute")
-async def execute_plan(request: ExecuteRequest, pool: AccountPool = Depends(get_account_pool)):
+async def execute_plan(request: ExecuteRequest, req: Request):
+    pool = req.app.state.account_pool
     token = settings.github_token
     if not token:
         raise HTTPException(400, "No GitHub token configured in .env")
@@ -63,7 +73,7 @@ async def execute_plan(request: ExecuteRequest, pool: AccountPool = Depends(get_
     try:
         workflow = parse_plan(request.plan_json, request.repo_owner, request.repo_name)
     except Exception as e:
-        raise HTTPException(400, f"Invalid plan: {e}")
+        raise HTTPException(400, f"Invalid plan: {e}") from e
 
     # 3. Check if we have any active/enabled accounts configured
     if not pool._accounts:
@@ -82,7 +92,7 @@ async def execute_plan(request: ExecuteRequest, pool: AccountPool = Depends(get_
             task.workflow_id = workflow.id
             await db.insert("agent_tasks", task.model_dump(mode="json"))
     except Exception as e:
-        raise HTTPException(500, f"Database persistence failed: {e}")
+        raise HTTPException(500, f"Database persistence failed: {e}") from e
 
     # 5. Execute using System A (WorkflowEngine)
     store = ContextStore(db)
@@ -109,7 +119,8 @@ async def execute_plan(request: ExecuteRequest, pool: AccountPool = Depends(get_
                 pr_url=db_task.get("pr_url") or None,
                 error=db_task.get("error") or None,
             ))
-        except Exception:
+        except Exception as e:
+            log.error("unhandled_exception", error=str(e))
             results.append(TaskResult(
                 task_id=str(task.id),
                 status=str(task.status),
@@ -128,9 +139,13 @@ async def execute_plan(request: ExecuteRequest, pool: AccountPool = Depends(get_
             if base_sha:
                 branches = [t.branch for t in workflow.tasks]
                 integration = f"jat/integration-{request.repo_name}"
-                await create_integration_branch(request.repo_owner, request.repo_name, base_sha, integration, token)
-                await merge_branches(request.repo_owner, request.repo_name, branches, integration, token)
-                await create_final_pr(request.repo_owner, request.repo_name, integration, "main", f"JAT-AI: {integration}", token)
+                await create_integration_branch(request.repo_owner, request.repo_name,
+                                                base_sha, integration, token)
+                await merge_branches(request.repo_owner, request.repo_name,
+                                     branches, integration, token)
+                pr_title = f"JAT-AI: {integration}"
+                await create_final_pr(request.repo_owner, request.repo_name,
+                                      integration, "main", pr_title, token)
         except Exception as e:
             print(f"[WORKFLOW] Post-execution merge/PR failed: {e}")
         finally:
@@ -154,21 +169,24 @@ class StartOrchestratorRequest(BaseModel):
 
 
 @router.post("/api/orchestrators/start")
-async def start_orchestrator(request: StartOrchestratorRequest, pool: AccountPool = Depends(get_account_pool)):
+async def start_orchestrator(request: StartOrchestratorRequest, req: Request):
     from uuid import uuid4
 
     from core.account_pool import AccountRole
+
+    pool = req.app.state.account_pool
 
     source = f"sources/github/{request.repo_owner}/{request.repo_name}"
     try:
         # Prioritize ORCHESTRATOR role account
         account = pool.acquire(source, role=AccountRole.ORCHESTRATOR)
-    except Exception:
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
         try:
             # Fall back to any available
             account = pool.acquire(source)
         except Exception as e:
-            raise HTTPException(400, f"No available accounts configured: {e}")
+            raise HTTPException(400, f"No available accounts configured: {e}") from e
 
     client = pool.get_client(account.id)
     try:
@@ -204,7 +222,9 @@ async def start_orchestrator(request: StartOrchestratorRequest, pool: AccountPoo
         })
 
         # Launch background poller
-        asyncio.create_task(_poll_orchestrator(session_id, str(account.id), request.repo_owner, request.repo_name, str(orchestrator_task_id)))
+        asyncio.create_task(_poll_orchestrator(session_id, str(account.id),
+                                               request.repo_owner, request.repo_name,
+                                               str(orchestrator_task_id)))
 
         return {
             "session_id": session_id,
@@ -213,7 +233,7 @@ async def start_orchestrator(request: StartOrchestratorRequest, pool: AccountPoo
             "task_id": str(orchestrator_task_id),
         }
     except Exception as e:
-        raise HTTPException(500, f"Failed to start orchestrator: {e}")
+        raise HTTPException(500, f"Failed to start orchestrator: {e}") from e
 
 
 async def _poll_orchestrator(session_id: str, account_id: str, owner: str, repo: str, task_id: str):
@@ -224,7 +244,8 @@ async def _poll_orchestrator(session_id: str, account_id: str, owner: str, repo:
     pool = get_singleton_pool()
     try:
         client = pool.get_client(UUID(account_id))
-    except Exception:
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
         return
 
     last_activity_time = None
@@ -239,13 +260,21 @@ async def _poll_orchestrator(session_id: str, account_id: str, owner: str, repo:
                     SessionState.PAUSED: "paused",
                 }
                 new_status = status_map.get(session.state, "running")
-                await db.update("orchestrator_sessions", {"status": new_status, "updated_at": _now()}, {"session_id": session_id})
-                await db.update("agent_tasks", {"status": "running" if new_status == "running" else new_status}, {"id": task_id})
+                await db.update("orchestrator_sessions",
+                                {"status": new_status, "updated_at": _now()},
+                                {"session_id": session_id})
+                task_status = "running" if new_status == "running" else new_status
+                await db.update("agent_tasks", {"status": task_status}, {"id": task_id})
 
                 try:
                     acts = await client.list_activities(session_id, since=last_activity_time)
                     for act in acts:
-                        activity_type = "plan_generated" if act.plan_generated else ("agent_messaged" if act.agent_messaged else "progress_updated")
+                        if act.plan_generated:
+                            activity_type = "plan_generated"
+                        elif act.agent_messaged:
+                            activity_type = "agent_messaged"
+                        else:
+                            activity_type = "progress_updated"
                         await db.upsert("session_activities", {
                             "task_id": task_id,
                             "session_id": session_id,
@@ -258,12 +287,14 @@ async def _poll_orchestrator(session_id: str, account_id: str, owner: str, repo:
                         })
                         if act.create_time:
                             last_activity_time = act.create_time.isoformat()
-                except Exception:
+                except Exception as e:
+                    log.error("unhandled_exception", error=str(e))
                     pass
 
                 if session.state in (SessionState.COMPLETED, SessionState.FAILED):
                     break
-            except Exception:
+            except Exception as e:
+                log.error("unhandled_exception", error=str(e))
                 pass
             await asyncio.sleep(15)
     finally:
@@ -271,7 +302,8 @@ async def _poll_orchestrator(session_id: str, account_id: str, owner: str, repo:
 
 
 @router.post("/api/orchestrators/{session_id}/approve")
-async def approve_orchestrator_plan(session_id: str, pool: AccountPool = Depends(get_account_pool)):
+async def approve_orchestrator_plan(session_id: str, req: Request):
+    pool = req.app.state.account_pool
     # Find account associated with the session
     try:
         tasks = await db.select("agent_tasks", {"session_id": session_id})
@@ -291,7 +323,7 @@ async def approve_orchestrator_plan(session_id: str, pool: AccountPool = Depends
         await db.update("orchestrator_sessions", {"status": "running"}, {"session_id": session_id})
         return {"ok": True}
     except Exception as e:
-        raise HTTPException(500, f"Approve plan failed: {e}")
+        raise HTTPException(500, f"Approve plan failed: {e}") from e
 
 
 @router.get("/api/orchestrators/{session_id}/decisions")
@@ -305,7 +337,7 @@ async def get_orchestrator_decisions(session_id: str):
             "tasks": tasks
         }
     except Exception as e:
-        raise HTTPException(500, str(e))
+        raise HTTPException(500, str(e)) from e
 
 
 @router.get("/api/projects/{owner}/{repo}/decisions")
@@ -326,7 +358,7 @@ async def get_project_decisions(owner: str, repo: str):
             })
         return {"decisions": results}
     except Exception as e:
-        raise HTTPException(500, str(e))
+        raise HTTPException(500, str(e)) from e
 
 
 @router.get("/api/session-limiter/status")

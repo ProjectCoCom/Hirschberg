@@ -16,11 +16,14 @@ import re
 import shutil
 from pathlib import Path
 
+import structlog
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from config import load_settings
 from db import db
+
+log = structlog.get_logger()
 
 router = APIRouter()
 
@@ -52,14 +55,16 @@ async def get_summarizer_settings():
         rows = await db.select("app_settings", filters={"key": _SETTINGS_KEY})
         if rows:
             return json.loads(rows[0].get("value", "{}"))
-    except Exception:
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
         try:
             if hasattr(db, "_get_conn"):
                 db._get_conn().execute(
                     "CREATE TABLE IF NOT EXISTS app_settings (key TEXT PRIMARY KEY, value TEXT NOT NULL DEFAULT '{}')"
                 )
                 db._get_conn().commit()
-        except Exception:
+        except Exception as e:
+            log.error("unhandled_exception", error=str(e))
             pass
     return {"mode": "free", "provider": "", "model": "", "limit": 10}
 
@@ -73,7 +78,8 @@ async def save_summarizer_settings(body: SummarizerConfig):
             await db.update("app_settings", {"value": value}, {"key": _SETTINGS_KEY})
         else:
             await db.insert("app_settings", {"key": _SETTINGS_KEY, "value": value})
-    except Exception:
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
         pass
     return {"ok": True}
 
@@ -100,7 +106,8 @@ async def _get_db_mode() -> str:
         rows = await db.select("app_settings", filters={"key": "database_mode"})
         if rows:
             return rows[0].get("value", "local")
-    except Exception:
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
         pass
     return "local"
 
@@ -186,7 +193,8 @@ async def update_app_settings(body: AppSettingsPayload):
             await db.update("app_settings", {"value": mode}, {"key": "database_mode"})
         else:
             await db.insert("app_settings", {"key": "database_mode", "value": mode})
-    except Exception:
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
         pass
 
     return {"ok": True, "restart_required": bool(updates)}
@@ -205,7 +213,8 @@ async def _migrate_encrypted_rows(old_key: str, new_key: str) -> tuple[int, int]
     for table, id_col in (("ai_providers", "id"), ("accounts", "id")):
         try:
             rows = await db.select(table, columns=f"{id_col}, api_key_encrypted")
-        except Exception:
+        except Exception as e:
+            log.error("unhandled_exception", error=str(e))
             continue
         for row in rows:
             encrypted = row.get("api_key_encrypted")
@@ -217,7 +226,8 @@ async def _migrate_encrypted_rows(old_key: str, new_key: str) -> tuple[int, int]
                 new_encrypted = new_vault.encrypt(plain)
                 await db.update(table, {"api_key_encrypted": new_encrypted}, filters={id_col: row_id})
                 migrated += 1
-            except Exception:
+            except Exception as e:
+                log.error("unhandled_exception", error=str(e))
                 failed += 1
     return migrated, failed
 

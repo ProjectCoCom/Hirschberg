@@ -200,7 +200,7 @@ async def run_workflow(settings, api_key: str, args) -> None:
     await pool.close_all()
 
 
-def _build_workflow(data: dict, settings) -> Workflow:
+def _build_workflow(data: dict, settings):  # type: ignore[no-untyped-def]
     from uuid import UUID
 
     from models.workflow import AgentTask, Workflow

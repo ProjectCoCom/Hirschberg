@@ -14,9 +14,12 @@ from __future__ import annotations
 import contextlib
 from datetime import UTC, datetime, timedelta
 
+import structlog
 from fastapi import APIRouter
 
 from db import db
+
+log = structlog.get_logger()
 
 router = APIRouter()
 
@@ -51,13 +54,21 @@ def _daily_breakdown(rows: list[dict], now: datetime) -> list[dict]:
 async def get_usage_stats():
     try:
         rows = await db.select("token_usage", order_by="created_at DESC")
-    except Exception:
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
         # Table may not exist yet on old DBs
         try:
             if hasattr(db, "_get_conn"):
-                db._get_conn().execute("CREATE TABLE IF NOT EXISTS token_usage (id TEXT PRIMARY KEY, provider_type TEXT NOT NULL DEFAULT '', model TEXT NOT NULL DEFAULT '', input_tokens INTEGER DEFAULT 0, output_tokens INTEGER DEFAULT 0, conversation_id TEXT DEFAULT '', created_at TEXT DEFAULT (datetime('now')))")
+                db._get_conn().execute(
+                    "CREATE TABLE IF NOT EXISTS token_usage "
+                    "(id TEXT PRIMARY KEY, provider_type TEXT NOT NULL DEFAULT '', "
+                    "model TEXT NOT NULL DEFAULT '', input_tokens INTEGER DEFAULT 0, "
+                    "output_tokens INTEGER DEFAULT 0, conversation_id TEXT DEFAULT '', "
+                    "created_at TEXT DEFAULT (datetime('now')))"
+                )
                 db._get_conn().commit()
-        except Exception:
+        except Exception as e:
+            log.error("unhandled_exception", error=str(e))
             pass
         rows = []
 
@@ -67,12 +78,25 @@ async def get_usage_stats():
     today_rows = [r for r in rows if r.get("created_at", "") >= today_start]
 
     return {
-        "total": {"input_tokens": sum(r.get("input_tokens", 0) for r in rows), "output_tokens": sum(r.get("output_tokens", 0) for r in rows), "requests": len(rows)},
-        "today": {"input_tokens": sum(r.get("input_tokens", 0) for r in today_rows), "output_tokens": sum(r.get("output_tokens", 0) for r in today_rows), "requests": len(today_rows)},
+        "total": {
+            "input_tokens": sum(r.get("input_tokens", 0) for r in rows),
+            "output_tokens": sum(r.get("output_tokens", 0) for r in rows),
+            "requests": len(rows)
+        },
+        "today": {
+            "input_tokens": sum(r.get("input_tokens", 0) for r in today_rows),
+            "output_tokens": sum(r.get("output_tokens", 0) for r in today_rows),
+            "requests": len(today_rows)
+        },
         "by_provider": _aggregate_by_field(rows, "provider_type"),
         "by_model": _aggregate_by_field(rows, "model"),
         "daily": _daily_breakdown(rows, now),
-        "recent": [{"provider": r.get("provider_type"), "model": r.get("model"), "input": r.get("input_tokens"), "output": r.get("output_tokens"), "at": r.get("created_at")} for r in rows[:20]],
+        "recent": [
+            {"provider": r.get("provider_type"), "model": r.get("model"),
+             "input": r.get("input_tokens"), "output": r.get("output_tokens"),
+             "at": r.get("created_at")}
+            for r in rows[:20]
+        ],
     }
 
 

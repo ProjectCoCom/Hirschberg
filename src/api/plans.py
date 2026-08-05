@@ -51,7 +51,12 @@ async def get_plan(plan_id: str):
 
 @router.post("/api/plans")
 async def create_plan(req: PlanCreate):
-    data = {"conversation_id": req.conversation_id, "title": req.title, "plan_json": req.plan_json, "status": req.status}
+    data = {
+        "conversation_id": req.conversation_id,
+        "title": req.title,
+        "plan_json": req.plan_json,
+        "status": req.status
+    }
     return await db.insert("plans", data)
 
 

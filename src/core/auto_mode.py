@@ -105,7 +105,8 @@ async def get_jules_key() -> str | None:
     from db import db
     try:
         rows = await db.select("accounts")
-    except Exception:
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
         return None
     enabled = [r for r in rows if r.get("enabled", True)]
     if not enabled:
@@ -120,7 +121,8 @@ async def get_jules_key() -> str | None:
     vault = KeyVault(load_settings().encryption_key)
     try:
         return vault.decrypt(encrypted)
-    except Exception:
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
         return encrypted
 
 
@@ -202,7 +204,8 @@ async def run_auto_mode(config: AutoModeConfig, state: AutoModeState) -> AutoMod
             db_task = await store.get_task_state(task.id)
             task.status = db_task.get("status", task.status)
             task.error = db_task.get("error", task.error)
-        except Exception:
+        except Exception as e:
+            log.error("unhandled_exception", error=str(e))
             pass
 
     failed = [t for t in plan.tasks if t.status != TaskStatus.COMPLETED]
