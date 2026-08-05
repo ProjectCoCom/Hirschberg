@@ -14,14 +14,16 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import StrEnum
-from uuid import UUID, uuid4
 from typing import TYPE_CHECKING
+from uuid import UUID, uuid4
 
 import structlog
 from fastapi import Request
 
 if TYPE_CHECKING:
     from core.context_store import ContextStore
+
+import contextlib
 
 from clients.jules import JulesClient
 from exceptions import AccountPoolExhausted
@@ -253,10 +255,8 @@ class AccountPool:
                 new_clients[acc_id] = JulesClient(decrypted_key)
 
         # Close clients for accounts that were deleted
-        for deleted_id in (set(self._clients.keys()) - set(new_clients.keys())):
-            try:
-                pass
-            except Exception:
+        for _deleted_id in (set(self._clients.keys()) - set(new_clients.keys())):
+            with contextlib.suppress(Exception):
                 pass
 
         self._accounts = new_accounts

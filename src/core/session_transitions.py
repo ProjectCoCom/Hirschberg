@@ -11,13 +11,14 @@ Coupling:
 from __future__ import annotations
 
 from typing import Any
+
 import structlog
 
 from core.account_pool import AccountPool
 from core.context_store import ContextStore
 from core.session_poller import store_activity
-from models.workflow import AgentTask
 from models.jules import SessionState
+from models.workflow import AgentTask
 
 log = structlog.get_logger()
 

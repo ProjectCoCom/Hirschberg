@@ -48,6 +48,8 @@ class ChatRequest(BaseModel):
     conversation_id: str | None = None
 
 
+import contextlib
+
 from prompts.system_prompts import ASK_MODE_SYSTEM, AUTO_MODE_SYSTEM, BUILD_MODE_SYSTEM, PLAN_MODE_SYSTEM
 
 MODE_SYSTEM_PROMPTS = {
@@ -134,7 +136,14 @@ async def _call_google(api_key: str, model: str, messages: list[dict], system: s
     return data["candidates"][0]["content"]["parts"][0]["text"]
 
 
-async def _call_openai_compat(api_key: str, provider_type: str, model: str, messages: list[dict], system: str, custom_base_url: str = "") -> str:
+async def _call_openai_compat(
+    api_key: str,
+    provider_type: str,
+    model: str,
+    messages: list[dict],
+    system: str,
+    custom_base_url: str = "",
+) -> str:
     import httpx
 
     from clients.ai_providers import DEFAULT_BASE_URLS, ProviderType
@@ -168,7 +177,14 @@ async def _call_openai_compat(api_key: str, provider_type: str, model: str, mess
     return data["choices"][0]["message"]["content"]
 
 
-async def _call_provider(api_key: str, provider_type: str, model: str, messages: list[dict], system: str, custom_base_url: str = "") -> str:
+async def _call_provider(
+    api_key: str,
+    provider_type: str,
+    model: str,
+    messages: list[dict],
+    system: str,
+    custom_base_url: str = "",
+) -> str:
     if provider_type == "google":
         return await _call_google(api_key, model, messages, system)
     return await _call_openai_compat(api_key, provider_type, model, messages, system, custom_base_url)
@@ -191,11 +207,14 @@ REPOMIX_TRIGGERS = {"rrpo", "repomix", "/repomix", "/rrpo", "rerepomix", "repomi
 THINK_INSTRUCTION = """
 
 <thinking>
-You may use <think>...</think> blocks for internal reasoning. Content inside think blocks will not be shown to the user but helps you work through complex problems step by step.
+You may use <think>...</think> blocks for internal reasoning.
+Content inside think blocks will not be shown to the user but helps you work through complex problems step by step.
 </thinking>
 
 <context_saving>
-If you discover important information worth remembering across conversations, append [ACTION:SAVE_CONTEXT:content here] at the end of your response. This saves the content to long-term memory for this repo.
+If you discover important information worth remembering,
+append [ACTION:SAVE_CONTEXT:content here] at the end of your response.
+This saves the content to long-term memory for this repo.
 </context_saving>"""
 
 
@@ -212,8 +231,16 @@ async def _inject_available_skills(system: str) -> str:
         rows = await db.select("prompts")
         if not rows:
             return system
-        skills_list = "\n".join(f"- {r['name']}: {r.get('content', '')[:80]}" for r in rows[:20])
-        return system + f"\n\n<available_skills>\nAssign these via prompt_id in your plan. The orchestrator will inject the full prompt content into each Jules session.\n{skills_list}\n</available_skills>"
+        skills_list = "\n".join(
+            f"- {r['name']}: {r.get('content', '')[:80]}" for r in rows[:20]
+        )
+        skills_header = (
+            "\n\n<available_skills>\n"
+            "Assign these via prompt_id in your plan.\n"
+            "The orchestrator will inject the full prompt content\n"
+            "into each Jules session.\n"
+        )
+        return system + skills_header + skills_list + "\n</available_skills>"
     except Exception:
         return system
 
@@ -245,9 +272,21 @@ async def _handle_plan_actions(conversation_id: str | None, response: str) -> No
         try:
             existing = await db.select("plans", filters={"conversation_id": conversation_id})
             if existing:
-                await db.update("plans", {"title": title.strip(), "plan_json": plan_json.strip(), "status": "draft"}, filters={"id": existing[0]["id"]})
+                await db.update(
+                    "plans",
+                    {"title": title.strip(), "plan_json": plan_json.strip(), "status": "draft"},
+                    filters={"id": existing[0]["id"]},
+                )
             else:
-                await db.insert("plans", {"conversation_id": conversation_id, "title": title.strip(), "plan_json": plan_json.strip(), "status": "draft"})
+                await db.insert(
+                    "plans",
+                    {
+                        "conversation_id": conversation_id,
+                        "title": title.strip(),
+                        "plan_json": plan_json.strip(),
+                        "status": "draft",
+                    },
+                )
         except Exception:
             pass
     # PLAN_UPDATE
@@ -255,17 +294,27 @@ async def _handle_plan_actions(conversation_id: str | None, response: str) -> No
         try:
             existing = await db.select("plans", filters={"conversation_id": conversation_id})
             if existing:
-                await db.update("plans", {"title": title.strip(), "plan_json": plan_json.strip()}, filters={"id": existing[0]["id"]})
+                await db.update(
+                    "plans",
+                    {"title": title.strip(), "plan_json": plan_json.strip()},
+                    filters={"id": existing[0]["id"]},
+                )
             else:
-                await db.insert("plans", {"conversation_id": conversation_id, "title": title.strip(), "plan_json": plan_json.strip(), "status": "draft"})
+                await db.insert(
+                    "plans",
+                    {
+                        "conversation_id": conversation_id,
+                        "title": title.strip(),
+                        "plan_json": plan_json.strip(),
+                        "status": "draft",
+                    },
+                )
         except Exception:
             pass
     # PLAN_DELETE
     for title in _PLAN_DELETE_PATTERN.findall(response):
-        try:
+        with contextlib.suppress(Exception):
             await db.delete("plans", filters={"conversation_id": conversation_id})
-        except Exception:
-            pass
 
 
 @router.post("/api/chat/send")
@@ -316,7 +365,10 @@ async def chat_send(request: ChatRequest):
             plan_rows = await db.select("plans", filters={"conversation_id": request.conversation_id})
             if plan_rows:
                 p = plan_rows[0]
-                system += f"\n\n<current_plan title=\"{p['title']}\" status=\"{p['status']}\">\n{p['plan_json']}\n</current_plan>"
+                system += (
+                    f"\n\n<current_plan title=\"{p['title']}\" status=\"{p['status']}\">\n"
+                    f"{p['plan_json']}\n</current_plan>"
+                )
         except Exception:
             pass
 

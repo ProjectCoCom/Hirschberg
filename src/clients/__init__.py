@@ -9,9 +9,9 @@ Coupling:
 """
 
 
-from clients.jules import JulesClient
-from clients.github import GitHubClient
-from clients.local_db import LocalDB
 from clients.database import Database
+from clients.github import GitHubClient
+from clients.jules import JulesClient
+from clients.local_db import LocalDB
 
 __all__ = ["JulesClient", "GitHubClient", "LocalDB", "Database"]

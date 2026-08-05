@@ -9,10 +9,11 @@ Coupling:
 """
 
 
+import contextlib
 import json
 import sqlite3
-import uuid
 import threading
+import uuid
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -21,7 +22,7 @@ from typing import Any
 def _serialize_val(v: Any) -> Any:
     if isinstance(v, uuid.UUID):
         return str(v)
-    if isinstance(v, (dict, list)):
+    if isinstance(v, dict | list):
         return json.dumps(v)
     if isinstance(v, bool):
         return 1 if v else 0
@@ -360,7 +361,7 @@ class LocalDB:
             if filters:
                 clauses = []
                 for k, v in filters.items():
-                    if isinstance(v, (list, tuple, set)):
+                    if isinstance(v, list | tuple | set):
                         if not v:
                             clauses.append("1 = 0")
                         else:
@@ -530,10 +531,8 @@ class LocalDB:
             if listener["table"] == table or listener["table"] == "*":
                 if listener["event_type"] == "*" or listener["event_type"] == event_type:
                     if listener["filter_fn"] is None or listener["filter_fn"](payload):
-                        try:
+                        with contextlib.suppress(Exception):
                             listener["callback"](payload)
-                        except Exception:
-                            pass
 
     def close(self) -> None:
         with self._lock:

@@ -102,6 +102,8 @@ async def _try_auto_merge(
     return result
 
 
+import contextlib
+
 from core.session_poller import SessionPoller, store_activity
 
 
@@ -151,10 +153,8 @@ async def _poll_until_done(
                     elif session.state == SessionState.AWAITING_PLAN_APPROVAL:
                         from core.orchestrator_relay import notify_orchestrator
                         await notify_orchestrator(pool, store, task_obj, "awaiting_plan_approval", summary="Session is awaiting plan approval")
-                        try:
+                        with contextlib.suppress(Exception):
                             await db.update("agent_tasks", {"status": "awaiting_plan_approval"}, {"id": task_id})
-                        except Exception:
-                            pass
                     elif session.state == SessionState.PAUSED:
                         from core.orchestrator_relay import notify_orchestrator
                         await notify_orchestrator(pool, store, task_obj, "paused", summary="Worker session paused")

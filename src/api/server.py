@@ -811,7 +811,7 @@ async def get_usage_heatmap():
     sessions_by_date, projects = await _fetch_jules_sessions_all_accounts()
 
     # Only include last 30 days
-    cutoff = (now - timedelta(days=30)).strftime("%Y-%m-%d")
+    (now - timedelta(days=30)).strftime("%Y-%m-%d")
     days: list[dict] = []
     total_sessions = 0
     total_days_active = 0

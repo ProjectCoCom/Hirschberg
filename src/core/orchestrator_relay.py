@@ -142,7 +142,7 @@ async def relay_worker_feedback(
         timeout = getattr(load_settings(), "feedback_timeout", 300.0)
         try:
             await asyncio.wait_for(poll_for_reply(), timeout=timeout)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             log.warning("relay_worker_feedback_timed_out", orchestrator_id=orchestrator_id, task_id=str(task.id))
             # Mark the task state to reflect "awaiting feedback timed out"
             task.status = "failed"
