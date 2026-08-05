@@ -93,7 +93,8 @@ class SessionPoller:
 
             try:
                 activities = await self.jules.list_activities(self.session_id, since=last_activity_time)
-            except Exception:
+            except Exception as e:
+                log.error("unhandled_exception", error=str(e))
                 activities = []
 
             for act in activities:

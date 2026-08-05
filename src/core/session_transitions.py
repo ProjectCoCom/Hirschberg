@@ -53,15 +53,28 @@ async def handle_session_transition(
                 await notify_orchestrator(pool, store, task, "failed", summary="Jules session failed")
             elif session.state == SessionState.AWAITING_USER_FEEDBACK:
                 from core.orchestrator_relay import notify_orchestrator, relay_worker_feedback
-                await notify_orchestrator(pool, store, task, "awaiting_user_feedback", summary="Worker session needs feedback")
+                await notify_orchestrator(
+                    pool,
+                    store,
+                    task,
+                    "awaiting_user_feedback",
+                    summary="Worker session needs feedback",
+                )
                 await relay_worker_feedback(pool, store, client, session.id, task)
             elif session.state == SessionState.AWAITING_PLAN_APPROVAL:
                 from core.orchestrator_relay import notify_orchestrator
-                await notify_orchestrator(pool, store, task, "awaiting_plan_approval", summary="Session is awaiting plan approval")
+                await notify_orchestrator(
+                    pool,
+                    store,
+                    task,
+                    "awaiting_plan_approval",
+                    summary="Session is awaiting plan approval",
+                )
                 try:
                     task.status = "awaiting_plan_approval"
                     await store.save_task_state(task.id, task.model_dump(mode="json"))
-                except Exception:
+                except Exception as e:
+                    log.error("unhandled_exception", error=str(e))
                     pass
             elif session.state == SessionState.PAUSED:
                 from core.orchestrator_relay import notify_orchestrator

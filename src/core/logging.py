@@ -15,7 +15,11 @@ import logging
 import re
 import sys
 
-SECRET_PATTERN = re.compile(r"(AQ[A-Za-z0-9_-]{20,}|ghp_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{80,}|sb-[A-Za-z0-9]{20,}|eyJ[A-Za-z0-9_-]{50,})")
+SECRET_PATTERN = re.compile(
+    r"(AQ[A-Za-z0-9_-]{20,}|ghp_[A-Za-z0-9]{36}|"
+    r"github_pat_[A-Za-z0-9_]{80,}|sb-[A-Za-z0-9]{20,}|"
+    r"eyJ[A-Za-z0-9_-]{50,})"
+)
 
 
 def _mask(text: str) -> str:

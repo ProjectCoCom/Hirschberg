@@ -15,11 +15,14 @@ import contextlib
 import json
 from datetime import UTC, datetime
 
+import structlog
 from fastapi import APIRouter
 from pydantic import BaseModel
 
 from config import load_settings
 from db import db
+
+log = structlog.get_logger()
 
 router = APIRouter()
 settings = load_settings()
@@ -43,11 +46,17 @@ class MessageCreate(BaseModel):
 @router.get("/api/conversations")
 async def list_conversations():
     try:
-        rows = await db.select("conversations", columns="id, title, mode, repo_owner, repo_name, model, provider_type, status, created_at, updated_at", order_by="updated_at DESC")
-    except Exception:
+        rows = await db.select(
+            "conversations",
+            columns="id, title, mode, repo_owner, repo_name, model, provider_type, status, created_at, updated_at",
+            order_by="updated_at DESC"
+        )
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
         try:
             rows = await db.select("conversations", order_by="updated_at DESC")
-        except Exception:
+        except Exception as e:
+            log.error("unhandled_exception", error=str(e))
             return {"conversations": []}
     return {"conversations": rows}
 
@@ -69,7 +78,8 @@ async def create_conversation(body: ConversationCreate):
 async def get_messages(conv_id: str):
     try:
         rows = await db.select("conversation_messages", filters={"conversation_id": conv_id}, order_by="created_at ASC")
-    except Exception:
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
         return {"messages": []}
     return {"messages": rows}
 
@@ -81,7 +91,8 @@ async def add_message(conv_id: str, body: MessageCreate):
         existing = await db.select("conversations", filters={"id": conv_id})
         if not existing:
             await db.insert("conversations", {"id": conv_id, "title": "Untitled", "mode": "ask"})
-    except Exception:
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
         pass
     row = await db.insert("conversation_messages", {
         "conversation_id": conv_id,
@@ -90,7 +101,11 @@ async def add_message(conv_id: str, body: MessageCreate):
         "metadata": json.dumps(body.metadata) if body.metadata else "{}",
     })
     with contextlib.suppress(Exception):
-        await db.update("conversations", {"updated_at": datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")}, {"id": conv_id})
+        await db.update(
+            "conversations",
+            {"updated_at": datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")},
+            {"id": conv_id}
+        )
     return row
 
 

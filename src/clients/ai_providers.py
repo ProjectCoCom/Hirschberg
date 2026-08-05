@@ -310,7 +310,14 @@ class AIProviderPool:
         resp.raise_for_status()
         models = resp.json().get("data", [])
         free = [m for m in models if ":free" in m.get("id", "")]
-        return [{"id": m["id"], "name": m.get("name", m["id"]), "context_length": m.get("context_length")} for m in free[:50]]
+        result = []
+        for m in free[:50]:
+            result.append({
+                "id": m["id"],
+                "name": m.get("name", m["id"]),
+                "context_length": m.get("context_length")
+            })
+        return result
 
     async def _list_google_models(self, account: ProviderAccount) -> list[dict]:
         resp = await self._client.get(

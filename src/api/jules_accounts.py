@@ -11,12 +11,15 @@ Coupling:
 
 from __future__ import annotations
 
+import structlog
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from config import load_settings
 from core.ai_interface import KeyVault
 from db import db
+
+log = structlog.get_logger()
 
 router = APIRouter()
 settings = load_settings()
@@ -48,7 +51,8 @@ class AccountPatch(BaseModel):
 async def list_accounts():
     try:
         rows = await db.select("accounts")
-    except Exception:
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
         rows = []
     accounts = []
     for r in rows:
@@ -92,7 +96,7 @@ async def create_account(body: AccountCreate):
     try:
         await db.insert("accounts", row)
     except Exception as e:
-        raise HTTPException(500, str(e))
+        raise HTTPException(500, str(e)) from e
     return {"ok": True}
 
 
@@ -114,7 +118,7 @@ async def patch_account(account_id: str, body: AccountPatch):
     try:
         await db.update("accounts", updates, {"id": account_id})
     except Exception as e:
-        raise HTTPException(500, str(e))
+        raise HTTPException(500, str(e)) from e
     return {"ok": True}
 
 
@@ -123,7 +127,7 @@ async def delete_account(account_id: str):
     try:
         await db.delete("accounts", {"id": account_id})
     except Exception as e:
-        raise HTTPException(500, str(e))
+        raise HTTPException(500, str(e)) from e
     return {"ok": True}
 
 
@@ -131,15 +135,17 @@ async def delete_account(account_id: str):
 async def test_account(account_id: str):
     try:
         rows = await db.select("accounts")
-    except Exception:
-        raise HTTPException(500, "DB unavailable")
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
+        raise HTTPException(500, "DB unavailable") from None
     row = next((r for r in rows if str(r["id"]) == account_id), None)
     if not row:
         raise HTTPException(404, "Account not found")
     key_raw = row.get("api_key_encrypted", row.get("api_key", ""))
     try:
         key = vault.decrypt(key_raw)
-    except Exception:
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
         key = key_raw
 
     from clients.jules import JulesClient
@@ -157,7 +163,8 @@ async def test_account(account_id: str):
 async def list_jules_sessions(repo: str | None = None):
     try:
         accounts = await db.select("accounts")
-    except Exception:
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
         return {"sessions": []}
 
     all_sessions = []
@@ -168,7 +175,8 @@ async def list_jules_sessions(repo: str | None = None):
         key_raw = acc.get("api_key_encrypted", acc.get("api_key", ""))
         try:
             key = vault.decrypt(key_raw)
-        except Exception:
+        except Exception as e:
+            log.error("unhandled_exception", error=str(e))
             key = key_raw
 
         try:
@@ -182,7 +190,8 @@ async def list_jules_sessions(repo: str | None = None):
                     all_sessions.append(s_dict)
             finally:
                 await client.close()
-        except Exception:
+        except Exception as e:
+            log.error("unhandled_exception", error=str(e))
             continue
 
     if repo:
@@ -200,15 +209,17 @@ async def list_jules_sessions(repo: str | None = None):
 async def get_session_detail(session_id: str):
     try:
         accounts = await db.select("accounts")
-    except Exception:
-        raise HTTPException(500, "DB unavailable")
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
+        raise HTTPException(500, "DB unavailable") from None
 
     from clients.jules import JulesClient
     for acc in accounts:
         key_raw = acc.get("api_key_encrypted", acc.get("api_key", ""))
         try:
             key = vault.decrypt(key_raw)
-        except Exception:
+        except Exception as e:
+            log.error("unhandled_exception", error=str(e))
             key = key_raw
 
         try:
@@ -220,7 +231,8 @@ async def get_session_detail(session_id: str):
                 return data
             finally:
                 await client.close()
-        except Exception:
+        except Exception as e:
+            log.error("unhandled_exception", error=str(e))
             continue
 
     raise HTTPException(404, "Session not found across any account")
@@ -234,15 +246,17 @@ async def send_session_message(session_id: str, body: dict):
 
     try:
         accounts = await db.select("accounts")
-    except Exception:
-        raise HTTPException(500, "DB unavailable")
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
+        raise HTTPException(500, "DB unavailable") from None
 
     from clients.jules import JulesClient
     for acc in accounts:
         key_raw = acc.get("api_key_encrypted", acc.get("api_key", ""))
         try:
             key = vault.decrypt(key_raw)
-        except Exception:
+        except Exception as e:
+            log.error("unhandled_exception", error=str(e))
             key = key_raw
 
         try:
@@ -252,7 +266,8 @@ async def send_session_message(session_id: str, body: dict):
                 return {"ok": True}
             finally:
                 await client.close()
-        except Exception:
+        except Exception as e:
+            log.error("unhandled_exception", error=str(e))
             continue
 
     raise HTTPException(404, "Session not found or not in awaiting state")

@@ -16,7 +16,6 @@ import os
 import sys
 
 from dotenv import load_dotenv
-
 from mcp.server.fastmcp import FastMCP
 
 # MCP server runs as a standalone process, needs src/ on the path
@@ -42,7 +41,8 @@ async def _get_jules():
         vault = KeyVault(load_settings().encryption_key)
         try:
             key = vault.decrypt(encrypted)
-        except Exception:
+        except Exception as e:
+            log.error("unhandled_exception", error=str(e))
             key = encrypted
     else:
         key = ""

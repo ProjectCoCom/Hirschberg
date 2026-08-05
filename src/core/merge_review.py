@@ -74,14 +74,20 @@ async def run_review_session(
             try:
                 session = await client.get_session(session_id)
                 if session.state in (SessionState.COMPLETED, SessionState.FAILED):
+                    pr_urls = []
+                    if session.outputs:
+                        for o in session.outputs:
+                            if o.pull_request:
+                                pr_urls.append({"pull_request": {"url": o.pull_request.url}})
                     result_data = {
                         "state": str(session.state),
-                        "outputs": [{"pull_request": {"url": o.pull_request.url}} for o in session.outputs if o.pull_request] if session.outputs else []
+                        "outputs": pr_urls,
                     }
                     break
                 if session.state == SessionState.AWAITING_PLAN_APPROVAL:
                     await client.approve_plan(session_id)
-            except Exception:
+            except Exception as e:
+                log.error("unhandled_exception", error=str(e))
                 pass
             await asyncio.sleep(15)
         else:
@@ -103,7 +109,14 @@ async def cleanup_branches(owner: str, repo: str, branches: list[str], token: st
     return results
 
 
-async def create_final_pr(owner: str, repo: str, integration_branch: str, base: str, title: str, token: str) -> str | None:
+async def create_final_pr(
+    owner: str,
+    repo: str,
+    integration_branch: str,
+    base: str,
+    title: str,
+    token: str,
+) -> str | None:
     gh_client = GitHubClient(token)
     try:
         return await gh_client.create_pull_request(

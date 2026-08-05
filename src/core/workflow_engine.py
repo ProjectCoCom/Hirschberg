@@ -12,6 +12,7 @@ Coupling:
 from __future__ import annotations
 
 import asyncio
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 import structlog
@@ -20,6 +21,9 @@ from core.context_store import ContextStore
 from core.coordinator import AgentCoordinator
 from exceptions import WorkflowValidationError
 from models.workflow import AgentTask, TaskStatus, Workflow, WorkflowStatus
+
+if TYPE_CHECKING:
+    from core.account_pool import AccountRole
 
 log = structlog.get_logger()
 
@@ -80,7 +84,11 @@ class WorkflowEngine:
                         await gh_client.create_branch_from_ref(owner, repo, workflow.integration_branch, base_sha)
                         # Persist integration branch on workflow in DB
                         await self._store.save_workflow_integration_branch(workflow.id, workflow.integration_branch)
-                        log.info("integration_branch_created", workflow_id=str(workflow.id), branch=workflow.integration_branch)
+                        log.info(
+                            "integration_branch_created",
+                            workflow_id=str(workflow.id),
+                            branch=workflow.integration_branch,
+                        )
                 except Exception as e:
                     log.warning("failed_to_create_integration_branch", error=str(e))
                 finally:
@@ -269,7 +277,8 @@ class WorkflowEngine:
                             verdict = extract_qa_verdict(act.agent_messaged.agent_message)
                             if verdict:
                                 parsed_verdict = verdict
-                except Exception:
+                except Exception as e:
+                    log.error("unhandled_exception", error=str(e))
                     pass
 
                 if session.state in (SessionState.COMPLETED, SessionState.FAILED):
@@ -287,9 +296,16 @@ class WorkflowEngine:
             parsed_verdict = {
                 "verdict": "reject",
                 "blocking_issues": [
-                    {"file": "N/A", "issue": "Integrator session failed to produce a valid JSON verdict block", "severity": "blocking"}
+                    {
+                        "file": "N/A",
+                        "issue": (
+                            "Integrator session failed to produce a valid "
+                            "JSON verdict block"
+                        ),
+                        "severity": "blocking",
+                    }
                 ],
-                "summary": "Integrator execution error or missing verdict."
+                "summary": "Integrator execution error or missing verdict.",
             }
 
         # 7. Update DB state
@@ -341,7 +357,10 @@ class WorkflowEngine:
 
                     issues_summary = ""
                     for issue in parsed_verdict.get("blocking_issues", []):
-                        issues_summary += f"- {issue.get('file', 'unknown')}: {issue.get('issue', '')} (Severity: {issue.get('severity', 'blocking')})\n"
+                        file_name = issue.get('file', 'unknown')
+                        issue_desc = issue.get('issue', '')
+                        severity = issue.get('severity', 'blocking')
+                        issues_summary += f"- {file_name}: {issue_desc} (Severity: {severity})\n"
                     summary = f"Integrator Review Rejected:\n{issues_summary}"
 
                     from core.orchestrator_relay import notify_orchestrator

@@ -16,14 +16,15 @@ import asyncio
 import os
 import sys
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from dotenv import load_dotenv
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 load_dotenv()
 
-from clients.supabase import SupabaseClient
+# Import after path setup and env loading
+from clients.supabase import SupabaseClient  # noqa: E402
 
 
 async def seed() -> None:
@@ -33,7 +34,7 @@ async def seed() -> None:
     task_1_id = str(uuid.uuid4())
     task_2_id = str(uuid.uuid4())
     task_3_id = str(uuid.uuid4())
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(UTC).isoformat()
 
     tasks = [
         {

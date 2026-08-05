@@ -11,8 +11,10 @@ Coupling:
 
 from __future__ import annotations
 
+import contextlib
 import re
 
+import structlog
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
@@ -27,6 +29,9 @@ from core.conversation_summarizer import (
 )
 from core.rag_store import query_conversation_context, store_context, store_conversation_exchange
 from db import db
+from prompts.system_prompts import ASK_MODE_SYSTEM, AUTO_MODE_SYSTEM, BUILD_MODE_SYSTEM, PLAN_MODE_SYSTEM
+
+log = structlog.get_logger()
 
 router = APIRouter()
 settings = load_settings()
@@ -48,10 +53,6 @@ class ChatRequest(BaseModel):
     conversation_id: str | None = None
 
 
-import contextlib
-
-from prompts.system_prompts import ASK_MODE_SYSTEM, AUTO_MODE_SYSTEM, BUILD_MODE_SYSTEM, PLAN_MODE_SYSTEM
-
 MODE_SYSTEM_PROMPTS = {
     "ask": ASK_MODE_SYSTEM,
     "plan": PLAN_MODE_SYSTEM,
@@ -72,14 +73,16 @@ def _decrypt_key(stored: str) -> str:
     vault = KeyVault(settings.encryption_key)
     try:
         return vault.decrypt(stored)
-    except Exception:
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
         return stored
 
 
 async def _get_enabled_keys(provider_type: str) -> list[dict]:
     try:
         rows = await db.select("ai_providers", filters={"provider_type": provider_type, "enabled": True})
-    except Exception:
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
         rows = []
     return rows
 
@@ -241,7 +244,8 @@ async def _inject_available_skills(system: str) -> str:
             "into each Jules session.\n"
         )
         return system + skills_header + skills_list + "\n</available_skills>"
-    except Exception:
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
         return system
 
 
@@ -287,7 +291,8 @@ async def _handle_plan_actions(conversation_id: str | None, response: str) -> No
                         "status": "draft",
                     },
                 )
-        except Exception:
+        except Exception as e:
+            log.error("unhandled_exception", error=str(e))
             pass
     # PLAN_UPDATE
     for title, plan_json in _PLAN_UPDATE_PATTERN.findall(response):
@@ -309,10 +314,11 @@ async def _handle_plan_actions(conversation_id: str | None, response: str) -> No
                         "status": "draft",
                     },
                 )
-        except Exception:
+        except Exception as e:
+            log.error("unhandled_exception", error=str(e))
             pass
     # PLAN_DELETE
-    for title in _PLAN_DELETE_PATTERN.findall(response):
+    for _title in _PLAN_DELETE_PATTERN.findall(response):
         with contextlib.suppress(Exception):
             await db.delete("plans", filters={"conversation_id": conversation_id})
 
@@ -369,7 +375,8 @@ async def chat_send(request: ChatRequest):
                     f"\n\n<current_plan title=\"{p['title']}\" status=\"{p['status']}\">\n"
                     f"{p['plan_json']}\n</current_plan>"
                 )
-        except Exception:
+        except Exception as e:
+            log.error("unhandled_exception", error=str(e))
             pass
 
     injected_chunks: list[str] = []
@@ -379,7 +386,8 @@ async def chat_send(request: ChatRequest):
             user_query = request.messages[-1].content
             try:
                 rag_chunks = await get_boosted_results(parts[0], parts[1], user_query, n_results=5)
-            except Exception:
+            except Exception as e:
+                log.error("unhandled_exception", error=str(e))
                 rag_chunks = []
             if rag_chunks:
                 injected_chunks = rag_chunks
@@ -389,7 +397,8 @@ async def chat_send(request: ChatRequest):
 
             try:
                 conv_chunks = await query_conversation_context(parts[0], parts[1], user_query, n_results=3)
-            except Exception:
+            except Exception as e:
+                log.error("unhandled_exception", error=str(e))
                 conv_chunks = []
             if conv_chunks:
                 conv_block = "\n---\n".join(conv_chunks)
@@ -421,7 +430,8 @@ async def chat_send(request: ChatRequest):
                         collection = request.repo.replace("/", "__")
                         chunk_ids = [f"{collection}_{hash(c[:100]) & 0xFFFFFFFF}" for c in referenced]
                         await record_chunk_usage(collection, chunk_ids)
-                except Exception:
+                except Exception as e:
+                    log.error("unhandled_exception", error=str(e))
                     pass
 
             if request.repo and request.messages:
@@ -429,7 +439,8 @@ async def chat_send(request: ChatRequest):
                     parts = request.repo.split("/", 1)
                     user_content = request.messages[-1].content if request.messages else ""
                     await store_conversation_exchange(parts[0], parts[1], user_content, response[:2000])
-                except Exception:
+                except Exception as e:
+                    log.error("unhandled_exception", error=str(e))
                     pass
 
             try:
@@ -444,7 +455,8 @@ async def chat_send(request: ChatRequest):
                     "output_tokens": output_toks,
                     "conversation_id": "",
                 })
-            except Exception:
+            except Exception as e:
+                log.error("unhandled_exception", error=str(e))
                 pass
 
             return ChatResponse(
@@ -453,7 +465,7 @@ async def chat_send(request: ChatRequest):
                 model=request.model,
             )
         except ModelNotAvailableError as e:
-            raise HTTPException(404, str(e))
+            raise HTTPException(404, str(e)) from e
         except RateLimitError:
             last_error = f"Rate limited on key {key_row.get('name', provider_id)}, trying next..."
             continue

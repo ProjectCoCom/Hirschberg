@@ -2,7 +2,8 @@
 Database connection and session management.
 
 Responsibilities:
-- Initializes the SQLite database engine, sets WAL mode, enforces foreign keys, and manages thread-local connection sessions.
+- Initializes SQLite DB engine, sets WAL mode, enforces foreign keys,
+  and manages thread-local connection sessions.
 
 Coupling:
 - Used by 'src/clients/database.py' and across the API controllers to interact with the database.
@@ -23,7 +24,8 @@ if _config_path.exists():
     try:
         raw = json.loads(_config_path.read_text())
         _db_config = raw.get("database", _db_config)
-    except Exception:
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
         pass
 
 db = Database(

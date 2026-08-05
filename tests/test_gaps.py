@@ -12,9 +12,10 @@ Coupling:
 from __future__ import annotations
 
 import asyncio
-import pytest
 import sys
 from pathlib import Path
+
+import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
@@ -237,8 +238,14 @@ async def test_integrator_workflow_review():
 
     # Build a multi-task workflow
     workflow_id = uuid4()
-    task1 = AgentTask(id=uuid4(), prompt="Task 1", exit_criteria="Crit 1", repo_owner="owner", repo_name="repo", branch="jat/task-1")
-    task2 = AgentTask(id=uuid4(), prompt="Task 2", exit_criteria="Crit 2", repo_owner="owner", repo_name="repo", branch="jat/task-2")
+    task1 = AgentTask(
+        id=uuid4(), prompt="Task 1", exit_criteria="Crit 1",
+        repo_owner="owner", repo_name="repo", branch="jat/task-1"
+    )
+    task2 = AgentTask(
+        id=uuid4(), prompt="Task 2", exit_criteria="Crit 2",
+        repo_owner="owner", repo_name="repo", branch="jat/task-2"
+    )
     workflow = Workflow(
         id=workflow_id,
         name="Multi-task Test Workflow",
@@ -275,7 +282,14 @@ async def test_integrator_workflow_review():
         "branch": workflow.integration_branch,
         "status": "completed",
         "orchestrator_session_id": "orch-1",
-        "context": {"is_integrator_task": True, "integrator_verdict": {"verdict": "approve", "blocking_issues": [], "summary": "Integration looks solid."}}
+        "context": {
+            "is_integrator_task": True,
+            "integrator_verdict": {
+                "verdict": "approve",
+                "blocking_issues": [],
+                "summary": "Integration looks solid."
+            }
+        }
     }
 
     # Mock pool account acquisition
@@ -292,7 +306,15 @@ async def test_integrator_workflow_review():
 
     # Mock activities to return Integrator "approve" verdict
     mock_act = MagicMock()
-    mock_act.agent_messaged.agent_message = 'My integration review details.\n\n{\n  "verdict": "approve",\n  "blocking_issues": [],\n  "summary": "Integration looks solid."\n}'
+    mock_act.agent_messaged.agent_message = (
+        'My integration review details.\n'
+        '\n'
+        '{\n'
+        '  "verdict": "approve",\n'
+        '  "blocking_issues": [],\n'
+        '  "summary": "Integration looks solid."\n'
+        '}'
+    )
     mock_jules_client.list_activities.return_value = [mock_act]
 
     coordinator._pool.get_client.return_value = mock_jules_client
@@ -981,8 +1003,9 @@ async def test_mcp_server_non_blocking_concurrency():
     sys.path = [p for p in sys.path if not (p.endswith("/src") or p.endswith("/src/"))]
 
     try:
-        import mcp  # noqa: F401
         import mcp.server.fastmcp  # noqa: F401
+
+        import mcp  # noqa: F401
     finally:
         sys.path = orig_path
 
@@ -1259,10 +1282,11 @@ async def test_encryption_key_rotation():
 
 @pytest.mark.asyncio
 async def test_get_client_for_session_routing():
+    from uuid import uuid4
+
     from core.account_pool import Account, AccountPool
     from core.context_store import ContextStore
     from db import db
-    from uuid import uuid4
 
     pool = AccountPool()
     acc_a = Account(id=uuid4(), name="account-a", api_key="key-a")
@@ -1309,13 +1333,14 @@ async def test_get_client_for_session_routing():
 
 @pytest.mark.asyncio
 async def test_relay_worker_feedback_timeout():
+    from unittest.mock import AsyncMock, MagicMock, patch
+    from uuid import uuid4
+
     from core.account_pool import Account, AccountPool
     from core.context_store import ContextStore
-    from core.orchestrator_relay import relay_worker_feedback, get_orchestrator_lock
-    from models.workflow import AgentTask
+    from core.orchestrator_relay import get_orchestrator_lock, relay_worker_feedback
     from db import db
-    from uuid import uuid4
-    from unittest.mock import AsyncMock, MagicMock, patch
+    from models.workflow import AgentTask
 
     pool = AccountPool()
     acc_orch = Account(id=uuid4(), name="orch-account", api_key="orch-key")
@@ -1405,10 +1430,11 @@ async def test_relay_worker_feedback_timeout():
 
 @pytest.mark.asyncio
 async def test_fake_async_db_layer_non_blocking():
-    from db import db
-    from unittest.mock import patch
     import asyncio
     import time
+    from unittest.mock import patch
+
+    from db import db
 
     def slow_select(*args, **kwargs):
         time.sleep(0.3)

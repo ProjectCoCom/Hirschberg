@@ -22,17 +22,33 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 
 def _wait_for_port(port: str, timeout: int = 30):
-    for _ in range(timeout):
-        time.sleep(1)
-        try:
-            import httpx
-
-            r = httpx.get(f"http://localhost:{port}/api/setup", timeout=2)
-            if r.status_code == 200:
-                return True
-        except Exception:
-            continue
-    return False
+    import asyncio
+    
+    async def _async_wait():
+        import httpx
+        
+        for _ in range(timeout):
+            await asyncio.sleep(1)
+            try:
+                r = httpx.get(f"http://localhost:{port}/api/setup", timeout=2)
+                if r.status_code == 200:
+                    return True
+            except Exception as e:
+                log.error("unhandled_exception", error=str(e))
+                continue
+        return False
+    
+    # Run the async function in a new event loop
+    import threading
+    result = [False]
+    
+    def run_loop():
+        result[0] = asyncio.run(_async_wait())
+    
+    thread = threading.Thread(target=run_loop)
+    thread.start()
+    thread.join()
+    return result[0]
 
 
 def _start_backend(root: Path, src_dir: Path, port: str) -> subprocess.Popen:
@@ -65,14 +81,15 @@ def _start_frontend(dashboard_dir: Path, port: str) -> subprocess.Popen | None:
         cwd=str(dashboard_dir),
     )
     for _ in range(15):
-        time.sleep(1)
+        time.sleep(1)  # Keep sync sleep here since this is in a subprocess context
         try:
             import httpx
 
             r = httpx.get(f"http://localhost:{port}", timeout=2)
             if r.status_code == 200:
                 break
-        except Exception:
+        except Exception as e:
+            log.error("unhandled_exception", error=str(e))
             continue
     print(f"[FRONTEND] Ready on http://localhost:{port}")
     return proc

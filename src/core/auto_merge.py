@@ -14,10 +14,14 @@ from __future__ import annotations
 import asyncio
 import random
 from enum import StrEnum
+from typing import TYPE_CHECKING
 
 import structlog
 
 from clients.github import GitHubClient
+
+if TYPE_CHECKING:
+    from core.context_store import ContextStore
 from models.github import CheckConclusion, CheckStatus, MergeResult
 
 log = structlog.get_logger()
@@ -71,7 +75,8 @@ class AutoMerge:
             workflow_row = await self._store.get_workflow_by_branch(pr.head_ref)
             if workflow_row:
                 is_integration_pr = bool(workflow_row.get("integration_branch"))
-        except Exception:
+        except Exception as e:
+            log.error("unhandled_exception", error=str(e))
             pass
 
         if is_integration_pr:
@@ -102,7 +107,13 @@ class AutoMerge:
 
                     issues_summary = ""
                     for issue in integrator_verdict_data.get("blocking_issues", []):
-                        issues_summary += f"- {issue.get('file', 'unknown')}: {issue.get('issue', '')} (Severity: {issue.get('severity', 'blocking')})\n"
+                        file_name = issue.get("file", "unknown")
+                        issue_desc = issue.get("issue", "")
+                        severity = issue.get("severity", "blocking")
+                        issues_summary += (
+                            f"- {file_name}: {issue_desc} "
+                            f"(Severity: {severity})\n"
+                        )
                     summary = f"Integrator Review Rejected:\n{issues_summary}"
 
                     from core.orchestrator_relay import notify_orchestrator
@@ -144,7 +155,13 @@ class AutoMerge:
 
                     issues_summary = ""
                     for issue in qa_verdict_data.get("blocking_issues", []):
-                        issues_summary += f"- {issue.get('file', 'unknown')}: {issue.get('issue', '')} (Severity: {issue.get('severity', 'blocking')})\n"
+                        file_name = issue.get("file", "unknown")
+                        issue_desc = issue.get("issue", "")
+                        severity = issue.get("severity", "blocking")
+                        issues_summary += (
+                            f"- {file_name}: {issue_desc} "
+                            f"(Severity: {severity})\n"
+                        )
                     summary = f"QA Review Rejected:\n{issues_summary}"
 
                     from core.orchestrator_relay import notify_orchestrator
@@ -179,7 +196,11 @@ class AutoMerge:
                     if wf_row:
                         integration_branch = wf_row.get("integration_branch")
                         if integration_branch:
-                            log.info("merging_individual_task_branch_into_integration", branch=pr.base_ref, integration=integration_branch)
+                            log.info(
+                                "merging_individual_task_branch_into_integration",
+                                branch=pr.base_ref,
+                                integration=integration_branch,
+                            )
                             await self._github.merge_branch(
                                 owner, repo, integration_branch, pr.base_ref,
                                 f"jat: merge task branch {pr.base_ref} into integration {integration_branch}"

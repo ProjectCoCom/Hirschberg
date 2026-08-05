@@ -17,8 +17,6 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from tests.mocks import MOCK_PR_URL, MOCK_SHA, MockGitHubAPI, MockJulesAPI
-
 from core.jdocs import CONTEXT_TEMPLATE, RULES_TEMPLATE
 from core.plan_executor import parse_plan
 from prompts.system_prompts import (
@@ -28,6 +26,7 @@ from prompts.system_prompts import (
     PLAN_MODE_SYSTEM,
     REVIEW_SESSION_PROMPT,
 )
+from tests.mocks import MOCK_PR_URL, MOCK_SHA, MockGitHubAPI, MockJulesAPI
 
 MOCK_REPOMIX_XML = """<?xml version="1.0" encoding="UTF-8"?>
 <repository name="AnyWebApi" owner="iceyxsm">

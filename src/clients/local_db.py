@@ -40,7 +40,8 @@ def _deserialize_row(row: dict) -> dict:
             elif isinstance(v, str):
                 try:
                     row_dict[k] = json.loads(v)
-                except Exception:
+                except Exception as e:
+                    log.error("unhandled_exception", error=str(e))
                     row_dict[k] = {}
         elif k in array_cols:
             if v is None or v == "":
@@ -48,7 +49,8 @@ def _deserialize_row(row: dict) -> dict:
             elif isinstance(v, str):
                 try:
                     row_dict[k] = json.loads(v)
-                except Exception:
+                except Exception as e:
+                    log.error("unhandled_exception", error=str(e))
                     row_dict[k] = []
     return row_dict
 
@@ -333,7 +335,9 @@ class LocalDB:
             conn.execute("ALTER TABLE agent_tasks ADD COLUMN exit_criteria TEXT NOT NULL DEFAULT ''")
         if "orchestrator_session_id" not in task_columns:
             conn.execute("ALTER TABLE agent_tasks ADD COLUMN orchestrator_session_id TEXT NOT NULL DEFAULT ''")
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_agent_tasks_orchestrator ON agent_tasks(orchestrator_session_id);")
+            idx_sql = "CREATE INDEX IF NOT EXISTS idx_agent_tasks_orchestrator"
+            idx_sql += " ON agent_tasks(orchestrator_session_id);"
+            conn.execute(idx_sql)
 
         conn.commit()
 
@@ -505,7 +509,8 @@ class LocalDB:
         import asyncio
         return await asyncio.to_thread(self.delete_sync, table, filters)
 
-    def subscribe(self, table: str, event_type: str, callback: Callable[[dict], None], filter_fn: Callable[[dict], bool] | None = None) -> str:
+    def subscribe(self, table: str, event_type: str, callback: Callable[[dict], None],
+                  filter_fn: Callable[[dict], bool] | None = None) -> str:
         sub_id = str(uuid.uuid4())
         self._listeners.append({
             "id": sub_id,
@@ -517,7 +522,7 @@ class LocalDB:
         return sub_id
 
     def unsubscribe(self, sub_id: str) -> None:
-        self._listeners = [l for l in self._listeners if l["id"] != sub_id]
+        self._listeners = [listener for listener in self._listeners if listener["id"] != sub_id]
 
     def _notify(self, table: str, event_type: str, new_data: dict | None, old_data: dict | None = None) -> None:
         payload = {
@@ -528,11 +533,11 @@ class LocalDB:
             "old": old_data or {}
         }
         for listener in list(self._listeners):
-            if listener["table"] == table or listener["table"] == "*":
-                if listener["event_type"] == "*" or listener["event_type"] == event_type:
-                    if listener["filter_fn"] is None or listener["filter_fn"](payload):
-                        with contextlib.suppress(Exception):
-                            listener["callback"](payload)
+            if (listener["table"] == table or listener["table"] == "*") and \
+               (listener["event_type"] == "*" or listener["event_type"] == event_type) and \
+               (listener["filter_fn"] is None or listener["filter_fn"](payload)):
+                with contextlib.suppress(Exception):
+                    listener["callback"](payload)
 
     def close(self) -> None:
         with self._lock:

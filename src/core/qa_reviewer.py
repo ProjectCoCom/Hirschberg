@@ -116,7 +116,8 @@ async def run_qa_review_for_task(
                         verdict = extract_qa_verdict(act.agent_messaged.agent_message)
                         if verdict:
                             parsed_verdict = verdict
-            except Exception:
+            except Exception as e:
+                log.error("unhandled_exception", error=str(e))
                 pass
 
             if session.state in (SessionState.COMPLETED, SessionState.FAILED):
@@ -129,9 +130,16 @@ async def run_qa_review_for_task(
             parsed_verdict = {
                 "verdict": "reject",
                 "blocking_issues": [
-                    {"file": "N/A", "issue": "QA session completed without returning a valid JSON verdict block", "severity": "blocking"}
+                    {
+                        "file": "N/A",
+                        "issue": (
+                            "QA session completed without returning a valid "
+                            "JSON verdict block"
+                        ),
+                        "severity": "blocking",
+                    }
                 ],
-                "summary": "QA session failed to return a proper JSON verdict."
+                "summary": "QA session failed to return a proper JSON verdict.",
             }
 
         # 6. Save the verdict in context and mark the QA task as COMPLETED regardless of verdict

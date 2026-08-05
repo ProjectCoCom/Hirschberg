@@ -30,7 +30,7 @@ class KeyVault:
         try:
             self._fernet = Fernet(encryption_key.encode())
         except (ValueError, Exception) as e:
-            raise ValueError(f"Invalid encryption key provided: {e}")
+            raise ValueError(f"Invalid encryption key provided: {e}") from e
 
     def encrypt(self, plaintext: str) -> str:
         if not self._fernet:

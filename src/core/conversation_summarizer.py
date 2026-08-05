@@ -116,13 +116,20 @@ async def build_ai_summarized_history(
         from api.chat import _call_provider
 
         summary_prompt = [
-            {"role": "system", "content": "Summarize this conversation into a concise paragraph capturing key topics, decisions, and context. Be brief but preserve important details."},
+            {
+                "role": "system",
+                "content": (
+                    "Summarize this conversation into a concise paragraph capturing "
+                    "key topics, decisions, and context. Be brief but preserve important details."
+                ),
+            },
             {"role": "user", "content": conversation_text[:8000]},
         ]
 
         response = await _call_provider(provider_type, model, summary_prompt)
         summary_text = response if isinstance(response, str) else str(response)
-    except Exception:
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
         summary_text = extract_summary(older)
 
     summary_msg = {
@@ -138,6 +145,7 @@ async def get_summarizer_config() -> dict:
         rows = await db.select("app_settings", filters={"key": "summarizer_config"})
         if rows:
             return json.loads(rows[0].get("value", "{}"))
-    except Exception:
+    except Exception as e:
+        log.error("unhandled_exception", error=str(e))
         pass
     return {"mode": "free", "provider": "", "model": "", "limit": 10}

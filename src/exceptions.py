@@ -35,7 +35,7 @@ class GitHubApiError(JatError):
         return self.status_code >= 500 or self.status_code == 429
 
 
-class AccountPoolExhausted(JatError):
+class AccountPoolExhaustedError(JatError):
     pass
 
 

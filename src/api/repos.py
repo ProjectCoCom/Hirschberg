@@ -34,13 +34,13 @@ async def analyze(owner: str, repo: str):
         traceback.print_exc()
         msg = str(e) or "Unknown runtime error (empty message)"
         print(f"[analyze] RuntimeError: {msg}")
-        raise HTTPException(500, f"Analysis failed: {msg}")
+        raise HTTPException(500, f"Analysis failed: {msg}") from e
     except Exception as e:
         import traceback
         traceback.print_exc()
-        msg = f"{type(e).__name__}: {e}" or "Unknown error"
+        msg = f"{type(e).__name__}: {e}"
         print(f"[analyze] Exception: {msg}")
-        raise HTTPException(500, f"Unexpected error: {msg}")
+        raise HTTPException(500, f"Unexpected error: {msg}") from e
 
     return {"xml": xml, "cached": False, "chars": len(xml)}
 

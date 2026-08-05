@@ -49,12 +49,14 @@ async def record_chunk_usage(collection: str, chunk_ids: list[str]) -> None:
             ).fetchone()
             if existing:
                 conn.execute(
-                    "UPDATE chunk_scores SET score = score + 0.1, hit_count = hit_count + 1, last_hit = ? WHERE chunk_id = ?",
+                    "UPDATE chunk_scores SET score = score + 0.1, hit_count = hit_count + 1, "
+                    "last_hit = ? WHERE chunk_id = ?",
                     (now, cid),
                 )
             else:
                 conn.execute(
-                    "INSERT INTO chunk_scores (chunk_id, collection, score, hit_count, last_hit) VALUES (?, ?, 1.1, 1, ?)",
+                    "INSERT INTO chunk_scores (chunk_id, collection, score, hit_count, last_hit) "
+                    "VALUES (?, ?, 1.1, 1, ?)",
                     (cid, collection, now),
                 )
         conn.commit()
